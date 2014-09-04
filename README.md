@@ -41,21 +41,30 @@ computation on that data.  The intended use-cases are wide-ranging:
 
 Manta is deployed on top of Joyent's
 [SmartDataCenter](https://github.com/joyent/sdc) platform (SDC), which is also
-open-source.  SDC is a system for operating a datacenter as a cloud.  SDC
-provides services for operating physical servers (compute nodes), deploying
-services in containers, monitoring services, transmitting and visualizing
-real-time performance data, and a bunch more.  Manta primarily uses SDC for
-initial deployment, service upgrade, and service monitoring.
+open-source.  SDC provides services for operating physical servers (compute
+nodes), deploying services in containers, monitoring services, transmitting and
+visualizing real-time performance data, and a bunch more.  Manta primarily uses
+SDC for initial deployment, service upgrade, and service monitoring.
 
-SDC itself depends on [SmartOS](https://smartos.org).  Manta also depends on
-several SmartOS features, notably: ZFS pooled storage, ZFS rollback, and
+SDC itself depends on [SmartOS](https://smartos.org).  Manta also directly
+depends on several SmartOS features, notably: ZFS pooled storage, ZFS rollback,
+and
 [hyprlofs](https://github.com/joyent/illumos-joyent/blob/master/usr/src/uts/common/fs/hyprlofs/hyprlofs_vfsops.c).
 
-The easiest way to play around with your own Manta installation is to:
 
-* Set up an SDC COAL (cloud-on-a-laptop) installation in VMware
-* Deploy Manta atop it using the deployment instructions in the Manta Operator's
-  Guide.
+## Building and Deploying Manta
+
+Manta is built and packaged with SDC.  Building the raw pieces uses the same
+mechanisms as building the services that are part of SDC.  When you build an SDC
+headnode image (which is the end result of the whole SDC build process), one of
+the built-in services you get is a [Manta
+deployment](https://github.com/joyent/manta-deployment) service, which is used
+to bootstrap a Manta installation.
+
+Once you have SDC set up, follow the instructions in the Manta Operator's Guide
+to deploy Manta.  The easiest way to play around with your own Manta
+installation is to first set up an SDC (cloud-on-a-laptop) installation in
+VMware and then follow those instructions to deploy Manta on it.
 
 
 ## Repositories
@@ -152,7 +161,7 @@ configuration file in each repo for exceptions to the default jsstyle rules.
 Lint is checked with
 [javascriptlint](https://github.com/davepacheco/javascriptlint).  ([Don't
 conflate lint with
-style!](http://dtrace.org/blogs/dap/2011/08/23/javascriptlint/).  There are gray
+style!](http://dtrace.org/blogs/dap/2011/08/23/javascriptlint/)  There are gray
 areas, but generally speaking, style rules are arbitrary, while lint warnings
 identify potentially broken code.)  Repos sometimes have repo-specific lint
 rules, but this is less common.
