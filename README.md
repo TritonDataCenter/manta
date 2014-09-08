@@ -66,6 +66,9 @@ to deploy Manta.  The easiest way to play around with your own Manta
 installation is to first set up an SDC (cloud-on-a-laptop) installation in
 VMware and then follow those instructions to deploy Manta on it.
 
+If you want to deploy your own builds of Manta components, see "Deploying your
+own Manta Builds" below.
+
 
 ## Repositories
 
@@ -141,6 +144,64 @@ deployed to increase capacity.
 
 For more details on the architecture, including how these pieces actually fit
 together, see "Architecture Basics" in the Manta Operator's Guide.
+
+
+## Deploying your own Manta Builds
+
+As described above, as part of the normal Manta deployment process, you start
+with the "manta-deployment" zone that's built into SDC.  Inside that zone, you
+run "manta-init" to fetch the latest Joyent build of each Manta component.  Then
+you run Manta deployment tools to actually deploy zones based on these builds.
+
+The easiest way to use your own custom build is to first deploy Manta using the
+default Joyent build and *then* replace whatever components you want with your
+own builds.  This will also ensure that you're starting from a known-working set
+of builds so that if something goes wrong, you know where to start looking.  To
+do this:
+
+1. Complete the Manta deployment procedure from the Manta Operator's Guide.
+1. Build a zone image for whatever zone you want to replace.  See the
+   instructions for building [SmartDataCenter](https://github.com/joyent/sdc)
+   zone images using Mountain Gorilla.  Manta zones work the same way.  The
+   output of this process will be a zone **image**, identified by uuid.  The
+   image is comprised of two files: an image manifest (a JSON file) and the
+   image file itself (a binary blob).
+1. Import the image into the SDC instance that you're using to deploy Manta.
+   (If you've got a multi-datacenter Manta deployment, you'll need to import the
+   image into each datacenter separately using this same procedure.)
+    1. Copy the image and manifest files to the SDC headnode where the Manta
+       deployment zone is deployed.    For simplicity, assume that the
+       manifest file is "/var/tmp/my_manifest.json" and the image file is
+       "/var/tmp/my_image".  You may want to use the image uuid in the filenames
+       instead.
+    1. Import the image using:
+
+           sdc-imgadm import -m /var/tmp/my_manifest.json -f /var/tmp/my_image
+
+1. Now you can use the normal Manta zone update procedure (from the Manta
+   Operator's Guide).  This involves saving the current configuration to a JSON
+   file using "manta-adm show -sj > config.json", updating the configuration
+   file, and then applying the changes with "manta-adm update < config.json".
+   When you modify the configuration file, you can use your image's uuid in
+   place of whatever service you're trying to replace.
+
+If for some reason you want to avoid deploying the Joyent builds at all, you'll
+have to follow a more manual procedure.  One approach is to update the SAPI
+configuration for whatever service you want (using sdc-sapi -- see
+[SAPI](https://github.com/joyent/sdc-sapi)) *immediately after* running
+manta-init but before deploying anything.  Note that each subsequent
+"manta-init" will clobber this change, though the SAPI configuration is normally
+only used for the initial deployment anyway.  The other option is to apply the
+fully-manual install procedure from the Manta Operator's Guide (i.e., instead of
+using manta-deploy-coal or manta-deploy-lab) and use a custom "manta-adm"
+configuration file in the first place.  If this is an important use case, file
+an issue and we can improve this procedure.
+
+The above procedure works to update Manta *zones*, which are most of the
+components above.  The other two kinds of components are the *platform* and
+*agents*.  Both of these procedures are documented in the Manta Operator's
+Guide, and they work to deploy custom builds as well as the official Joyent
+builds.
 
 
 ## Contributing to Manta
