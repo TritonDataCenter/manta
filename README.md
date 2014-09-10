@@ -25,8 +25,8 @@ the user documentation.
 To learn about installing and operating your own Manta deployment, see the Manta
 Operator's Guide.
 
-Manta is designed to store amounts of data storage and support arbitrary
-computation on that data.  The intended use-cases are wide-ranging:
+Manta is designed to store arbitrary amounts of data storage and support
+arbitrary computation on that data.  The intended use-cases are wide-ranging:
 
 * web assets (e.g., images, HTML and CSS files, and so on), with the ability to
   convert or resize images without copying any data out of Manta
