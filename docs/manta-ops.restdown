@@ -1124,9 +1124,7 @@ once, this alone should not induce errors.)
 
 ## Manta deployment zone upgrades
 
-    headnode$ updates-imgadm list name=manta-deployment | tail -10
-    headnode$ /var/tmp/incr-upgrade/download-image.sh [image uuid]
-    headnode$ sapiadm reprovision [zone uuid] [image uuid]
+    headnode$ sdcadm update manta
 
 ## Amon Alarm Updates
 
