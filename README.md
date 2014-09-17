@@ -58,7 +58,7 @@ Manta is built and packaged with SDC.  Building the raw pieces uses the same
 mechanisms as building the services that are part of SDC.  When you build an SDC
 headnode image (which is the end result of the whole SDC build process), one of
 the built-in services you get is a [Manta
-deployment](https://github.com/joyent/manta-deployment) service, which is used
+deployment](http://github.com/joyent/sdc-manta) service, which is used
 to bootstrap a Manta installation.
 
 Once you have SDC set up, follow the instructions in the Manta Operator's Guide
@@ -88,7 +88,7 @@ The metadata tier stores the entire object namespace (not object data) as well
 as information about compute jobs and backend storage system capacity:
 
 * [manatee](https://github.com/joyent/manatee): high-availability postgres
-  cluster using synchronous replication
+  cluster using synchronous replication and automatic fail-over
 * [moray](https://github.com/joyent/moray): Node-based key-value store built on
   top of manatee.  Also responsible for monitoring manatee replication topology
   (i.e., which postgres instance is the master).
@@ -101,7 +101,7 @@ The storage tier is responsible for actually storing bits on disk:
 * [mako](https://github.com/joyent/manta-mako): nginx-based server that receives
   PUT/GET requests from Muskie to store object data on disk.
 
-The compute tier (also called [Marlin](https://github.com/joyent/manta-marlin)
+The compute tier (also called [Marlin](https://github.com/joyent/manta-marlin))
 is responsible for the distributed execution of user jobs.  Most of it is
 contained in the Marlin repo, and it consists of:
 
@@ -122,10 +122,11 @@ Manta's operation:
 * [binder](https://github.com/joyent/binder): hosts both ZooKeeper (used for
   manatee leader election and for group membership) and a Node-based DNS server
   that keeps track of which instances of each service are online at any given
-  time.
+  time
 * [mola](https://github.com/joyent/manta-mola): garbage collection (removing
   files from storage servers corresponding to objects that have been deleted
-  from the namespace)
+  from the namespace) and audit (verifying that objects in the index tier
+  exist on the storage hosts)
 * [mackerel](https://github.com/joyent/manta-mackerel): metering (computing
   per-user details about requests made, bandwidth used, storage used, and
   compute time used)
@@ -170,7 +171,7 @@ do this:
    (If you've got a multi-datacenter Manta deployment, you'll need to import the
    image into each datacenter separately using this same procedure.)
     1. Copy the image and manifest files to the SDC headnode where the Manta
-       deployment zone is deployed.    For simplicity, assume that the
+       deployment zone is deployed.  For simplicity, assume that the
        manifest file is "/var/tmp/my_manifest.json" and the image file is
        "/var/tmp/my_image".  You may want to use the image uuid in the filenames
        instead.
@@ -216,8 +217,8 @@ Guidelines](https://github.com/joyent/eng) as the SDC project.  Notably:
 
 "make check" checks both JavaScript style and lint.  Style is checked with
 [jsstyle](https://github.com/davepacheco/jsstyle).  The specific style rules are
-somewhat repo-specific.  Style is somewhat repo-specific.  See the jsstyle
-configuration file in each repo for exceptions to the default jsstyle rules.
+somewhat repo-specific.  See the jsstyle configuration file in each repo for
+exceptions to the default jsstyle rules.
 
 Lint is checked with
 [javascriptlint](https://github.com/davepacheco/javascriptlint).  ([Don't
@@ -327,6 +328,11 @@ System"](http://queue.acm.org/detail.cfm?id=2482856).
 For information about how Manta is designed to survive component failures and
 maintain strong consistency, see [Fault tolerance in
 Manta](http://dtrace.org/blogs/dap/2013/07/03/fault-tolerance-in-manta/).
+
+For information on the latest recommended production hardware, see [Joyent
+Manufacturing Matrix](http://eng.joyent.com/manufacturing/matrix.html) and
+[Joyent Manufacturing Bill of
+Materials](http://eng.joyent.com/manufacturing/bom.html).
 
 Applications and customer stories:
 

@@ -146,7 +146,7 @@ services.
 
 ### Manta components at a glance
 
-|| **Kind** || **Major subsystem** || **Service**        || **Purpose**                           || **Components**            ||
+|| **Kind** || **Major subsystem** || **Service**        || **Purpose**                           || **Components**          ||
 || Service  || Consensus           || nameservice        || Service discovery                     || ZooKeeper, binder (DNS) ||
 || Service  || Front door          || loadbalancer       || SSL termination and load balancing    || stud, haproxy/muppet    ||
 || Service  || Front door          || webapi             || Manta HTTP API server                 || muskie                  ||
@@ -159,8 +159,8 @@ services.
 || Service  || Operations          || madtom             || Web-based Manta monitoring            || madtom                  ||
 || Service  || Operations          || marlin-dashboard   || Web-based Marlin monitoring           || marlin-dashboard        ||
 || Service  || Compute             || jobsupervisor      || Distributed job orchestration         || jobsupervisor           ||
-|| Service  || Compute             || jobpuller          || Job archival                          || wrasse           ||
-|| Service  || Compute             || marlin             || Compute containers for end users      || none                    ||
+|| Service  || Compute             || jobpuller          || Job archival                          || wrasse                  ||
+|| Service  || Compute             || marlin             || Compute containers for end users      || marlin-lackey           ||
 || Agent    || Compute             || marlin-agent       || Job execution on each storage node    || marlin-agent            ||
 
 
@@ -214,11 +214,11 @@ runs:
 
 * **mako**: an nginx instance that supports simple PUT/GET for objects.  This is
   not the front door; this is used *internally* to store each copy of a user
-  object.  Objects are stored in a delegated dataset inside the storage zone,
-  under `$user_uuid/$object_uuid`.
+  object.  Objects are stored in a ZFS delegated dataset inside the storage
+  zone, under `/manta/$account_uuid/$object_uuid`.
 * **minnow**: a small Node service that periodically reports storage capacity
   data into the metadata tier so that the front door knows how much capacity
-  each system has
+  each storage node has.
 
 In addition to the "storage" zone, each storage node has some number of
 **marlin zones** (or **compute zones**).  These are essentially blank zones in
@@ -299,7 +299,7 @@ There are actually three kinds of metadata in Manta:
   high volume, depending on job load.
 
 In the us-east production deployment, shard 1 stores compute job state and
-storage node capacity.  Shards 2-4 store the
+storage node capacity.  Shards 2-4 store the object metadata.
 
 Manta supports **resharding** object metadata, which would typically be used to
 add an additional shard (for additional capacity).  This operation has never
@@ -309,7 +309,7 @@ likely just a matter of time.
 ### Moray
 
 For each metadata shard (which we said above consists of three PostgreSQL
-databases), there's one or more "moray" instances.  Moray is a key-value store
+databases), there's two or more "moray" instances.  Moray is a key-value store
 built on top of postgres.  Clients never talk to postgres directly; they always
 talk to Moray.  (Actually, they generally talk to electric-moray, which proxies
 requests to Moray.  See below.)  Moray keeps track of the replication topology
@@ -349,10 +349,10 @@ handles PUT/GET/DELETE requests to the front door, including requests to:
 
 Requests for objects and directories involve:
 
-* validating the request,
-* authenticating the user (via mahi, the auth cache),
+* validating the request
+* authenticating the user (via mahi, the auth cache)
 * looking up the requested object's metadata (via electric moray)
-* authorizing the user for access to the specifed
+* authorizing the user for access to the specifed resource
 
 For requests on directories and zero-byte objects, the last step is to update or
 return the right metadata.
@@ -361,18 +361,19 @@ For write requests on objects, muskie then:
 
 * Constructs a set of candidate storage nodes that will be used to store the
   object's data, where each storage node is located in a different datacenter
-  (in a multi-DC configuration).  By default, there are two nodes, but users can
-  configure this by setting the durability level with the request.
+  (in a multi-DC configuration).  By default, there are two copies of the data,
+  but users can configure this by setting the durability level with the
+  request.
 * Tries to issue a PUT with 100-continue to each of the storage nodes in the
   candidate set.  If that fails, try another set.  If all sets are exhausted,
   fail with 503.
 * Once the 100-continue is received from all storage nodes, the user's data is
-  streamed to both nodes.  Upon completion, there should be two 204 responses --
-  one from each storage node.
+  streamed to all nodes.  Upon completion, there should be a 204 response from
+  each storage node.
 * Once the data is safely written to all nodes, the metadata tier is updated
   (using a PUT to electric-moray), and a 204 is returned to the client.  At this
   point, the object's data is recorded persistently on the requested number of
-  nodes, and the metadata is replicated on at least two nodes.
+  storage nodes, and the metadata is replicated on at least two index nodes.
 
 For read requests on objects, muskie instead contacts each of the storage nodes
 hosting the data and streams data from whichever one responds first to the
@@ -495,9 +496,9 @@ which no longer exist.  When an object is deleted, muskie records that event in
 a log and removes the metadata from Moray, but does not actually remove the
 object from storage servers because there may have been other links to it.  The
 garbage collection job (called "mola") processes these logs, along with dumps of
-the metadata tier (taken hourly and stored into Manta), and determines which
-objects can safely be deleted.  These delete requests are batched and sent to
-each storage node, which moves the objects to a "tombstone" area.  Objects in
+the metadata tier (taken periodically and stored into Manta), and determines
+which objects can safely be deleted.  These delete requests are batched and sent
+to each storage node, which moves the objects to a "tombstone" area.  Objects in
 the tombstone area are deleted after a fixed interval.
 
 **Auditing** is the process of ensuring that each object is replicated as
@@ -557,6 +558,14 @@ shard's postgres instance should be on a separate compute node.  So you want at
 least as many compute nodes as you will have shards.  The us-east deployment
 distributes the other services on those same compute nodes.
 
+For information on the latest recommended production hardware, see [Joyent
+Manufacturing Matrix](http://eng.joyent.com/manufacturing/matrix.html) and
+[Joyent Manufacturing Bill of
+Materials](http://eng.joyent.com/manufacturing/bom.html).
+
+The us-east deployment uses older versions of the Tenderloin-A for service
+nodes and Mantis Shrimps for storage nodes.
+
 ## Choosing how to lay out zones
 
 Since there are so many different Manta components, and they're all deployed
@@ -598,7 +607,7 @@ to keep in mind:
   on different compute nodes.  (Postgres instances from different shards can be
   on the same compute node, though for performance reasons it would be better to
   avoid that.)
-* For **moray**, there should be at least two instance per shard in the entire
+* For **moray**, there should be at least two instances per shard in the entire
   deployment, and these instances should reside on separate compute nodes (and
   preferably separate datacenters).
 
@@ -695,7 +704,10 @@ These instructions assume a single-datacenter installation, but they work on
 anything from COAL to a multi-compute-node deployment.  The general process is:
 
 1. Set up SDC in each datacenter, including the headnode, all SDC services, and
-   all compute nodes you intend to use.
+   all compute nodes you intend to use.  For easier management of hosts, we
+   reccommend that the hostname reflect the type of server and, possibly, the
+   intended purpose of the host.  For example, we use the the "RA" or "RM"
+   prefix for "Richmond-A" hosts and "MS" prefix for "Mantis Shrimp" hosts.
 2. In the global zone of the headnode, set up a manta deployment zone using:
 
         /usbkey/scripts/setup_manta_zone.sh
@@ -704,12 +716,12 @@ anything from COAL to a multi-compute-node deployment.  The general process is:
 
     a. For COAL, from the GZ, use:
 
-        /zones/$(vmadm lookup alias=manta0)/root/opt/smartdc/manta-deployment/networking/gen-coal.sh > /var/tmp/netconfig.json
+        headnode$ /zones/$(vmadm lookup alias=manta0)/root/opt/smartdc/manta-deployment/networking/gen-coal.sh > /var/tmp/netconfig.json
 
     b. For lab machines, run this from the [lab.git
        repo](https://mo.joyent.com/docs/lab/master/):
 
-        node bin/genmanta.js -r RIG_NAME LAB_NAME
+        lab.git$ node bin/genmanta.js -r RIG_NAME LAB_NAME
 
        and copy that to the headnode GZ.
 
@@ -718,20 +730,26 @@ anything from COAL to a multi-compute-node deployment.  The general process is:
 4. Once you've got the networking configuration file, configure networks by
    running this in the global zone of the headnode:
 
-        /zones/$(vmadm lookup alias=manta0)/root/opt/smartdc/manta-deployment/networking/manta-net.sh CONFIG_FILE
+        headnode$ ln -s /zones/$(vmadm lookup alias=manta0)/root/opt/smartdc/manta-deployment/networking /var/tmp/networking
+        headnode$ cd /var/tmp/networking
+        headnode$ ./manta-net.sh CONFIG_FILE
 
-   This step is idempotent.
+   This step is idempotent.  Note that if you are setting up a multi-DC Manta,
+   ensure that (1) your SDC networks have corss datacenter connectivity and
+   routing set up and (2) the SDC firewalls allow TCP and UDP traffic cross-
+   datacenter.
 
 5. Inside the manta deployment zone, run:
 
-        manta-init -s SIZE -e YOUR_EMAIL
+        manta$ manta-init -s SIZE -e YOUR_EMAIL
 
-   SIZE must be one of "coal", "lab", or "production".  REGION should be the SDC
-   region name.  YOUR_EMAIL is used for configuring alarms.
+   SIZE must be one of "coal", "lab", or "production".  YOUR_EMAIL is used for
+   configuring alarms.
 
    This step runs various initialization steps, including downloading all of
    the zone images required to deploy Manta.  This can take a while the first
-   time you run it.  It's idempotent.
+   time you run it, so you may want to run it in a screen seesion.  It's
+   idempotent.
 
 6. Inside the manta deployment zone, deploy Manta.
 
@@ -789,51 +807,109 @@ Besides those two, each of these blocks has a property for the current
 availability zone that describes the "subnet", "gateway", "vlan_id", and
 "start" and "end" provisionable addresses.
 
-For reference, here's an example configuration file from a lab system:
+For reference, here's an example multi-datacenter configuration with one service
+node (aac3c402-3047-11e3-b451-002590c57864) and one storage node
+(445aab6c-3048-11e3-9816-002590c3f3bc):
 
     {
-      "azs": [ "sf-1" ],
-      "this_az": "sf-1",
-      "manta_nodes": [ "00000000-0000-0000-0000-002590943378" ],
-      "marlin_nodes": [ "00000000-0000-0000-0000-002590943378" ],
+      "this_az": "staging-1",
+
+      "manta_nodes": [
+        "aac3c402-3047-11e3-b451-002590c57864",
+        "445aab6c-3048-11e3-9816-002590c3f3bc"
+      ],
+      "marlin_nodes": [
+        "445aab6c-3048-11e3-9816-002590c3f3bc"
+      ],
+      "azs": [
+        "staging-1",
+        "staging-2",
+        "staging-3"
+      ],
+
       "admin": {
         "nic_tag": "admin",
         "network": "admin",
-        "sf-1": {
-          "subnet": "172.21.1.0/24",
-          "gateway": "172.21.1.1"
+        "staging-1": {
+          "subnet": "172.25.3.0/24",
+          "gateway": "172.25.3.1"
+        },
+        "staging-2": {
+          "subnet": "172.25.4.0/24",
+          "gateway": "172.25.4.1"
+        },
+        "staging-3": {
+          "subnet": "172.25.5.0/24",
+          "gateway": "172.25.5.1"
         }
       },
+
       "manta": {
         "nic_tag": "manta",
         "network": "manta",
-        "sf-1": {
-          "subnet": "172.22.1.0/24",
-          "gateway": "172.22.1.1",
-          "vlan_id": 3601,
-          "start": "172.22.1.4",
-          "end": "172.22.1.254"
+        "staging-1": {
+          "vlan_id": 3603,
+          "subnet": "172.27.3.0/24",
+          "start": "172.27.3.4",
+          "end": "172.27.3.254",
+          "gateway": "172.27.3.1"
+        },
+        "staging-2": {
+          "vlan_id": 3604,
+          "subnet": "172.27.4.0/24",
+          "start": "172.27.4.4",
+          "end": "172.27.4.254",
+          "gateway": "172.27.4.1"
+        },
+        "staging-3": {
+          "vlan_id": 3605,
+          "subnet": "172.27.5.0/24",
+          "start": "172.27.5.4",
+          "end": "172.27.5.254",
+          "gateway": "172.27.5.1"
         }
       },
+
       "marlin": {
         "nic_tag": "mantanat",
         "network": "mantanat",
-        "sf-1": {
-          "subnet": "172.23.0.0/19",
-          "gateway": "172.23.0.1",
-          "vlan_id": 3901,
-          "start": "172.23.0.4",
-          "end": "172.23.31.254"
+        "staging-1": {
+          "vlan_id": 3903,
+          "subnet": "172.28.64.0/19",
+          "start": "172.28.64.4",
+          "end": "172.28.95.254",
+          "gateway": "172.28.64.1"
+        },
+        "staging-2": {
+          "vlan_id": 3904,
+          "subnet": "172.28.96.0/19",
+          "start": "172.28.96.4",
+          "end": "172.28.127.254",
+          "gateway": "172.28.96.1"
+        },
+        "staging-3": {
+          "vlan_id": 3905,
+          "subnet": "172.28.128.0/19",
+          "start": "172.28.128.4",
+          "end": "172.28.159.254",
+          "gateway": "172.28.128.1"
         }
       },
+
       "mac_mappings": {
-        "00000000-0000-0000-0000-002590943378": {
-          "manta": "90:e2:ba:26:5a:29",
-          "mantanat": "90:e2:ba:26:5a:29"
+        "aac3c402-3047-11e3-b451-002590c57864": {
+          "manta": "90:e2:ba:4b:ec:d1"
+        },
+        "445aab6c-3048-11e3-9816-002590c3f3bc": {
+          "manta": "90:e2:ba:4a:32:71",
+          "mantanat": "90:e2:ba:4a:32:71"
         }
       }
     }
 
+In a multi-datacenter configuration, this would be used to configure the
+"staging-1" datacenter.  There would be two more configuration files, one
+for "staging-2" and one for "staging-3".
 
 ## manta-adm configuration
 
@@ -960,7 +1036,7 @@ method for all zones other than the "marlin" zones.
 1. Figure out which image you want to install. You can list available images by
    running updates-imgadm:
 
-        updates-imgadm list name=manta-jobsupervisor | tail
+        headnode$ updates-imgadm list name=manta-jobsupervisor | tail
 
     Replace manta-jobsupervisor with some other image name, or leave it off to
     see all images. Typically you'll want the most recent one. Note the uuid of
@@ -970,7 +1046,7 @@ method for all zones other than the "marlin" zones.
    datacenter, you can enumerate the zones and versions for a given manta_role
    using:
 
-        # manta-adm show jobsupervisor
+        headnode$ manta-adm show jobsupervisor
 
    You'll want to note the VM UUIDs for the instances you want to update.
 
@@ -978,28 +1054,24 @@ method for all zones other than the "marlin" zones.
 
 Run this in each datacenter:
 
-1. Download the image.
+1. Download updated images.  The supported approach is to re-run the manta-init
+   command that you used when initially deploying Manta inside the
+   manta-deployment zone.  For us-east, that's:
 
-   a. The easiest approach is usually to re-run the manta-init command that
-      you used when initially deploying Manta inside the manta-deployment
-      zone.  For us-east, that's:
-
-        $ manta-init -e manta+us-east@joyent.com -s production -c 10
-
-   b. If you know that the service's SAPI parameters haven't changed, and you
-      want something other than the very most recent image, you can use the
-      "download.image.sh" script, which is typically run as:
-
-       # /usbkey/scripts/download-image.sh IMAGE_UUID
+    manta$ manta-init -e manta+us-east@joyent.com -s production -c 10
 
 2. Inside the Manta deployment zone, generate a configuration file representing
    the current deployment state:
 
-        $ manta-adm show -s -j > config.json
+    manta$ manta-adm show -s -j > config.json
 
 3. Modify the file as desired.  See "manta-adm configuration" above for details
    on the format.  In most cases, you just need to change the image uuid for
-   the service that you're updating.
+   the service that you're updating.  You can get the latest image for a
+   service with the following command:
+
+    headnode$ sdc-sapi "/services?name=[service name]&include_master=true" | \
+        json -Ha params.image_uuid
 
 4. Update the mantamon alarm configuration as needed.  If you provisioned a new
    zone, you'll likely want to "mantamon add" alarms for that zone.  If you
@@ -1016,7 +1088,7 @@ Run this procedure for each datacenter whose Marlin agents you want to upgrade.
    /Joyent_Dev, you can run this from any machine with internet access and the
    Manta CLI tools:
 
-        $ mfind -n 'marlin-master-.*\.tar.\gz' \
+        headnode$ mfind -n 'marlin-master-.*\.tar.\gz' \
             $(mget /Joyent_Dev/stor/builds/marlin/master-latest)/marlin
 
 2. Fetch the desired marlin-master-.*.tar.gz tarball to /var/tmp on the
@@ -1024,21 +1096,22 @@ Run this procedure for each datacenter whose Marlin agents you want to upgrade.
 
 3. Copy the tarball to each of the storage nodes:
 
-        $ sdc-oneachnode -n $(manta-adm cn -n storage) -d /var/tmp -g /var/tmp/TARBALL
+        headnode$ sdc-oneachnode -n $(manta-adm cn -n storage) \
+            -d /var/tmp -g /var/tmp/TARBALL
 
 4. Apply the update to all shrimps with:
 
-        $ sdc-oneachnode -n $(manta-adm cn -n storage) \
+        headnode$ sdc-oneachnode -n $(manta-adm cn -n storage) \
             '/opt/smartdc/agents/bin/apm install /var/tmp/TARBALL && svcs marlin-agent'
 
 5. Verify that agents are online with:
 
-        $ sdc-oneachnode -n $(manta-adm cn -n storage) 'svcs marlin-agent'
+        headnode$ sdc-oneachnode -n $(manta-adm cn -n storage) 'svcs marlin-agent'
 
 6. Make sure most of the compute zones become ready. For this, you can use the
    dashboard or run this periodically:
 
-        $ sdc-oneachnode -n $(manta-adm cn -n storage) mrzones
+        headnode$ sdc-oneachnode -n $(manta-adm cn -n storage) mrzones
 
 Note: The "apm install" operation will restart the marlin-agent service, which
 has the impact of aborting any currently-running tasks on that system and
@@ -1051,9 +1124,9 @@ once, this alone should not induce errors.)
 
 ## Manta deployment zone upgrades
 
-    # updates-imgadm list name=manta-deployment | tail -10
-    # /var/tmp/incr-upgrade/download-image.sh [image uuid]
-    # sapiadm reprovision [zone uuid] [image uuid]
+    headnode$ updates-imgadm list name=manta-deployment | tail -10
+    headnode$ /var/tmp/incr-upgrade/download-image.sh [image uuid]
+    headnode$ sapiadm reprovision [zone uuid] [image uuid]
 
 ## Amon Alarm Updates
 
@@ -1061,18 +1134,18 @@ Alarm probes are managed via amon, and specifically in manta via mantamon.  When
 engineering delivers new probes as part of mantamon, the update procedure is to
 update the manta zone to latest (see above), and then:
 
-    # sdc-login manta
-    # mantamon alarms
+    headnode$ sdc-login manta
+    manta$ mantamon alarms
 
 At this point you must stop and address any open alarms; note that updating
 mantamon probes involves a full drop and re-add. To close all alarms blindly:
 
-    # mantamon alarms -H | awk '{print $1}' | xargs -I {} mantamon close {}
+    manta$ mantamon alarms -H | awk '{print $1}' | xargs -I {} mantamon close {}
 
 Now drop all existing probes, and re-add them.
 
-    # mantamon drop
-    # mantamon add
+    manta$ mantamon drop
+    manta$ mantamon add
 
 ## SDC zone and agent upgrades
 
@@ -1101,14 +1174,14 @@ as for any other SDC compute node.  For reference, this is documented here.
 
    and then download it on each headnode with:
 
-        $ cd /var/tmp;
-        $ curl -o platform-master-DATESTAMP.tgz -k "URL"
+        headnode$ cd /var/tmp;
+        headnode$ curl -o platform-master-DATESTAMP.tgz -k "URL"
 
    where URL is the `$url` from above.
 
 3. On the headnode, run:
 
-        $ /usbkey/scripts/install-platform.sh PATH_TO_PLATFORM
+        headnode$ /usbkey/scripts/install-platform.sh PATH_TO_PLATFORM
 
    where the PATH_TO_PLATFORM is the path to the file in /var/tmp.
 
@@ -1117,11 +1190,11 @@ as for any other SDC compute node.  For reference, this is documented here.
 
     a. To update the headnode, use:
 
-        $ /usbkey/scripts/switch-platform.sh DATESTAMP
+        headnode$ /usbkey/scripts/switch-platform.sh DATESTAMP
 
     b. To update any other node with server uuid SERVER_UUID, use:
 
-        $ sdc-cnapi /boot/SERVER_UUID -d '{"platform": "DATESTAMP"}' -X POST
+        headnode$ sdc-cnapi /boot/SERVER_UUID -d '{"platform": "DATESTAMP"}' -X POST
 
 5. As desired, reboot the CNs, with the following caveats:
 
@@ -1138,9 +1211,9 @@ as for any other SDC compute node.  For reference, this is documented here.
 6. If you store authorized keys on compute nodes, you'll need to propagate these
    to whatever nodes you've rebooted:
 
-        # sdc-oneachnode -n SERVER_UUID 'mkdir /root/.ssh'
+        headnode$ sdc-oneachnode -n SERVER_UUID 'mkdir /root/.ssh'
         ...
-        # sdc-oneachnode -n SERVER_UUID -d /root/.ssh -g /root/.ssh/authorized_keys
+        headnode$ sdc-oneachnode -n SERVER_UUID -d /root/.ssh -g /root/.ssh/authorized_keys
 
 
 ## SSL Certificate Updates
@@ -1214,7 +1287,7 @@ contacts are managed via the `MANTAMON_INFO` metadata field.  Here is an example
 update for alarms going to an email address and to an XMPP endpoint and info
 going just to XMPP:
 
-    echo '{
+    headnode$ echo '{
       "metadata": {
         "MANTAMON_ALERT": [
           { "contact": "email" },
@@ -1244,10 +1317,10 @@ and setup; additionally there is a man page for the tool, which you can access
 by just running `man mantamon` inside the manta zone.  That said, you typically
 will want:
 
-    # mantamon alarms
-    # mantamon close ...
+    manta$ mantamon alarms
+    manta$ mantamon close ...
 
-Probes are managed by engineering, and are centrally checked in via the
+Probes are managed by mantamon, and are centrally checked in via the
 mantamon.git repository.
 
 Unfortunately, at present the alarms are not generally clear about the severity
@@ -1262,7 +1335,7 @@ paged to assess the problem and correct the issue.
 
 Madtom is a dashboard that presents the state of all Manta components in a
 region-wide deployment.  You can access the Madtom dashboard by pointing a web
-browser to port 5555 at the IP address of the "madtom" zone that's deployed with
+browser to port 80 at the IP address of the "madtom" zone that's deployed with
 Manta.  For the JPC deployment, this is usually accessed through an ssh tunnel
 to the corresponding headnode.
 
@@ -1275,18 +1348,10 @@ overall system health and utilization; and information about jobs, groups, and
 task streams, which represent all the work in the system.  That includes both
 work that's currently executing and work that's queued up to execute.
 
-You can access the Marlin dashboard by pointing a web browser to port 8080 on
+You can access the Marlin dashboard by pointing a web browser to port 80 on
 the IP address of the "marlin-dashboard" zone that's deployed with Manta.  For
 the JPC deployment, this is usually accessed through an ssh tunnel to the
 corresponding headnode.
-
-
-## Man O' War (graphing dashboard)
-
-The Man O' War dashboard allows operators to browse historical graphs of system
-activities.  You can access it by pointing a web browser at port 4444 on the IP
-address of the "ops" zone that's deployed with Manta.  For the JPC deployment,
-this is usually accessed through an ssh tunnel to the corresponding headnode.
 
 
 ## Marlin tools
@@ -1358,8 +1423,8 @@ etag, and which sharks store copies of it.
 
 ## Logs
 
-Unfortunately, logging not totally standardized across all Manta components.
-There are three common patterns:
+Unfortunately, logging is not standardized across all Manta components.  There
+are three common patterns:
 
 * Services log to their SMF log file (usually in the
   [bunyan](https://github.com/trentm/node-bunyan) format, though startup scripts
@@ -1388,6 +1453,8 @@ the service's that *don't* use the SMF log file:
 || haproxy || /var/log/haproxy.log || haproxy-specific ||
 || mackerel (metering) || /var/log/mackerel.log || bunyan ||
 || mola || /var/log/mola*.log || bunyan ||
+|| zookeeper || /var/log/zookeeper/zookeeper.log || zookeeper-specific ||
+|| redis || /var/log/redis/redis.log || redis-specific ||
 
 Most of the remaining components log in bunyan format to their service log file
 (including binder, config-agent, electric-moray, jobsupervisor, manatee-sitter,
@@ -1409,13 +1476,13 @@ past.
 
 Each physical server has several unique identifers: the server UUID, the
 hostname, the manta compute id, and the manta storage id.  It also has a
-hardware configuration type (Shrimp or Richmond), a global zone IP, and a
-service processor IP.  Most of these are available from the "manta-adm cn"
-command.
+hardware configuration type (Shrimp, Richmond, Tenderloin, etc), a global zone
+IP, and a service processor IP.  Most of these are available from the "manta-adm
+cn" command.
 
 As an example, to fetch the server uuid and global zone IP for RM08218, use:
 
-    # manta-adm cn -o host,server_uuid,admin_ip RM08218
+    headnode$ manta-adm cn -o host,server_uuid,admin_ip RM08218
     HOST     SERVER UUID                          ADMIN IP
     RM08218  00000000-0000-0000-0000-00259094c058 10.10.0.34
 
@@ -1474,7 +1541,7 @@ the above procedure.
 
 Use `mrjob list -s running`:
 
-    $ mrjob list -s running
+    ops$ mrjob list -s running
     JOBID                                LOGIN          S NOUT NERR NRET NDISP NCOMM
     b1f8c8ce-8afe-445e-8846-484ac908ebd0 jason          R    0    0    0     1     0
 
@@ -1482,7 +1549,7 @@ Use `mrjob list -s running`:
 
 Use `mrjob list -t 60`, where "60" is the number of seconds back to look:
 
-    $ mrjob list -t 60
+    ops$ mrjob list -t 60
     JOBID                                LOGIN          S NOUT NERR NRET NDISP NCOMM
     ed4eff3c-5e2e-4fcb-ad67-3ac09629056f jason          D    1    0    0   485   485
 
@@ -1490,7 +1557,7 @@ Use `mrjob list -t 60`, where "60" is the number of seconds back to look:
 
 Use `mrjob get`:
 
-    $ mrjob get a2922490-c8de-e4b3-abbc-f3367464b651
+    ops$ mrjob get a2922490-c8de-e4b3-abbc-f3367464b651
            Job a2922490-c8de-e4b3-abbc-f3367464b651
       Job name interactive compute job
           User thoth (aed35417-4c53-4d6c-a127-fd8a6e55723b)
@@ -1504,7 +1571,7 @@ Use `mrjob get`:
 
 You can use `-p` to get details about what the job runs in each phase:
 
-    $ mrjob get -p a2922490-c8de-e4b3-abbc-f3367464b651
+    ops$ mrjob get -p a2922490-c8de-e4b3-abbc-f3367464b651
            Job a2922490-c8de-e4b3-abbc-f3367464b651
       Job name interactive compute job
           User thoth (aed35417-4c53-4d6c-a127-fd8a6e55723b)
@@ -1525,7 +1592,7 @@ See `mrjob --help` for more options.
 If the job completed more than 24 hours ago, then mrjob may report an error
 like:
 
-    $ mrjob get 43a9949b-4fab-4037-a32a-371146ac44f9
+    ops$ mrjob get 43a9949b-4fab-4037-a32a-371146ac44f9
     mrjob: failed to fetch job: failed to fetch job: marlin_jobs_v2::43a9949b-4fab-4037-a32a-371146ac44f9 does not exist
 
 That's because jobs are removed from the live database about 24 hours after they
@@ -1552,7 +1619,7 @@ retried errors, which are not exposed to end users.
 
 Use `mrjob where` to list uncompleted tasks and see where they're running:
 
-    $ mrjob where e493ab87-fcf0-e991-8b82-8f649696d197
+    ops$ mrjob where e493ab87-fcf0-e991-8b82-8f649696d197
     TASKID                               PH       NIN SERVER
     6ce64b78-691b-4703-970a-de2fb84b69f1  0         - 1.cn.us-east.joyent.us
          map: /dap/stor/mdb.log
@@ -1580,7 +1647,7 @@ phase.
 Here's an example usage.  I ran this job (note the phases):
 
 
-    $ mrjob get -p ea784e03-a735-cd29-d913-b1b9cb5f0503
+    ops$ mrjob get -p ea784e03-a735-cd29-d913-b1b9cb5f0503
            Job ea784e03-a735-cd29-d913-b1b9cb5f0503
           User dap (ddb63097-4093-4a74-b8e8-56b23eb253e0)
          State done
@@ -1609,7 +1676,7 @@ although if a job was currently stuck, you could also use `mrjob where`.
 Here's a normal history for one of the first phase tasks:
 
 
-    $ mrjob taskhistory 33b7f617-141e-4673-8056-a27a6f511b60
+    ops$ mrjob taskhistory 33b7f617-141e-4673-8056-a27a6f511b60
     2014-01-17T19:22:02.814Z  jobinput   318ed0ad-8aed-4f74-af90-a7cfefc87880
         /dap/stor/datasets/cmd/cmd/acct/acctcms.c
 
@@ -1642,7 +1709,7 @@ run it.  You'd get the exact same output if you specified tasks
 Here's an example where one of the early phase map tasks failed and had to be retried:
 
 
-    $ mrjob taskhistory a322ebe6-3279-40ee-8c7e-88130def17b4
+    ops$ mrjob taskhistory a322ebe6-3279-40ee-8c7e-88130def17b4
     2014-01-17T19:22:03.220Z  jobinput   5f72c373-9155-459e-9032-0ac18ecaef6a
         /dap/stor/datasets/cmd/cmd/addbadsec/addbadsec.c
 
@@ -1678,7 +1745,7 @@ In this case, we see the map task we asked about, the error it produced, and the
 
 Here's what happens when we select a reducer that failed:
 
-    $ mrjob taskhistory 3ac67932-75ba-4ce0-891e-1b295949a3be
+    ops$ mrjob taskhistory 3ac67932-75ba-4ce0-891e-1b295949a3be
     2014-01-17T19:22:02.447Z  reducer    3ac67932-75ba-4ce0-891e-1b295949a3be
                                          (attempt 1, host 9.cn.us-east.joyent.us)
                                          input stream open
@@ -1702,7 +1769,7 @@ taskinput, indicating that the first reducer failed logically before this
 object was assigned to the reducer, so it was assigned directly to the second
 attempt:
 
-    $ mrjob taskhistory 94851372-49b9-48fd-b5ca-b51b330561ab
+    ops$ mrjob taskhistory 94851372-49b9-48fd-b5ca-b51b330561ab
     2014-01-17T19:22:03.024Z  jobinput   237d6925-75e4-4a0a-9186-cd214b510e6a
         /dap/stor/datasets/cmd/cmd/acct/acctwtmp.c
 
@@ -1754,7 +1821,7 @@ PATH if you've set up the Marlin tools.
 
 You can find the jobsupervisor that's managing a job with:
 
-    $ getobject marlin_jobs_v2 994703de-0c5c-49e8-ba98-8361d1624ae1 | \
+    ops$ getobject marlin_jobs_v2 994703de-0c5c-49e8-ba98-8361d1624ae1 | \
         json value.worker
     4fdcffe8-30ef-476e-8266-279a241c76c0
 
@@ -1765,7 +1832,7 @@ the job.  In most cases, this is also the jobsupervisor that's currently
 managing the job.  However, it's possible for one jobsupervisor to take over for
 another.  You can check this with:
 
-    $ findobjects marlin_health_v2 instance=4fdcffe8-30ef-476e-8266-279a241c76c0 | \
+    ops$ findobjects marlin_health_v2 instance=4fdcffe8-30ef-476e-8266-279a241c76c0 | \
         json value
     {
       "component": "worker",
@@ -1843,7 +1910,7 @@ currently saved for a few days in the global zone, under
 way to find the right one is to find the taskId that you're debugging as
 described above, and then:
 
-    $ grep -l TASKID /var/smartdc/marlin/log/zones/JOBID.*
+    shrimp-gz$ grep -l TASKID /var/smartdc/marlin/log/zones/JOBID.*
 
 That usually returns pretty quickly, and you can view the file with bunyan(1).
 
@@ -2096,7 +2163,7 @@ will result in data loss for the user.**  In particular, the inputs, outputs,
 errors, and so on will all be lost permanently.  **This can also have an
 unpredictable impact on the rest of Marlin, which is not designed to have state
 removed while a job is running.**  This operation should be used with extreme
-care, and likely only by engineering.
+care, and likely only in emergencies.
 
 To delete a job, use `mrjob delete JOBID`.  Be sure to have read the above
 caveats.
@@ -2194,7 +2261,7 @@ stage).  Changes must be made via the SAPI api (see the SAPI docs for details).
 Downloading the images take a long time, so in the manta-deployment repository
 there's the tools/install_marlin_image.sh script.  This script:
 
-    $ ./tools/install_marlin_image.sh <machine>
+    manta$ ./tools/install_marlin_image.sh <machine>
 
 will download the latest marlin image from updates.joyent.com, save it on that
 machine on which the script is run, and copy it to the machine's IMGAPI.  On
@@ -2203,22 +2270,18 @@ avoid downloading it again from updates.joyent.com.  Because the manta-compute
 image is larger than all other images combined, using install_marlin_image.sh
 will shorten the development cycle.
 
-To update the manta-deployment zone on a machine:
+To update the manta-deployment zone on a machine with changes you've made to
+sdc-manta:
 
-    $ ./tools/update_manta_zone.sh <machine>
-
-To add SSH keys to UFDS, run (from the GZ):
-
-    # sdc-ldap add -f \
-        /zones/$MANTA_ZONE/root/opt/smartdc/manta-deployment/devs/ufds.ldif
+    sdc-manta.git$ ./tools/update_manta_zone.sh <machine>
 
 To see which manta zones are deployed, use manta-adm show:
 
-    # manta-adm show
+    headnode$ manta-adm show
 
 To tear down an existing manta deployment, use manta-factoryreset:
 
-    # manta-factoryreset
+    manta$ manta-factoryreset
 
 ## Configuring NAT for Marlin compute zones
 
@@ -2298,7 +2361,6 @@ which provide the SAPI configuration used for manta.
     config/services             Service definitions
     manifests                   Configuration manifests
     manifests/applications      Configuration manifests for manta application
-    manifests/services          Configuration manifests for manta services
 
 There's no static information for certain instances.  Instead, manta-deploy will
 set a handful of instance-specific metadata (e.g. shard membership).
@@ -2309,8 +2371,8 @@ set a handful of instance-specific metadata (e.g. shard membership).
 Once Manta has been deployed there will be cases where the service manifests
 must be changed.  Only changing the manifest in this repository isn't
 sufficient.  The manifests used to configure running instances (new and old) are
-the once stored in SAPI.  The service templates in the zone are not used after
-initial setup.  To update service templates in a running environment (coal or
+the ones stored in SAPI.  The service templates in the zone are **not used after
+initial setup**.  To update service templates in a running environment (coal or
 production, for example):
 
 1) Verify that your changes to configuration are backward compatible or that the
@@ -2318,17 +2380,17 @@ production, for example):
 
 2) Get the current configuration for your service:
 
-    sdc-sapi /services?name=[service name]
+    headnode$ sdc-sapi /services?name=[service name]
 
 If you can't find your service name, look for what you want with the following
 command:
 
-    sdc-sapi /services?application_uuid=$(sdc-sapi /applications?name=manta | \
+    headnode$ sdc-sapi /services?application_uuid=$(sdc-sapi /applications?name=manta | \
       json -gHa uuid) | json -gHa uuid name
 
 Take note of the service uuid and make sure you can fetch it with:
 
-    sdc-sapi /services/[service uuid]
+    headnode$ sdc-sapi /services/[service uuid]
 
 3) Identify the differences between the template in this repository and what is
    in SAPI.
@@ -2336,25 +2398,25 @@ Take note of the service uuid and make sure you can fetch it with:
 4) Update the service template in SAPI.  If it is a simple, one-parameter
    change, and the value of the key is a string type, it can be done like this:
 
-    sapiadm update [service uuid] json.path=value
+    headnode$ sapiadm update [service uuid] json.path=value
     #Examples:
-    sapiadm update 8386d8f5-d4ff-4b51-985a-061832b41179 \
+    headnode$ sapiadm update 8386d8f5-d4ff-4b51-985a-061832b41179 \
       params.tags.manta_storage_id=2.stor.us-east.joyent.us
-    sapiadm update update 0b48c067-01bd-41ca-9f70-91bda65351b2 \
+    headnode$ sapiadm update update 0b48c067-01bd-41ca-9f70-91bda65351b2 \
       metadata.PG_DIR=/manatee/pg/data
 
 If you require a complex type (an object or array) or a value that is not a
 string, you will need to hand-craft the differences and `|` to `sapiadm`.  For
 example:
 
-    echo '{ "metadata": { "PORT": 5040 } }' | \
+    headnode$ echo '{ "metadata": { "PORT": 5040 } }' | \
       sapiadm update fde6c6ed-eab6-4230-bb39-69c3cba80f15
 
 Or if you want to "edit" what comes back from sapi:
 
-    sapiadm get [service uuid] | json params >/tmp/params.json
+    headnode$ sapiadm get [service uuid] | json params >/tmp/params.json
     #Edit params.txt to wrap the json structure in { "params": ... }
-    cat /tmp/params.json | json -o json-0 | sapiadm update [service uuid]
+    headnode$ cat /tmp/params.json | json -o json-0 | sapiadm update [service uuid]
 
 5) Once the service in SAPI has been modified, make sure to get it to verify
    what SAPI has is what it should be.
@@ -2362,7 +2424,7 @@ Or if you want to "edit" what comes back from sapi:
 
 ## Shard Management
 
-A shard is a set of moray buckets, backed by three moray instances and three
+A shard is a set of moray buckets, backed by >1 moray instances and >=3
 Postgres instances.  No data is shared between any two shards.  Many other manta
 services may said to be "in a shard", but more accurately, they're using a
 particular shard.
@@ -2373,38 +2435,28 @@ There are three pieces of metadata which define how shards are used:
     MARLIN_MORAY_SHARD          Shard used for marlin job records
     STORAGE_MORAY_SHARD         Shard used for minnow (manta_storage) records
 
-Right now, marlin uses only a single shard.  That can be (should be?) extended
-to multiple shards.
+Right now, marlin uses only a single shard.
 
-Currently, the hash ring topology for electric-moray is created once via the
-fash CLI and checked in to the electric-moray build image under
-./etc/<stage>.ring.json. This topology is **independent** of what's set in
-manta-shardadm. **WARNING UNDER NO CIRCUMSTANCES SHOULD THIS TOPOLOGY BE
-CHANGED ONCE MANTA HAS BEEN DEPLOYED, DOING SO WILL RESULT IN DATA CORRUPTION**
-The goal in the future is for this topology to be stored in Moray and
-dynamically updated whenever there are changes to the topology. In order to add
-or change the shard topology of electric-moray, one needs to checkout the
-electric-moray repo, and use the included fash.js tool.
+Currently, the hash ring topology for electric-moray is created once during
+Manta setup and stored as an image in an SDC imgapi.  The image uuid and
+imgapi endpoint are stored in the following sapi parameters:
 
-    ./node_modules/fash/bin/fash.js create
-    create a consistent hash ring.
+    HASH_RING_IMAGE             The hash rimg image uuid
+    HASH_RING_IMGAPI_SERVICE    The imageapi that stores the image.
 
-    usage:
-        fash create [options]
+In a cross-datacenter deployment, the HASH_RING_IMGAPI_SERVICE may be in
+another datacenter.  This limits your ability to deploy new electric-moray
+instances in the event of DC failure.
 
-    Options:
-        -v NUM, --vnode=NUM      number of vnodes
-        -p ARG, --pnode=ARG      physical node names
-        -a ARG, --algorithm=ARG  the algorithm to use
+This topology is **independent** of what's set in manta-shardadm. **WARNING
+UNDER NO CIRCUMSTANCES SHOULD THIS TOPOLOGY BE CHANGED ONCE MANTA HAS BEEN
+DEPLOYED, DOING SO WILL RESULT IN DATA CORRUPTION**
 
-So for prod, the arguments to fash.js might look like
+See manta-deploy-lab for hash-ring generation examples.
 
-    ./node_modules/fash/bin/fash.js create -v 10000000 -p 'tcp://2.moray.us-east.joyent.com tcp://3.moray.us-east.joyent.com tcp://4.moray.us-east.joyent.com' > ./etc/prod.ring.json
+The manta-shardadm tool lists shards and allows the addition of new ones:
 
-
-The manta-shardadm tool lists these shards and allows the addition of new ones:
-
-    # manta-shardadm
+    manta$ manta-shardadm
     Manage manta shards
 
     Usage:
@@ -2442,8 +2494,8 @@ point it at COAL.  Since the manta networking changes, you'll need to setup your
 zone(s) with a NIC on the `10.77.77.X` network.  Fortunately this is easy, so
 get on your dev VM's GZ, and run:
 
-    $ nictagadm add manta $(ifconfig e1000g0 | grep ether | awk '{print $2}')`
-    $ echo '{ "add_nics": [ { "ip": "10.77.77.250", "netmask": "255.255.255.0", "nic_tag": "manta" } ] }' | vmadm update <VM>
+    dev-gz$ nictagadm add manta $(ifconfig e1000g0 | grep ether | awk '{print $2}')`
+    dev-gz$ echo '{ "add_nics": [ { "ip": "10.77.77.250", "netmask": "255.255.255.0", "nic_tag": "manta" } ] }' | vmadm update <VM>
 
 Then reboot the zone.
 
@@ -2494,9 +2546,6 @@ this repository.  There are several steps involved there:
    explanation.
  * You probably want to update bin/manta-deploy-svcs to deploy your service in a
    standard deployment.
- * The staging environment is driven by scripts in globe-theatre.git.  You want
-   to update globe-theatre.git/bin/stage-manta-setup to deploy your service as
-   well.
 
 
 # Advanced Marlin Reference
@@ -2541,7 +2590,7 @@ through the system.
 
 The schema for these buckets is not documented or stable, but you can find the
 latest version (with comments) on
-[mo](https://mo.joyent.com/marlin/blob/master/lib/schema.js).
+[github](https://github.com/joyent/manta-marlin/blob/master/common/lib/schema.js).
 
 
 ## Heartbeats, failures, and health checking
@@ -2579,14 +2628,14 @@ Jobsupervisors and agents export Kang entry points that describe their internal
 state.  For agents, the HTTP server runs on port 9080, and you can get this
 state with:
 
-    $ curl -si http://GZ_IP_ADDRESS:9080/kang/snapshot | json
+    headnode$ curl -si http://GZ_IP_ADDRESS:9080/kang/snapshot | json
 
 For jobsupervisors, you can get this with:
 
-    $ curl -si http://ZONE_IP_ADDRESS/kang/snapshot | json
+    headnode$ curl -si http://ZONE_IP_ADDRESS/kang/snapshot | json
 
 This API is undocumented and unstable.  It's the same one that feeds the
-dashboard.
+marlin dashboard.
 
 
 ## Fetching information about historical jobs
@@ -2614,7 +2663,7 @@ database:
 
 1. Starting with the jobid, you'll need to figure out which hour's database dump
    the job's details will be stored in.  You should use the database dump
-   labeled an hour or two after the job's "done" time.
+   labeled after the job's "done" time, but within 24 hours of job completion.
 
     a. If you don't know what date and time the job completed, but you know
        which account ran the job, then you can fetch the job's user-facing JSON
@@ -2639,21 +2688,21 @@ database:
        directory, which will have the job's completion time in it.
 
 2. At this point, you should have the jobid *and* the job's completion time,
-   which will tell you which hour's database dump the job's records will be in.
-   For example, if the job completed at 2014-05-05T11:07:05.519Z, you'll look at
-   the dump for 2014/05/05/12 (the first dump after the completion time).  All
-   of the dumps are stored in `/poseidon/stor/manatee_backups`, under the shard
+   which will tell you which database dump the job's records will be in.  For
+   example, if the job completed at 2014-05-05T11:07:05.519Z, you'll look at the
+   dump for 2014/05/06/00 (the first dump after the completion time).  All of
+   the dumps are stored in `/poseidon/stor/manatee_backups`, under the shard
    designated as the jobs shard.  For the us-east Manta deployment, the jobs
    shard is 1.moray.us-east.joyent.us.  Putting all this together, the database
    dumps we care about would be in:
 
-        /poseidon/stor/manatee_backups/1.moray.us-east.joyent.us/2014/05/05/12
+        /poseidon/stor/manatee_backups/1.moray.us-east.joyent.us/2014/05/06/00
 
    Next, you'll run `mrextractjob` (from the `ops` zone).  You can run it with
    no arguments for details, but basically you'll run something like this:
 
         $ mrextractjob \
-            /poseidon/stor/manatee_backups/1.moray.us-east.joyent.us/2014/05/12/22 \
+            /poseidon/stor/manatee_backups/1.moray.us-east.joyent.us/2014/05/06/00 \
             /poseidon/stor/debug-fe4c6e2a \
             fe4c6e2a-bc78-4c94-d4cd-c9f6a8931855
 
