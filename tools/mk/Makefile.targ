@@ -89,9 +89,9 @@
 #
 #	JSSTYLE_FLAGS	Additional flags to pass through to jsstyle
 #
-#	RESTDOWN_EXT	By default '.restdown' is required for DOC_FILES
-#			(see above). If you want to use, say, '.md' instead, then
-#			set 'RESTDOWN_EXT=.md' in your Makefile.
+#	RESTDOWN_EXT	By default '.md' is required for DOC_FILES (see above).
+#			If you want to use, say, '.restdown' instead, then set
+#			'RESTDOWN_EXT=.restdown' in your Makefile.
 #
 
 #
@@ -108,7 +108,7 @@ JSSTYLE		?= jsstyle
 MKDIR		?= mkdir -p
 MV		?= mv
 RESTDOWN_FLAGS	?=
-RESTDOWN_EXT	?= .restdown
+RESTDOWN_EXT	?= .md
 RMTREE		?= rm -rf
 JSL_FLAGS  	?= --nologo --nosummary
 
@@ -209,7 +209,7 @@ check-jsstyle:  $(JSSTYLE_EXEC)
 	$(JSSTYLE) $(JSSTYLE_FLAGS) $(JSSTYLE_FILES)
 
 .PHONY: check
-check: check-jsl check-json $(JSSTYLE_TARGET) check-bash
+check:: check-jsl check-json $(JSSTYLE_TARGET) check-bash
 	@echo check ok
 
 .PHONY: clean
@@ -296,7 +296,8 @@ $(DOC_MEDIA_FILES_BUILD): | $(DOC_MEDIA_DIRS_BUILD)
 $(DOC_BUILD)/%: docs/% | $(DOC_BUILD)
 	$(CP) $< $@
 
-docs/%.json docs/%.html: docs/%$(RESTDOWN_EXT) | $(DOC_BUILD) $(RESTDOWN_EXEC)
+docs/%.json docs/%.html: docs/%$(RESTDOWN_EXT) | $(DOC_BUILD) $(RESTDOWN_EXEC) \
+    $(EXTRA_DOC_DEPS)
 	$(RESTDOWN) $(RESTDOWN_FLAGS) -m $(DOC_BUILD) $<
 
 $(DOC_BUILD):

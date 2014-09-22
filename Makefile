@@ -11,7 +11,7 @@
 #
 # Files
 #
-DOC_FILES	 = $(shell find docs -name "*.restdown" | sed 's/docs\///;')
+DOC_FILES	 = $(shell find docs -name "*.md" | sed 's/docs\///;')
 
 include ./tools/mk/Makefile.defs
 

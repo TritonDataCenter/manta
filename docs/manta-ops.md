@@ -1,6 +1,6 @@
 ---
 title: Manta Operator's Guide
-markdown2extras: wiki-tables, code-friendly
+markdown2extras: tables, code-friendly
 apisections: .
 ---
 <!--
@@ -146,22 +146,23 @@ services.
 
 ### Manta components at a glance
 
-|| **Kind** || **Major subsystem** || **Service**        || **Purpose**                           || **Components**          ||
-|| Service  || Consensus           || nameservice        || Service discovery                     || ZooKeeper, binder (DNS) ||
-|| Service  || Front door          || loadbalancer       || SSL termination and load balancing    || stud, haproxy/muppet    ||
-|| Service  || Front door          || webapi             || Manta HTTP API server                 || muskie                  ||
-|| Service  || Front door          || authcache          || Authentication cache                  || mahi (redis)            ||
-|| Service  || Metadata            || postgres           || Metadata storage and replication      || postgres, manatee       ||
-|| Service  || Metadata            || moray              || Key-value store                       || moray                   ||
-|| Service  || Metadata            || electric-moray     || Consistent hashing (sharding)         || electric-moray          ||
-|| Service  || Storage             || storage            || Object storage and capacity reporting || mako (nginx), minnow    ||
-|| Service  || Operations          || ops                || GC, audit, and metering cron jobs     || mola, mackerel          ||
-|| Service  || Operations          || madtom             || Web-based Manta monitoring            || madtom                  ||
-|| Service  || Operations          || marlin-dashboard   || Web-based Marlin monitoring           || marlin-dashboard        ||
-|| Service  || Compute             || jobsupervisor      || Distributed job orchestration         || jobsupervisor           ||
-|| Service  || Compute             || jobpuller          || Job archival                          || wrasse                  ||
-|| Service  || Compute             || marlin             || Compute containers for end users      || marlin-lackey           ||
-|| Agent    || Compute             || marlin-agent       || Job execution on each storage node    || marlin-agent            ||
+| Kind    | Major subsystem | Service          | Purpose                               | Components              |
+| ------- | --------------- | ---------------- | ------------------------------------- | ----------------------- |
+| Service | Consensus       | nameservice      | Service discovery                     | ZooKeeper, binder (DNS) |
+| Service | Front door      | loadbalancer     | SSL termination and load balancing    | stud, haproxy/muppet    |
+| Service | Front door      | webapi           | Manta HTTP API server                 | muskie                  |
+| Service | Front door      | authcache        | Authentication cache                  | mahi (redis)            |
+| Service | Metadata        | postgres         | Metadata storage and replication      | postgres, manatee       |
+| Service | Metadata        | moray            | Key-value store                       | moray                   |
+| Service | Metadata        | electric-moray   | Consistent hashing (sharding)         | electric-moray          |
+| Service | Storage         | storage          | Object storage and capacity reporting | mako (nginx), minnow    |
+| Service | Operations      | ops              | GC, audit, and metering cron jobs     | mola, mackerel          |
+| Service | Operations      | madtom           | Web-based Manta monitoring            | madtom                  |
+| Service | Operations      | marlin-dashboard | Web-based Marlin monitoring           | marlin-dashboard        |
+| Service | Compute         | jobsupervisor    | Distributed job orchestration         | jobsupervisor           |
+| Service | Compute         | jobpuller        | Job archival                          | wrasse                  |
+| Service | Compute         | marlin           | Compute containers for end users      | marlin-lackey           |
+| Agent   | Compute         | marlin-agent     | Job execution on each storage node    | marlin-agent            |
 
 
 ## Consensus and internal service discovery
@@ -632,13 +633,14 @@ compute nodes.  The remaining services can be spread over the compute nodes
 in whatever way, as long as you avoid putting two of the same thing onto the
 same compute node.  Here's an example with two shards using six compute nodes:
 
-|| **CN1**       || **CN2**       ||  **CN3**       || **CN4**      || **CN5**       || **CN6**        ||
-|| postgres 1    || postgres 1    || postgres 1     || postgres 2   || postgres 2    || postgres 2     ||
-|| moray 1       || moray 1       || electric-moray || moray 2      || moray 2       || electric-moray ||
-|| jobsupervisor || jobsupervisor || medusa         || medusa       || authcache     || authcache      ||
-|| nameservice   || nameservice   || nameservice    || webapi       || webapi        || webapi         ||
-|| ops           || marlin-dash   || madtom         || loadbalancer || loadbalancer  || loadbalancer   ||
-|| jobpuller     || jobpuller     ||                ||              ||               ||                ||
+| CN1           | CN2           | CN3            | CN4          | CN5          | CN6            |
+| ------------- | ------------- | -------------- | ------------ | ------------ | -------------- |
+| postgres 1    | postgres 1    | postgres 1     | postgres 2   | postgres 2   | postgres 2     |
+| moray 1       | moray 1       | electric-moray | moray 2      | moray 2      | electric-moray |
+| jobsupervisor | jobsupervisor | medusa         | medusa       | authcache    | authcache      |
+| nameservice   | nameservice   | nameservice    | webapi       | webapi       | webapi         |
+| ops           | marlin-dash   | madtom         | loadbalancer | loadbalancer | loadbalancer   |
+| jobpuller     | jobpuller     |                |              |              |                |
 
 In this notation, "postgres 1" and "moray 1" refer to an instance of "postgres"
 or "moray" for shard 1.
@@ -657,13 +659,14 @@ instances for N shards across 3N compute nodes, but you'll also want to deploy
 at least one postgres instance in each datacenter.  For four shards, we
 recommend the following in each datacenter:
 
-|| **CN1**          || **CN2**       || **CN3**        || **CN4**      ||
-|| postgres 1       || postgres 2    || postgres 3     || postgres 4   ||
-|| moray    1       || moray    2    || moray    3     || moray    4   ||
-|| nameservice      || nameservice   || electric-moray || authcache    ||
-|| ops              || jobsupervisor || jobsupervisor  || webapi       ||
-|| webapi           || jobpuller     || loadbalancer   || loadbalancer ||
-|| marlin-dashboard || madtom        ||                ||              ||
+| CN1              | CN2           | CN3            | CN4          |
+| ---------------- | ------------- | -------------- | ------------ |
+| postgres 1       | postgres 2    | postgres 3     | postgres 4   |
+| moray    1       | moray    2    | moray    3     | moray    4   |
+| nameservice      | nameservice   | electric-moray | authcache    |
+| ops              | jobsupervisor | jobsupervisor  | webapi       |
+| webapi           | jobpuller     | loadbalancer   | loadbalancer |
+| marlin-dashboard | madtom        |                |              |
 
 In this notation, "postgres 1" and "moray 1" refer to an instance of "postgres"
 or "moray" for shard 1.
@@ -777,15 +780,16 @@ for details on how to check if services are healthy.
 The networking configuration file is a per-datacenter JSON file with several
 properties:
 
-|| **Property**   || **Kind** || **Description** ||
-|| `azs`          || array&nbsp;of&nbsp;strings || list of all availabililty zones (datacenters) participating in Manta in this region ||
-|| `this_az`      || string           || string (in `azs`) denoting this availability zone ||
-|| `manta_nodes`  || array&nbsp;of&nbsp;strings || list of server uuid's for *all* servers participating in Manta in this AZ ||
-|| `marlin_nodes` || array&nbsp;of&nbsp;strings || list of server uuid's (subset of `manta_nodes`) that are storage nodes ||
-|| `admin`        || object           || describes the "admin" network in this datacenter (see below) ||
-|| `manta`        || object           || describes the "manta" network in this datacenter (see below) ||
-|| `marlin`       || object           || describes the "marlin" network in this datacenter (see below) ||
-|| `mac_mappings` || object           || maps each server uuid from `manta_nodes` to an object mapping each network name ("admin", "manta", and "marlin") to the MAC address on that server over which that network should be created. ||
+| Property       | Kind                       | Description                                                                                                                                                                                   |
+| -------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `azs`          | array&nbsp;of&nbsp;strings | list of all availabililty zones (datacenters) participating in Manta in this region                                                                                                           |
+| `this_az`      | string                     | string (in `azs`) denoting this availability zone                                                                                                                                             |
+| `manta_nodes`  | array&nbsp;of&nbsp;strings | list of server uuid's for *all* servers participating in Manta in this AZ                                                                                                                     |
+| `marlin_nodes` | array&nbsp;of&nbsp;strings | list of server uuid's (subset of `manta_nodes`) that are storage nodes                                                                                                                        |
+| `admin`        | object                     | describes the "admin" network in this datacenter (see below)                                                                                                                                  |
+| `manta`        | object                     | describes the "manta" network in this datacenter (see below)                                                                                                                                  |
+| `marlin`       | object                     | describes the "marlin" network in this datacenter (see below)                                                                                                                                 |
+| `mac_mappings` | object                     | maps each server uuid from `manta_nodes` to an object mapping each network name ("admin", "manta", and "marlin") to the MAC address on that server over which that network should be created. |
 
 "admin", "manta", and "marlin" all describe these networks that are built into Manta:
 
@@ -799,9 +803,10 @@ properties:
 
 Each of these is an object with several properties:
 
-|| **Property**     || **Kind** || **Description** ||
-|| `network`        || string   || Name for the SDC network object (usually the same as the network name) ||
-|| `nic_tag`        || string   || NIC tag name for this network (usually the same as the network name)   ||
+| Property  | Kind   | Description                                                            |
+| --------- | ------ | ---------------------------------------------------------------------- |
+| `network` | string | Name for the SDC network object (usually the same as the network name) |
+| `nic_tag` | string | NIC tag name for this network (usually the same as the network name)   |
 
 Besides those two, each of these blocks has a property for the current
 availability zone that describes the "subnet", "gateway", "vlan_id", and
@@ -1444,15 +1449,16 @@ If you find yourself needing to look at the *current* log file for a component
 (i.e., can't wait for the next hourly upload into Manta), here's a reference for
 the service's that *don't* use the SMF log file:
 
-|| **Service**  || **Path** || **Format** ||
-|| muskie || /var/log/muskie.log || bunyan ||
-|| moray  || /var/log/muskie.log || bunyan ||
-|| mbackup<br />(the log file uploader itself) || /var/log/mbackup.log || bash xtrace ||
-|| haproxy || /var/log/haproxy.log || haproxy-specific ||
-|| mackerel (metering) || /var/log/mackerel.log || bunyan ||
-|| mola || /var/log/mola*.log || bunyan ||
-|| zookeeper || /var/log/zookeeper/zookeeper.log || zookeeper-specific ||
-|| redis || /var/log/redis/redis.log || redis-specific ||
+| Service                                     | Path                             | Format             |
+| ------------------------------------------- | -------------------------------- | ------------------ |
+| muskie                                      | /var/log/muskie.log              | bunyan             |
+| moray                                       | /var/log/muskie.log              | bunyan             |
+| mbackup<br />(the log file uploader itself) | /var/log/mbackup.log             | bash xtrace        |
+| haproxy                                     | /var/log/haproxy.log             | haproxy-specific   |
+| mackerel (metering)                         | /var/log/mackerel.log            | bunyan             |
+| mola                                        | /var/log/mola*.log               | bunyan             |
+| zookeeper                                   | /var/log/zookeeper/zookeeper.log | zookeeper-specific |
+| redis                                       | /var/log/redis/redis.log         | redis-specific     |
 
 Most of the remaining components log in bunyan format to their service log file
 (including binder, config-agent, electric-moray, jobsupervisor, manatee-sitter,
@@ -1490,12 +1496,13 @@ To find a manta zone, log into one of the headnodes and run `manta-adm show`.
 
 ## Accessing systems
 
-|| **To access ...** || **do this...** ||
-|| a&nbsp;headnode        || ssh directly to the headnode. ||
-|| a&nbsp;compute&nbsp;node    || ssh to the headnode for that datacenter, then ssh to the CN's GZ ip<br />(see "manta-adm cn" above) ||
-|| a&nbsp;compute&nbsp;zone    || ssh to the headnode for that datacenter, then use `manta-login ZONETYPE` or `manta-login ZONENAME`, where ZONENAME can actually be any unique part of the zone's name. ||
-|| a&nbsp;compute&nbsp;node's&nbsp;console    || ssh to the headnode for that datacenter, find the compute node's service processor IP, then:<br/>`ipmitool -I lanplus -H SERVICE_PROCESS_IP -U ADMIN -P ADMIN sol activate`<br />To exit the console, press enter, then `~.`, prefixed with as many "~"s as you have ssh sessions. (If ssh'd to the headnode, use enter, then `~~.`) If you don't use the prefix `~`s, you'll kill your ssh connection too. ||
-|| a&nbsp;headnode's&nbsp;console || ssh to the headnode of one of the other datacenters, then "sdc-login" to the "manta" zone. From there, use the above "ipmitool" command in the usual way with the headnode's SP IP. ||
+| To access ...                           | do this...                                                                                                                                                                                                                                                                                                                                                                                                  |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| a&nbsp;headnode                         | ssh directly to the headnode.                                                                                                                                                                                                                                                                                                                                                                               |
+| a&nbsp;compute&nbsp;node                | ssh to the headnode for that datacenter, then ssh to the CN's GZ ip<br />(see "manta-adm cn" above)                                                                                                                                                                                                                                                                                                         |
+| a&nbsp;compute&nbsp;zone                | ssh to the headnode for that datacenter, then use `manta-login ZONETYPE` or `manta-login ZONENAME`, where ZONENAME can actually be any unique part of the zone's name.                                                                                                                                                                                                                                      |
+| a&nbsp;compute&nbsp;node's&nbsp;console | ssh to the headnode for that datacenter, find the compute node's service processor IP, then:<br/>`ipmitool -I lanplus -H SERVICE_PROCESS_IP -U ADMIN -P ADMIN sol activate`<br />To exit the console, press enter, then `~.`, prefixed with as many "~"s as you have ssh sessions. (If ssh'd to the headnode, use enter, then `~~.`) If you don't use the prefix `~`s, you'll kill your ssh connection too. |
+| a&nbsp;headnode's&nbsp;console          | ssh to the headnode of one of the other datacenters, then "sdc-login" to the "manta" zone. From there, use the above "ipmitool" command in the usual way with the headnode's SP IP.                                                                                                                                                                                                                         |
 
 
 ## Translating from mantaComputeId or mantaStorageId to hostname

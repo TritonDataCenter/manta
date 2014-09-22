@@ -50,3 +50,5 @@ $(JSSTYLE_EXEC): | deps/jsstyle/.git
 RESTDOWN_EXEC	?= deps/restdown/bin/restdown
 RESTDOWN	?= python $(RESTDOWN_EXEC)
 $(RESTDOWN_EXEC): | deps/restdown/.git
+
+EXTRA_DOC_DEPS	?=
