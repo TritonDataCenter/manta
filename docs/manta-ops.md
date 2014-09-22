@@ -2093,6 +2093,91 @@ electric-moray service.  Check supervisor health, look for errors in the log,
 and check whether electric-moray is online.
 
 
+## Zones not resetting
+
+There have been a few bugs where Marlin zone resets hang.  For a single zone,
+this just reduces capacity, usually by an immeasurable amount.  In some cases,
+this ends up affecting all zones on a system, in which case forward progress for
+nearly all jobs can be impacted.  These situations are always bugs, and if
+possible they should be root-caused so they can be fixed.  There are open
+tickets for improving the system's resilience to this kind of problem.
+
+When you suspect a particular zone's reset is hung (e.g., because it's been
+resetting for at least 10 minutes), log into the GZ of that system and look at
+processes in the Marlin agent service.  Here's what a normal service looks like:
+
+    [root@RA10146 (staging-1) ~]# svcs -p marlin-agent
+    STATE          STIME    FMRI
+    online         Sep_15   svc:/smartdc/agent/marlin-agent:default
+                   Sep_15      27668 node
+                   Sep_15      28118 node
+
+The marlin agent normally comprises two node processes, and their STIME
+indicates when they started.  If you see a number of other processes that have
+been running for several minutes, that's generally a sign that things are in
+bad shape.  Here's an example:
+
+    [root@RM08211 (us-east-2) ~]# svcs -p marlin-agent
+    STATE          STIME    FMRI
+    online         Dec_20   svc:/smartdc/agent/marlin-agent:default
+                   16:54:16    15450 vmadm
+                    9:47:17    20230 zfs
+                   Dec_20      95665 node
+                   Dec_20      95666 node
+
+This output shows that the "zfs" process has been hung for at least 7 hours.
+At that point, the next step in root cause analysis would be to understand why
+the "zfs" process is hung using the usual tools (ps(1), pstack(1), pfiles(1),
+mdb(1), and so on).  The details depend on the specific bug you've found.
+
+This is just an example.  The hung process may be something other than "zfs".
+
+For some pathologies, a zone reset may be hung without an associated process.
+This can happen when a zone fails to boot properly.  In this case, use the Kang
+output from the Marlin agent to see what stage of boot is hung.  See "Kang
+state" below.  For example, you may see a zone's kang state that looks like
+this:
+
+        "070fbff6-1579-4147-a539-b43b3aa54306": {
+          "zonename": "070fbff6-1579-4147-a539-b43b3aa54306",
+          "state": "uninit",
+          "pipeline": {
+            "operations": [
+              {
+                "funcname": "maZoneCleanupServer",
+                "status": "ok"
+              },
+              ...
+              {
+                "funcname": "maZoneReadyBoot",
+                "status": "ok",
+                "err": null,
+                "result": ""
+              },
+              {
+                "funcname": "maZoneReadyWaitBooted",
+                "status": "pending"
+              },
+
+The "Boot" stage, which issues the command to boot the zone, has completed
+successfully.  The "WaitBooted" stage is "pending".  This output indicates that
+Marlin is waiting for the zone to boot up.  It's worth checking that Marlin
+really is watching the zone's state (and hasn't somehow forgotten about it).
+The easiest way to do that is to use a D script to watch processes that the
+agent forks, like this:
+
+    # dtrace -n 'exec-success/ppid == 95665 || ppid == 95666/{ printf("%s", curpsinfo->pr_psargs); }'
+    dtrace: description 'exec-success' matched 1 probe
+    CPU     ID                    FUNCTION:NAME
+      8  14952         exec_common:exec-success svcs -H -z 070fbff6-1579-4147-a539-b43b3aa54306 -ostate milestone/multi-user:de
+     19  14952         exec_common:exec-success svcs -H -z 070fbff6-1579-4147-a539-b43b3aa54306 -ostate milestone/multi-user:de
+
+(You'll need to replace the two ppid conditions with the two Marlin agent
+processes on your system.)  We can see from this output that Marlin *is*
+checking the status of that zone as expected, so the problem is that the zone
+isn't coming up.  Again, the next step depends on the specific bug you've run
+into.
+
 
 # Debugging Marlin: Zones
 
