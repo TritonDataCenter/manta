@@ -512,6 +512,40 @@ used), storage metering (how much storage is used), request metering, and
 bandwidth metering.  These are compute jobs run over the compute logs (produced
 by the marlin agent), the metadata dumps, and the muskie request logs.
 
+## Manta Scalability
+
+There are many dimensions to scalability.
+
+In the metadata tier:
+
+* number of objects (scalable with additional shards)
+* number of objects in a directory (fixed, currently at a few million objects)
+
+In the storage tier:
+
+* total size of data (scalable with additional storage servers)
+* size of data per object (limited to the amount of storage on any single
+  system, typically in the tens of terrabytes, which is far larger than
+  is typically practical)
+
+In terms of performance:
+
+* total bytes in or out per second (depends on network configuration)
+* count of concurrent requests (scalable with additional metadata shards or API
+  servers)
+* count of compute tasks executed per second (scalable with additional storage
+  nodes)
+* count of concurrent compute tasks (could be measured in tasks, CPU cores
+  available, or DRAM availability; scaled with additional storage node hardware)
+
+As described above, for most of these dimensions, Manta can be scaled
+horizontally by deploying more software instances (often on more hardware).  For
+a few of these, the limits are fixed, but we expect them to be high enough for
+most purposes.  For a few others, the limits are not known, and we've never (or
+rarely) run into them, but we may need to do additional work when we discover
+where these limits are.
+
+
 # Planning a Manta deployment
 
 Before even starting to deploy Manta, you must decide:
