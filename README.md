@@ -8,25 +8,11 @@
     Copyright (c) 2014, Joyent, Inc.
 -->
 
-# Manta: object storage with first-class compute
+# Manta: object storage with integrated compute
 
-Manta is an open-source, HTTP-based object store with built-in support to run
-arbitrary programs on data at rest (i.e., without copying data out of the object
-store).  Joyent operates a public-facing production [Manta
-service](https://www.joyent.com/products/manta), but all the pieces required to
-deploy and operate your own Manta are open source.  This repo provides
-documentation for the overall Manta project and pointers to the other
-repositories that make up a complete Manta deployment.
-
-To start playing with Manta (e.g., to see what it does), see the [Getting
-Started](https://apidocs.joyent.com/manta/index.html#getting-started) guide in
-the user documentation.
-
-To learn about installing and operating your own Manta deployment, see the Manta
-Operator's Guide.
-
-Manta is designed to store arbitrary amounts of data and support arbitrary
-computation on that data.  The intended use-cases are wide-ranging:
+Manta is an open-source, HTTP-based object store that uses OS containers to
+allow running arbitrary compute on data at rest (i.e., without copying data
+out of the object store).  The intended use-cases are wide-ranging:
 
 * web assets (e.g., images, HTML and CSS files, and so on), with the ability to
   convert or resize images without copying any data out of Manta
@@ -36,6 +22,32 @@ computation on that data.  The intended use-cases are wide-ranging:
 * data warehousing
 * software crash dump storage and analysis
 
+Joyent operates a public-facing production [Manta
+service](https://www.joyent.com/products/manta), but all the pieces required to
+deploy and operate your own Manta are open source.  This repo provides
+documentation for the overall Manta project and pointers to the other
+repositories that make up a complete Manta deployment.
+
+## Getting started
+
+The fastest way to experiment with Manta is to start playing with the
+Manta service; see the [Getting
+Started](https://apidocs.joyent.com/manta/index.html#getting-started) guide in
+the user documentation for details.
+
+To see an actual example of using Manta, check out [Kartlytics: Applying Big Data Analytics to Mario Kart](http://www.joyent.com/blog/introducing-kartlytics-mario-kart-64-analytics).
+
+To learn about installing and operating your own Manta deployment, see the
+[Manta Operator's
+Guide](https://github.com/joyent/manta/blob/master/docs/manta-ops.md).
+
+To understand Manta's architecture, see the [ACM Queue](http://queue.acm.org/)
+article on its design and implementation,
+[Bringing Arbitrary Compute to Authoritative
+Data](http://queue.acm.org/detail.cfm?id=2645649).  To understand the
+[CAP tradeoffs](http://en.wikipedia.org/wiki/CAP_theorem) in Manta,
+see [Dave Pacheco](https://github.com/davepacheco)'s blog entry on
+[Fault Tolerence in Manta](http://dtrace.org/blogs/dap/2013/07/03/fault-tolerance-in-manta/).
 
 ## Dependencies
 
@@ -208,7 +220,8 @@ builds.
 ## Contributing to Manta
 
 Manta repositories use the same [Joyent Engineering
-Guidelines](https://github.com/joyent/eng) as the SDC project.  Notably:
+Guidelines](https://github.com/joyent/eng/blob/master/docs/index.md) as
+the SDC project.  Notably:
 
 * The #master branch should be first-customer-ship (FCS) quality at all times.
   Don't push anything until it's tested.
