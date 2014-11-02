@@ -166,7 +166,7 @@ deployed to increase capacity.
 For more details on the architecture, including how these pieces actually fit
 together, see "Architecture Basics" in the 
 [Manta Operator's
-Guide](https://github.com/joyent/manta/blob/master/docs/manta-ops.md)
+Guide](https://github.com/joyent/manta/blob/master/docs/manta-ops.md).
 
 
 ## Deploying your own Manta Builds
@@ -183,7 +183,7 @@ of builds so that if something goes wrong, you know where to start looking.  To
 do this:
 
 1. Complete the Manta deployment procedure from the [Manta Operator's
-Guide](https://github.com/joyent/manta/blob/master/docs/manta-ops.md)
+Guide](https://github.com/joyent/manta/blob/master/docs/manta-ops.md).
 1. Build a zone image for whatever zone you want to replace.  See the
    instructions for building [SmartDataCenter](https://github.com/joyent/sdc)
    zone images using Mountain Gorilla.  Manta zones work the same way.  The
