@@ -30,24 +30,30 @@ repositories that make up a complete Manta deployment.
 
 ## Getting started
 
-The fastest way to experiment with Manta is to start playing with the
-Manta service; see the [Getting
+The fastest way to get started with Manta depends on what exactly one
+wishes to do.
+
+* To experiment with Manta, the fastest way is to start playing with [Joyent's 
+Manta service](https://www.joyent.com/products/manta); see the [Getting
 Started](https://apidocs.joyent.com/manta/index.html#getting-started) guide in
 the user documentation for details.
 
-To see an actual example of using Manta, check out [Kartlytics: Applying Big Data Analytics to Mario Kart](http://www.joyent.com/blog/introducing-kartlytics-mario-kart-64-analytics).
+* To see a detailed, real example of using Manta, check out [Kartlytics: Applying Big Data Analytics to Mario Kart](http://www.joyent.com/blog/introducing-kartlytics-mario-kart-64-analytics).
 
-To learn about installing and operating your own Manta deployment, see the
+* To learn about installing and operating your own Manta deployment, see the
 [Manta Operator's
 Guide](https://github.com/joyent/manta/blob/master/docs/manta-ops.md).
 
-To understand Manta's architecture, see the [ACM Queue](http://queue.acm.org/)
-article on its design and implementation,
+* To understand Manta's architecture, see 
 [Bringing Arbitrary Compute to Authoritative
-Data](http://queue.acm.org/detail.cfm?id=2645649).  To understand the
+Data](http://queue.acm.org/detail.cfm?id=2645649), the
+[ACM Queue](http://queue.acm.org/)
+article on its design and implementation.
+
+* To understand the
 [CAP tradeoffs](http://en.wikipedia.org/wiki/CAP_theorem) in Manta,
 see [Dave Pacheco](https://github.com/davepacheco)'s blog entry on
-[Fault Tolerence in Manta](http://dtrace.org/blogs/dap/2013/07/03/fault-tolerance-in-manta/).
+[Fault Tolerence in Manta](http://dtrace.org/blogs/dap/2013/07/03/fault-tolerance-in-manta/) -- which, it must be said, received [the highest possible praise](https://twitter.com/eric_brewer/status/352804538769604609).
 
 ## Dependencies
 
@@ -73,7 +79,9 @@ the built-in services you get is a [Manta
 deployment](http://github.com/joyent/sdc-manta) service, which is used
 to bootstrap a Manta installation.
 
-Once you have SDC set up, follow the instructions in the Manta Operator's Guide
+Once you have SDC set up, follow the instructions in the 
+[Manta Operator's
+Guide](https://github.com/joyent/manta/blob/master/docs/manta-ops.md)
 to deploy Manta.  The easiest way to play around with your own Manta
 installation is to first set up an SDC (cloud-on-a-laptop) installation in
 VMware and then follow those instructions to deploy Manta on it.
@@ -156,7 +164,9 @@ all be deployed redundantly for availability and additional instances can be
 deployed to increase capacity.
 
 For more details on the architecture, including how these pieces actually fit
-together, see "Architecture Basics" in the Manta Operator's Guide.
+together, see "Architecture Basics" in the 
+[Manta Operator's
+Guide](https://github.com/joyent/manta/blob/master/docs/manta-ops.md)
 
 
 ## Deploying your own Manta Builds
@@ -172,7 +182,8 @@ own builds.  This will also ensure that you're starting from a known-working set
 of builds so that if something goes wrong, you know where to start looking.  To
 do this:
 
-1. Complete the Manta deployment procedure from the Manta Operator's Guide.
+1. Complete the Manta deployment procedure from the [Manta Operator's
+Guide](https://github.com/joyent/manta/blob/master/docs/manta-ops.md)
 1. Build a zone image for whatever zone you want to replace.  See the
    instructions for building [SmartDataCenter](https://github.com/joyent/sdc)
    zone images using Mountain Gorilla.  Manta zones work the same way.  The
@@ -191,8 +202,9 @@ do this:
 
            sdc-imgadm import -m /var/tmp/my_manifest.json -f /var/tmp/my_image
 
-1. Now you can use the normal Manta zone update procedure (from the Manta
-   Operator's Guide).  This involves saving the current configuration to a JSON
+1. Now you can use the normal Manta zone update procedure (from the [Manta
+   Operator's Guide](https://github.com/joyent/manta/blob/master/docs/manta-ops.md).
+   This involves saving the current configuration to a JSON
    file using "manta-adm show -sj > config.json", updating the configuration
    file, and then applying the changes with "manta-adm update < config.json".
    When you modify the configuration file, you can use your image's uuid in
@@ -205,15 +217,19 @@ configuration for whatever service you want (using sdc-sapi -- see
 manta-init but before deploying anything.  Note that each subsequent
 "manta-init" will clobber this change, though the SAPI configuration is normally
 only used for the initial deployment anyway.  The other option is to apply the
-fully-manual install procedure from the Manta Operator's Guide (i.e., instead of
+fully-manual install procedure from the 
+[Manta Operator's
+Guide](https://github.com/joyent/manta/blob/master/docs/manta-ops.md)
+(i.e., instead of
 using manta-deploy-coal or manta-deploy-lab) and use a custom "manta-adm"
 configuration file in the first place.  If this is an important use case, file
 an issue and we can improve this procedure.
 
 The above procedure works to update Manta *zones*, which are most of the
 components above.  The other two kinds of components are the *platform* and
-*agents*.  Both of these procedures are documented in the Manta Operator's
-Guide, and they work to deploy custom builds as well as the official Joyent
+*agents*.  Both of these procedures are documented in the 
+[Manta Operator's
+Guide](https://github.com/joyent/manta/blob/master/docs/manta-ops.md), and they work to deploy custom builds as well as the official Joyent
 builds.
 
 
