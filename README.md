@@ -55,6 +55,19 @@ article on its design and implementation.
 see [Dave Pacheco](https://github.com/davepacheco)'s blog entry on
 [Fault Tolerence in Manta](http://dtrace.org/blogs/dap/2013/07/03/fault-tolerance-in-manta/) -- which, it must be said, received [the highest possible praise](https://twitter.com/eric_brewer/status/352804538769604609).
 
+## Community
+
+Community discussion about Manta happens in two main places:
+
+* The *manta-discuss* mailing list.  Once you [subscribe to the
+  list](https://www.listbox.com/subscribe/?list_id=247448), you can send mail
+  to the list address: manta-discuss@lists.mantastorage.org.  The mailing list
+  archives are also [available on the
+  web](https://www.listbox.com/member/archive/247448/=now).
+
+* In the *#manta* IRC channel on the [Freenode IRC
+  network](https://freenode.net/).
+
 ## Dependencies
 
 Manta is deployed on top of Joyent's
