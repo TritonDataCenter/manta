@@ -1,0 +1,3471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Manta Operator's Guide</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" href="media/css/restdown.css">
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+</head>
+<body>
+<div id="header">
+    <h1>Manta Operator's Guide Documentation</h1>
+</div>
+
+    <div id="sidebar">
+<ul>
+  <li><div><a href="#architecture-basics">Architecture basics</a></div>
+  <ul>
+    <li><div><a href="#design-constraints">Design constraints</a></div></li>
+    <li><div><a href="#basic-terminology">Basic terminology</a></div></li>
+    <li><div><a href="#manta-and-sdc">Manta and SDC</a></div></li>
+    <li><div><a href="#components-of-manta">Components of Manta</a></div></li>
+    <li><div><a href="#services-instances-and-agents">Services, instances, and agents</a></div></li>
+    <li><div><a href="#consensus-and-internal-service-discovery">Consensus and internal service discovery</a></div></li>
+    <li><div><a href="#external-service-discovery">External service discovery</a></div></li>
+    <li><div><a href="#storage-tier">Storage tier</a></div></li>
+    <li><div><a href="#metadata-tier">Metadata tier</a></div></li>
+    <li><div><a href="#the-front-door">The front door</a></div></li>
+    <li><div><a href="#compute-tier-aka-marlin">Compute tier (a.k.a., Marlin)</a></div></li>
+    <li><div><a href="#garbage-collection-auditing-and-metering">Garbage collection, auditing, and metering</a></div></li>
+    <li><div><a href="#manta-scalability">Manta Scalability</a></div></li>
+  </ul></li>
+  <li><div><a href="#planning-a-manta-deployment">Planning a Manta deployment</a></div>
+  <ul>
+    <li><div><a href="#choosing-the-number-of-datacenters">Choosing the number of datacenters</a></div></li>
+    <li><div><a href="#choosing-the-number-of-metadata-shards">Choosing the number of metadata shards</a></div></li>
+    <li><div><a href="#choosing-the-number-of-storage-and-non-storage-compute-nodes">Choosing the number of storage and non-storage compute nodes</a></div></li>
+    <li><div><a href="#choosing-how-to-lay-out-zones">Choosing how to lay out zones</a></div></li>
+    <li><div><a href="#example-single-datacenter-multi-server-configuration">Example single-datacenter, multi-server configuration</a></div></li>
+    <li><div><a href="#example-three-datacenter-configuration">Example three-datacenter configuration</a></div></li>
+    <li><div><a href="#other-configurations">Other configurations</a></div></li>
+  </ul></li>
+  <li><div><a href="#deploying-manta">Deploying Manta</a></div>
+  <ul>
+    <li><div><a href="#networking-configuration">Networking configuration</a></div></li>
+    <li><div><a href="#manta-adm-configuration">manta-adm configuration</a></div></li>
+  </ul></li>
+  <li><div><a href="#upgrading-manta-components">Upgrading Manta components</a></div>
+  <ul>
+    <li><div><a href="#manta-services-upgrades">Manta services upgrades</a></div></li>
+    <li><div><a href="#marlin-agent-upgrades">Marlin agent upgrades</a></div></li>
+    <li><div><a href="#manta-deployment-zone-upgrades">Manta deployment zone upgrades</a></div></li>
+    <li><div><a href="#amon-alarm-updates">Amon Alarm Updates</a></div></li>
+    <li><div><a href="#sdc-zone-and-agent-upgrades">SDC zone and agent upgrades</a></div></li>
+    <li><div><a href="#platform-upgrades">Platform upgrades</a></div></li>
+    <li><div><a href="#ssl-certificate-updates">SSL Certificate Updates</a></div></li>
+    <li><div><a href="#changing-mantamon-contact-methods">Changing Mantamon contact methods</a></div></li>
+  </ul></li>
+  <li><div><a href="#overview-of-operating-manta">Overview of Operating Manta</a></div>
+  <ul>
+    <li><div><a href="#alarms">Alarms</a></div></li>
+    <li><div><a href="#madtom-dashboard-service-health">Madtom dashboard (service health)</a></div></li>
+    <li><div><a href="#marlin-dashboard-compute-activity">Marlin dashboard (compute activity)</a></div></li>
+    <li><div><a href="#marlin-tools">Marlin tools</a></div></li>
+    <li><div><a href="#manta-tools">Manta tools</a></div></li>
+    <li><div><a href="#logs">Logs</a></div></li>
+    <li><div><a href="#job-archives">Job archives</a></div></li>
+  </ul></li>
+  <li><div><a href="#debugging-general-tasks">Debugging: general tasks</a></div>
+  <ul>
+    <li><div><a href="#locating-systems">Locating systems</a></div></li>
+    <li><div><a href="#accessing-systems">Accessing systems</a></div></li>
+    <li><div><a href="#translating-from-mantacomputeid-or-mantastorageid-to-hostname">Translating from mantaComputeId or mantaStorageId to hostname</a></div></li>
+  </ul></li>
+  <li><div><a href="#debugging-marlin-distributed-state">Debugging Marlin: distributed state</a></div>
+  <ul>
+    <li><div><a href="#list-running-jobs">List running jobs</a></div></li>
+    <li><div><a href="#list-recently-completed-jobs">List recently completed jobs</a></div></li>
+    <li><div><a href="#fetch-details-about-a-job">Fetch details about a job</a></div></li>
+    <li><div><a href="#list-job-inputs-outputs-retries-and-errors-as-a-user-would-see-them">List job inputs, outputs, retries, and errors (as a user would see them)</a></div></li>
+    <li><div><a href="#fetch-summary-of-errors-for-a-job">Fetch summary of errors for a job</a></div></li>
+    <li><div><a href="#list-tasks-not-yet-completed-for-a-given-job-and-see-where-theyre-running">List tasks not-yet-completed for a given job (and see where they're running)</a></div></li>
+    <li><div><a href="#see-the-history-of-a-given-task">See the history of a given task</a></div></li>
+    <li><div><a href="#using-the-moray-tools-to-fetch-detailed-state">Using the Moray tools to fetch detailed state</a></div></li>
+    <li><div><a href="#figuring-out-which-jobsupervisor-is-managing-a-job">Figuring out which jobsupervisor is managing a job</a></div></li>
+  </ul></li>
+  <li><div><a href="#debugging-marlin-storage-nodes">Debugging Marlin: storage nodes</a></div>
+  <ul>
+    <li><div><a href="#figuring-out-whats-running">Figuring out what's running</a></div></li>
+    <li><div><a href="#figuring-out-what-ran-in-the-past">Figuring out what ran in the past</a></div></li>
+  </ul></li>
+  <li><div><a href="#debugging-marlin-anticipated-frequent-issues">Debugging Marlin: anticipated frequent issues</a></div>
+  <ul>
+    <li><div><a href="#users-want-more-information-about-job-progress">Users want more information about job progress</a></div></li>
+    <li><div><a href="#users-observe-non-zero-count-of-errors-from-mjob-get">Users observe non-zero count of errors from "mjob get"</a></div></li>
+    <li><div><a href="#users-observe-non-zero-count-of-retries-from-mjob-get">Users observe non-zero count of retries from "mjob get"</a></div></li>
+    <li><div><a href="#user-observes-job-in-queued-state">User observes job in "queued" state</a></div></li>
+    <li><div><a href="#job-hung-not-making-forward-progress">Job hung (not making forward progress)</a></div></li>
+    <li><div><a href="#poor-job-performance">Poor job performance</a></div></li>
+    <li><div><a href="#error-user-task-error-for-unknown-reason">Error: User Task Error (for unknown reason)</a></div></li>
+    <li><div><a href="#error-task-init-error">Error: Task Init Error</a></div></li>
+    <li><div><a href="#error-internal-error">Error: Internal Error</a></div></li>
+    <li><div><a href="#zones-not-resetting">Zones not resetting</a></div></li>
+  </ul></li>
+  <li><div><a href="#debugging-marlin-zones">Debugging Marlin: Zones</a></div>
+  <ul>
+    <li><div><a href="#clearing-disabled-zones">Clearing Disabled Zones</a></div></li>
+  </ul></li>
+  <li><div><a href="#controlling-marlin">Controlling Marlin</a></div>
+  <ul>
+    <li><div><a href="#cancel-a-running-job">Cancel a running job</a></div></li>
+    <li><div><a href="#deleting-a-job">Deleting a job</a></div></li>
+    <li><div><a href="#quiescing-a-supervisor">Quiescing a supervisor</a></div></li>
+  </ul></li>
+  <li><div><a href="#advanced-deployment-notes">Advanced deployment notes</a></div>
+  <ul>
+    <li><div><a href="#size-overrides">Size Overrides</a></div></li>
+    <li><div><a href="#development-tools">Development tools</a></div></li>
+    <li><div><a href="#configuring-nat-for-marlin-compute-zones">Configuring NAT for Marlin compute zones</a></div></li>
+    <li><div><a href="#configuration">Configuration</a></div></li>
+    <li><div><a href="#shard-management">Shard Management</a></div></li>
+    <li><div><a href="#working-with-a-development-vm-that-talks-to-coal">Working with a Development VM that talks to COAL</a></div></li>
+    <li><div><a href="#adding-a-new-service">Adding a new service</a></div></li>
+  </ul></li>
+  <li><div><a href="#advanced-marlin-reference">Advanced Marlin Reference</a></div>
+  <ul>
+    <li><div><a href="#internal-state">Internal state</a></div></li>
+    <li><div><a href="#heartbeats-failures-and-health-checking">Heartbeats, failures, and health checking</a></div></li>
+    <li><div><a href="#kang-state">Kang state</a></div></li>
+    <li><div><a href="#fetching-information-about-historical-jobs">Fetching information about historical jobs</a></div></li>
+  </ul></li>
+</ul>
+
+    </div>
+    <div id="content">
+
+<!--
+    This Source Code Form is subject to the terms of the Mozilla Public
+    License, v. 2.0. If a copy of the MPL was not distributed with this
+    file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<!--
+    Copyright (c) 2014, Joyent, Inc.
+-->
+
+
+<h1>Manta Operator's Guide</h1>
+<div class="intro">
+
+
+<p>Manta is an internet-facing object store with in-situ Unix-based compute as a
+first class operation.  The user interface to Manta is essentially:</p>
+
+<ul>
+<li>A filesystem-like namespace, with <em>directories</em> and <em>objects</em>, accessible over
+HTTP</li>
+<li><em>Objects</em> are arbitrary-size blobs of data</li>
+<li>Users can use standard HTTP <code>PUT</code>/<code>GET</code>/<code>DELETE</code> verbs to create and remove
+directories and objects as well as to list directories</li>
+<li>Users can fetch arbitrary ranges of an object, but may not <em>modify</em> an object
+except by replacing it</li>
+<li>Users submit map-reduce <em>compute jobs</em> that run arbitrary Unix programs on
+their objects.</li>
+</ul>
+
+<p>Users can interact with Manta through the official Node.js CLI; the Joyent user
+portal; the Node, Python, Ruby, or Java SDKs; curl(1); or any web browser.</p>
+
+<p>For more information, see the official <a href="http://apidocs.joyent.com/manta/">public user
+documentation</a>.  <strong>Before reading this
+document, you should be very familiar with using Manta, including both the CLI
+tools and the compute (jobs) features.  You should also be comfortable with all
+the <a href="http://apidocs.joyent.com/manta/">reference material</a> on how the system
+works from a user's perspective.</strong></p>
+
+
+</div>
+<h1 id="architecture-basics">Architecture basics</h1>
+
+<h2 id="design-constraints">Design constraints</h2>
+
+<p><strong>Horizontal scalability.</strong>  It must be possible to add more hardware to scale
+any component within Manta without downtime.  As a result of this constraint,
+there are multiple instances of each service.</p>
+
+<p><strong>Strong consistency.</strong>  In the face of network partitions where it's not
+possible to remain both consistent and available, Manta chooses consistency.  So
+if all three datacenters in a three-DC deployment become partitioned from one
+another, requests may fail rather than serve potentially incorrect data.</p>
+
+<p><strong>High availability.</strong>  Manta must survive failure of any service, physical
+server, rack, or even an entire datacenter, assuming it's been deployed
+appropriately.  Development installs of Manta can fit on a single system, and
+obviously those don't survive server failure, but the us-east production
+deployment spans three datacenters and survives partitioning or failure of an
+entire datacenter without downtime for the other two.</p>
+
+<h2 id="basic-terminology">Basic terminology</h2>
+
+<p>We use <strong>nodes</strong> to refer to physical servers.  <strong>Compute nodes</strong> mean the same
+thing they mean in SDC, which is any physical server that's not a head node.
+<strong>Storage nodes</strong> are compute nodes that are designated to store actual Manta
+objects.  These are the same servers that run users' compute jobs, but we don't
+call those compute nodes because that would be confusing with the SDC
+terminology.</p>
+
+<p>A Manta install uses:</p>
+
+<ul>
+<li>a headnode (see "Manta and SDC" below)</li>
+<li>one or more storage nodes to store user objects and run compute jobs</li>
+<li>one or more non-storage compute nodes for the other Manta services.</li>
+</ul>
+
+<p>We use the term <em>datacenter</em> (or DC) to refer to an availability zone (or AZ).
+Each datacenter represents a single SDC deployment (see below).  Manta supports
+being deployed in either 1 or 3 datacenters within a single <em>region</em>, which is a
+group of datacenters having a high-bandwidth, low-latency network connection.</p>
+
+<h2 id="manta-and-sdc">Manta and SDC</h2>
+
+<p>Manta is built atop SmartDataCenter.  A three-datacenter deployment of Manta is
+built atop three separate SmartDataCenter deployments.  The presence of Manta
+does not change the way SmartDataCenter is deployed or operated.  Administrators
+still have AdminUI, APIs, and they're still responsible for managing the SDC
+services, platform versions, and the like through the normal SDC mechanisms.</p>
+
+<h2 id="components-of-manta">Components of Manta</h2>
+
+<p>All user-facing Manta functionality can be divided into a few major subsystems:</p>
+
+<ul>
+<li>The <strong>storage tier</strong> is responsible for storing the physical copies of user
+objects on disk.  Storage nodes store objects as files with random uuids.  So
+within each storage node, the objects themselves are effectively just large,
+opaque blobs of data.</li>
+<li>The <strong>metadata tier</strong> is responsible for storing metadata about each object
+that's visible from the public Manta API.  This metadata includes the set of
+storage nodes on which the physical copy is stored.</li>
+<li>The <strong>jobs subsystem</strong> (also called Marlin) is responsible for executing user
+programs on the objects stored in the storage tier.</li>
+</ul>
+
+<p>In order to make all this work, there are several other pieces:</p>
+
+<ul>
+<li>The <strong>front door</strong> is made up of the SSL terminators, load balancers, and API
+servers that actually handle user HTTP requests.  All user interaction with
+Manta happens over HTTP (even compute jobs), so the front door handles all
+user-facing operations.</li>
+<li>An <strong>authentication cache</strong> maintains a read-only copy of the Joyent user
+database.  All front door requests are authenticated against this cache.</li>
+<li>A <strong>garbage collection and auditing</strong> system periodically compares the
+contents of the metadata tier with the contents of the storage tier to
+identify deleted objects, remove them, and verify that all other objects are
+replicated as they should be.</li>
+<li>A <strong>metering</strong> system periodically processes log files generated by the rest
+of the system to produce reports that are ultimately turned into invoices.</li>
+<li>A couple of <strong>dashboards</strong> provide visibility into what the system is doing at
+any given point.</li>
+<li>A <strong>consensus layer</strong> is used to keep track of primary-secondary relationships
+in the metadata tier.</li>
+<li>DNS-based <strong>nameservices</strong> are used to keep track of all instances of all
+services in the system.</li>
+</ul>
+
+<h2 id="services-instances-and-agents">Services, instances, and agents</h2>
+
+<p>Just like with SDC, components are divided into services, instances, and agents.
+Services and instances are SAPI concepts.</p>
+
+<p>A <strong>service</strong> is a group of <strong>instances</strong> of the same kind.  For example,
+"jobsupervisor" is a service, and there may be multiple jobsupervisor zones.
+Each zone is an instance of the "jobsupervisor" service.  The vast majority of
+Manta components are service instances, and there are several different services
+involved.</p>
+
+<p><strong>Agents</strong> are components that run in the global zone.  Manta uses one agent on
+each storage node called the <em>marlin agent</em> in order to manage the execution of
+user compute jobs on each storage node.</p>
+
+<p>Note: Do not confuse SAPI services with SMF services.  We're talking about SAPI
+services here.  A given SAPI instance (which is a zone) may have many <em>SMF</em>
+services.</p>
+
+<h3 id="manta-components-at-a-glance">Manta components at a glance</h3>
+
+<table>
+<thead>
+<tr>
+  <th>Kind</th>
+  <th>Major subsystem</th>
+  <th>Service</th>
+  <th>Purpose</th>
+  <th>Components</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>Service</td>
+  <td>Consensus</td>
+  <td>nameservice</td>
+  <td>Service discovery</td>
+  <td>ZooKeeper, binder (DNS)</td>
+</tr>
+<tr>
+  <td>Service</td>
+  <td>Front door</td>
+  <td>loadbalancer</td>
+  <td>SSL termination and load balancing</td>
+  <td>stud, haproxy/muppet</td>
+</tr>
+<tr>
+  <td>Service</td>
+  <td>Front door</td>
+  <td>webapi</td>
+  <td>Manta HTTP API server</td>
+  <td>muskie</td>
+</tr>
+<tr>
+  <td>Service</td>
+  <td>Front door</td>
+  <td>authcache</td>
+  <td>Authentication cache</td>
+  <td>mahi (redis)</td>
+</tr>
+<tr>
+  <td>Service</td>
+  <td>Metadata</td>
+  <td>postgres</td>
+  <td>Metadata storage and replication</td>
+  <td>postgres, manatee</td>
+</tr>
+<tr>
+  <td>Service</td>
+  <td>Metadata</td>
+  <td>moray</td>
+  <td>Key-value store</td>
+  <td>moray</td>
+</tr>
+<tr>
+  <td>Service</td>
+  <td>Metadata</td>
+  <td>electric-moray</td>
+  <td>Consistent hashing (sharding)</td>
+  <td>electric-moray</td>
+</tr>
+<tr>
+  <td>Service</td>
+  <td>Storage</td>
+  <td>storage</td>
+  <td>Object storage and capacity reporting</td>
+  <td>mako (nginx), minnow</td>
+</tr>
+<tr>
+  <td>Service</td>
+  <td>Operations</td>
+  <td>ops</td>
+  <td>GC, audit, and metering cron jobs</td>
+  <td>mola, mackerel</td>
+</tr>
+<tr>
+  <td>Service</td>
+  <td>Operations</td>
+  <td>madtom</td>
+  <td>Web-based Manta monitoring</td>
+  <td>madtom</td>
+</tr>
+<tr>
+  <td>Service</td>
+  <td>Operations</td>
+  <td>marlin-dashboard</td>
+  <td>Web-based Marlin monitoring</td>
+  <td>marlin-dashboard</td>
+</tr>
+<tr>
+  <td>Service</td>
+  <td>Compute</td>
+  <td>jobsupervisor</td>
+  <td>Distributed job orchestration</td>
+  <td>jobsupervisor</td>
+</tr>
+<tr>
+  <td>Service</td>
+  <td>Compute</td>
+  <td>jobpuller</td>
+  <td>Job archival</td>
+  <td>wrasse</td>
+</tr>
+<tr>
+  <td>Service</td>
+  <td>Compute</td>
+  <td>marlin</td>
+  <td>Compute containers for end users</td>
+  <td>marlin-lackey</td>
+</tr>
+<tr>
+  <td>Agent</td>
+  <td>Compute</td>
+  <td>marlin-agent</td>
+  <td>Job execution on each storage node</td>
+  <td>marlin-agent</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="consensus-and-internal-service-discovery">Consensus and internal service discovery</h2>
+
+<p>In some sense, the heart of Manta (and SDC) is a service discovery mechanism
+(based on ZooKeeper) for keeping track of which service instances are running.
+In a nutshell, this works like this:</p>
+
+<ol>
+<li>Setup: There are 3-5 "nameservice" zones deployed that form a ZooKeeper cluster.
+There's a "binder" DNS server in each of these zones that serves DNS requests
+based on the contents of the ZooKeeper data store.</li>
+<li>Setup: When other zones are deployed, part of their configuration includes
+the IP addresses of the nameservice zones.  These DNS servers are the only
+components that each zone knows about directly.</li>
+<li>When an instance starts up (e.g., a "moray" zone), an SMF service called the
+<em>registrar</em> connects to the ZooKeeper cluster (using the IP addresses
+configured with the zone) and publishes its own IP to ZooKeeper.  A moray
+zone for shard 1 in region "us-east" publishes its own IP under
+"1.moray.us-east.joyent.us".</li>
+<li>When a client wants to contact the shard 1 moray, it makes a DNS request for
+1.moray.us-east.joyent.us using the DNS servers in the ZooKeeper cluster.
+Those DNS servers returns <em>all</em> IPs that have been published for
+1.moray.us-east.joyent.us.</li>
+<li>If the registrar in the 1.moray zone dies, the corresponding entry in the
+ZooKeeper data store is automatically removed, causing that zone to fall out
+of DNS.  Due to DNS TTLs of 60s, it may take up to a minute for clients to
+notice that the zone is gone.</li>
+</ol>
+
+<p>Internally, most services work this way.</p>
+
+<h2 id="external-service-discovery">External service discovery</h2>
+
+<p>Since we don't control Manta clients, the external service discovery system is
+simpler and more static.  We manually configure the public
+<code>us-east.manta.joyent.com</code> DNS name to resolve to each of the loadbalancer
+public IP addresses.  After a request reaches the loadbalancers, everything uses
+the internal service discovery mechanism described above to contact whatever
+other services they need.</p>
+
+<h2 id="storage-tier">Storage tier</h2>
+
+<p>The storage tier is made up of Mantis Shrimp nodes.  Besides having a great deal
+of physical storage in order to store users' objects, these systems have lots of
+DRAM in order to support a large number of marlin <em>compute zones</em>, where we run
+user programs directly on their data.</p>
+
+<p>Each storage node has an instance of the <strong>storage</strong> service, also called a
+"mako" or "shark" (as in: a <em>shard</em> of the storage tier).  Inside this zone
+runs:</p>
+
+<ul>
+<li><strong>mako</strong>: an nginx instance that supports simple PUT/GET for objects.  This is
+not the front door; this is used <em>internally</em> to store each copy of a user
+object.  Objects are stored in a ZFS delegated dataset inside the storage
+zone, under <code>/manta/$account_uuid/$object_uuid</code>.</li>
+<li><strong>minnow</strong>: a small Node service that periodically reports storage capacity
+data into the metadata tier so that the front door knows how much capacity
+each storage node has.</li>
+</ul>
+
+<p>In addition to the "storage" zone, each storage node has some number of
+<strong>marlin zones</strong> (or <strong>compute zones</strong>).  These are essentially blank zones in
+which we run user programs.  We currently configure 128 of these zones on each
+storage node.</p>
+
+<h2 id="metadata-tier">Metadata tier</h2>
+
+<p>The metadata tier is itself made up of three levels:</p>
+
+<ul>
+<li>"postgres" zones, which run instances of the postgresql database</li>
+<li>"moray" zones, which run a key-value store on top of postgres</li>
+<li>"electric-moray" zones, which handle sharding of moray requests</li>
+</ul>
+
+<h3 id="postgres-replication-and-sharding">Postgres, replication, and sharding</h3>
+
+<p>All object metadata is stored in PostgreSQL databases.  Metadata is keyed on the
+object's name, and the value is a JSON document describing properties of the
+object including what storage nodes it's stored on.</p>
+
+<p>This part is particularly complicated, so pay attention!  The metadata tier is
+<strong>replicated for availability</strong> and <strong>sharded for scalability</strong>.</p>
+
+<p>It's easiest to think of sharding first.  Sharding means dividing the entire
+namespace into one or more <em>shards</em> in order to scale horizontally.  So instead
+of storing objects A-Z in a single postgres database, we might choose two shards
+(A-M in shard 1, N-Z in shard 2), or three shards (A-I in shard 1, J-R in shard
+2, S-Z in shard 3), and so on.  Each shard is completely separate from the
+others.  They don't overlap at all in the data that they store.  The shard
+responsible for a given object is determined by consistent hashing on the
+<em>directory name</em> of the object.  So the shard for "/mark/stor/foo" is determined
+by hashing "/mark/stor".</p>
+
+<p>Within each shard, we use multiple postgres instances for high availability.  At
+any given time, there's a <em>primary peer</em> (also called the "master"), a
+<em>secondary peer</em> (also called the "synchronous slave"), and an <em>async peer</em>
+(sometimes called the "asynchronous slave").  As the names suggest, we configure
+synchronous replication between the primary and secondary, and asynchronous
+replication between the secondary and the async peer.  <strong>Synchronous</strong>
+replication means that transactions must be committed on both the primary and
+the secondary before they can be committed to the client.  <strong>Asynchronous</strong>
+replication means that the asynchronous peer may be slightly behind the other
+two.</p>
+
+<p>The idea with configuration replication in this way is that if the primary
+crashes, we take several steps to recover:</p>
+
+<ol>
+<li>The shard is immediately marked read-only.</li>
+<li>The secondary is promoted to the primary.</li>
+<li>The async peer is promoted to the secondary.  With the shard being read-only,
+it should quickly catch up.</li>
+<li>Once the async peer catches up, the shard is marked read-write again.</li>
+<li>When the former primary comes back online, it becomes the asynchronous peer.</li>
+</ol>
+
+<p>This allows us to quickly restore read-write service in the event of a postgres
+crash or an OS crash on the system hosting the primary.  This process is managed
+by the "manatee" component, which uses ZooKeeper for leader election to
+determine which postgres will be the primary at any given time.</p>
+
+<p>It's really important to keep straight the difference between <em>sharding</em> and
+<em>replication</em>.  Even though replication means that we have multiple postgres
+instances in each shard, only the primary can be used for read/write operations,
+so we're still limited by the capacity of a single postgres instance.  That's
+why we have multiple shards.</p>
+
+<!-- XXX graphic -->
+
+<h3 id="other-shards">Other shards</h3>
+
+<p>There are actually three kinds of metadata in Manta:</p>
+
+<ul>
+<li>Object metadata, which is sharded as described above.  This may be medium to
+high volume, depending on load.</li>
+<li>Storage node capacity metadata, which is reported by "minnow" instances (see
+above) and all lives on one shard.  This is extremely low-volume: a couple of
+writes per storage node per minute.</li>
+<li>Compute job state, which is all stored on a single shard.  This is extremely
+high volume, depending on job load.</li>
+</ul>
+
+<p>In the us-east production deployment, shard 1 stores compute job state and
+storage node capacity.  Shards 2-4 store the object metadata.</p>
+
+<p>Manta supports <strong>resharding</strong> object metadata, which would typically be used to
+add an additional shard (for additional capacity).  This operation has never
+been needed (or used) in production.  Assuming the service is successful, that's
+likely just a matter of time.</p>
+
+<h3 id="moray">Moray</h3>
+
+<p>For each metadata shard (which we said above consists of three PostgreSQL
+databases), there's two or more "moray" instances.  Moray is a key-value store
+built on top of postgres.  Clients never talk to postgres directly; they always
+talk to Moray.  (Actually, they generally talk to electric-moray, which proxies
+requests to Moray.  See below.)  Moray keeps track of the replication topology
+(which Postgres instances is the primary, which is the secondary, and which is
+the async) and directs all read/write requests to the primary Postgres instance.
+This way, clients don't need to know about the replication topology.</p>
+
+<p>Like Postgres, each Moray instance is tied to a particular shard.  These are
+typically referred to as "1.moray", "2.moray", and so on.</p>
+
+<h3 id="electric-moray">Electric-moray</h3>
+
+<p>The electric-moray service sits in front of the sharded Moray instances and
+directs requests to the appropriate shard.  So if you try to update or fetch the
+metadata for <code>/mark/stor/foo</code>, electric-moray will hash <code>/mark/stor</code> to find the
+right shard and then proxy the request to one of the Moray instances operating
+that shard.</p>
+
+<h2 id="the-front-door">The front door</h2>
+
+<p>The front door consists of "loadbalancer" and "webapi" zones.</p>
+
+<p>"loadbalancer" zones actually run both stud (for SSL termination) and haproxy
+(for load balancing across the available "webapi" instances).  "haproxy" is
+managed by a component called "muppet" that uses the DNS-based service discovery
+mechanism to keep haproxy's list of backends up-to-date.</p>
+
+<p>"webapi" zones run the Manta-specific API server, called <strong>muskie</strong>.  Muskie
+handles PUT/GET/DELETE requests to the front door, including requests to:</p>
+
+<ul>
+<li>create and delete objects</li>
+<li>create, list, and delete directories</li>
+<li>create compute jobs, submit input, end input, fetch inputs, fetch outputs,
+fetch errors, and cancel jobs</li>
+</ul>
+
+<h3 id="objects-and-directories">Objects and directories</h3>
+
+<p>Requests for objects and directories involve:</p>
+
+<ul>
+<li>validating the request</li>
+<li>authenticating the user (via mahi, the auth cache)</li>
+<li>looking up the requested object's metadata (via electric moray)</li>
+<li>authorizing the user for access to the specifed resource</li>
+</ul>
+
+<p>For requests on directories and zero-byte objects, the last step is to update or
+return the right metadata.</p>
+
+<p>For write requests on objects, muskie then:</p>
+
+<ul>
+<li>Constructs a set of candidate storage nodes that will be used to store the
+object's data, where each storage node is located in a different datacenter
+(in a multi-DC configuration).  By default, there are two copies of the data,
+but users can configure this by setting the durability level with the
+request.</li>
+<li>Tries to issue a PUT with 100-continue to each of the storage nodes in the
+candidate set.  If that fails, try another set.  If all sets are exhausted,
+fail with 503.</li>
+<li>Once the 100-continue is received from all storage nodes, the user's data is
+streamed to all nodes.  Upon completion, there should be a 204 response from
+each storage node.</li>
+<li>Once the data is safely written to all nodes, the metadata tier is updated
+(using a PUT to electric-moray), and a 204 is returned to the client.  At this
+point, the object's data is recorded persistently on the requested number of
+storage nodes, and the metadata is replicated on at least two index nodes.</li>
+</ul>
+
+<p>For read requests on objects, muskie instead contacts each of the storage nodes
+hosting the data and streams data from whichever one responds first to the
+client.</p>
+
+<h3 id="compute-jobs">Compute jobs</h3>
+
+<p>Requests to manipulate compute jobs generally translate into creating
+or listing job-related Moray records:</p>
+
+<ul>
+<li>When the user submits a request to create a job, muskie creates a new job
+record in Moray.</li>
+<li>When the user submits a request to add an input, muskie creates a new job
+input record in Moray.</li>
+<li>When the user submits a request to cancel a job or end input, muskie modifies
+the job record in Moray.</li>
+<li>When the user lists inputs, outputs, or errors, muskie lists job input
+records, task output records, or error records.</li>
+</ul>
+
+<p>All of these requests operate on the shard storing all of the compute node
+metadata.  These requests do not go through electric-moray.</p>
+
+<h2 id="compute-tier-aka-marlin">Compute tier (a.k.a., Marlin)</h2>
+
+<p>There are three core components of Marlin:</p>
+
+<ul>
+<li>A small fleet of <strong>supervisors</strong> manages the execution of jobs.  (Supervisors
+used to be called <strong>workers</strong>, and you may still see that terminology).
+Supervisors pick up new inputs, locate the servers where the input objects are
+stored, issue tasks to execute on those servers, monitor the execution of
+those tasks, and decide when the job is done.  Each supervisor can manage many
+jobs, but each job is managed by only one supervisor at a time.</li>
+<li>Job tasks execute directly on the Manta storage nodes.  Each node has an
+<strong>agent</strong> (i.e., the "marlin agent") running in the global zone that manages
+tasks assigned to that node and the zones available for running those tasks.</li>
+<li>Within each compute zone, task execution is managed by a <strong>lackey</strong> under the
+control of the agent.</li>
+</ul>
+
+<p>All of Marlin's state is stored in <strong>Moray</strong>.  A few other components are
+involved in executing jobs:</p>
+
+<ul>
+<li><strong>Muskie</strong> handles all user requests related to jobs: creating jobs,
+submitting input, and fetching status, outputs, and errors.  To create jobs
+and submit inputs, Muskie creates and updates records in Moray.  See above for
+details.</li>
+<li><strong>Wrasse</strong> (the jobpuller) is a separate component that periodically scans for
+recently completed jobs, archives the saved state into flat objects back in
+Manta, and then removes job state from Moray.  This is critical to keep the
+database that manages job state from growing forever.</li>
+</ul>
+
+<h3 id="distributed-execution">Distributed execution</h3>
+
+<p>When the user runs a "map" job, Muskie receives client requests to create the
+job, to add inputs to the job, and to indicate that there will be no more job
+inputs.  Jobsupervisors compete to take newly assigned jobs, and exactly one
+will win and become responsible for orchestrating the execution of the job.  As
+inputs are added, the supervisor resolves each object's name to the internal
+uuid that identifies the object and checks whether the user is allowed to access
+that object.  Assuming the user is authorized for that object, the supervisor
+locates all copies of the object in the fleet, selects one, and issues a task to
+an <em>agent</em> running on the server where that copy is stored.  This process is
+repeated for each input object, distributing work across the fleet.</p>
+
+<p>The agent on the storage server accepts the task and runs the user's script in
+an isolated compute zone.  It records any outputs emitted as part of executing
+the script.  When the task has finished running, the agent marks it completed.
+The supervisor <em>commits</em> the completed task, marking its outputs as final job
+outputs.  When there are no more unprocessed inputs and no uncommitted tasks,
+the supervisor declares the job done.</p>
+
+<p>If a task fails for a retryable reason, it will be retried a few times,
+preferably on different servers.  If it keeps failing, an error is produced.</p>
+
+<p>Multi-phase map jobs are similar except that the outputs of each first-phase map
+task become inputs to a new second-phase map task, and only the outputs of the
+second phase become outputs of the job.</p>
+
+<p>Reducers run like mappers, except that the input for a reducer is not completely
+known until the previous phase has already completed, and reducers can read an
+arbitrary number of inputs so the inputs themselves are dispatched as individual
+records and a separate end-of-input must be issued before the reducer can
+complete.</p>
+
+<h3 id="local-execution">Local execution</h3>
+
+<p>The agent on each storage server maintains a fixed set of compute zones in which
+user scripts can be run.  When a map task arrives, the agent locates the file
+representing the input object on the local filesystem, finds a free compute
+zone, maps the object into the local filesystem, and runs the user's script,
+redirecting stdin from the input file and stdout to a local file.  When the
+script exits, assuming it succeeds, the output file is saved as an object in the
+object store, recorded as an output from the task, and the task is marked
+completed.  If there is more work to be done for the same job, the agent may
+choose to run it in the same compute zone without doing anything to clean up
+after the first one.  When there is no more work to do, or the agent decides to
+repurpose the compute zone for another job, the compute zone is halted, the
+filesystem rolled back to its pristine state, and the zone is booted again to
+run the next task.  Since the compute zones themselves are isolated from one
+another and they are fully rebooted and rolled back between jobs, there is no
+way for users' jobs to see or interfere with other jobs running in the system.</p>
+
+<h3 id="internal-communication-within-marlin">Internal communication within Marlin</h3>
+
+<p>The system uses a Moray/PostgreSQL shard for all communication.  There are
+buckets for jobs, job inputs, tasks, task inputs (for reduce tasks), task
+outputs, and errors.  Supervisors and agents poll for new records applicable to
+them.  For example, supervisors poll for tasks assigned to them that have been
+completed but not committed and agents poll for tasks assigned to them that have
+been dispatched but not accepted.</p>
+
+<h2 id="garbage-collection-auditing-and-metering">Garbage collection, auditing, and metering</h2>
+
+<p>Garbage collection, auditing, and metering all run as cron jobs out of the "ops"
+zone.</p>
+
+<p><strong>Garbage collection</strong> is the process of freeing up storage used for objects
+which no longer exist.  When an object is deleted, muskie records that event in
+a log and removes the metadata from Moray, but does not actually remove the
+object from storage servers because there may have been other links to it.  The
+garbage collection job (called "mola") processes these logs, along with dumps of
+the metadata tier (taken periodically and stored into Manta), and determines
+which objects can safely be deleted.  These delete requests are batched and sent
+to each storage node, which moves the objects to a "tombstone" area.  Objects in
+the tombstone area are deleted after a fixed interval.</p>
+
+<p><strong>Auditing</strong> is the process of ensuring that each object is replicated as
+expected.  This is a similar job run over the contents of the metadata tier and
+manifests reported by the storage nodes.</p>
+
+<p><strong>Metering</strong> is the process of measuring how much resource each user used, both
+for reporting and billing.  There's compute metering (how much compute time was
+used), storage metering (how much storage is used), request metering, and
+bandwidth metering.  These are compute jobs run over the compute logs (produced
+by the marlin agent), the metadata dumps, and the muskie request logs.</p>
+
+<h2 id="manta-scalability">Manta Scalability</h2>
+
+<p>There are many dimensions to scalability.</p>
+
+<p>In the metadata tier:</p>
+
+<ul>
+<li>number of objects (scalable with additional shards)</li>
+<li>number of objects in a directory (fixed, currently at a few million objects)</li>
+</ul>
+
+<p>In the storage tier:</p>
+
+<ul>
+<li>total size of data (scalable with additional storage servers)</li>
+<li>size of data per object (limited to the amount of storage on any single
+system, typically in the tens of terrabytes, which is far larger than
+is typically practical)</li>
+</ul>
+
+<p>In terms of performance:</p>
+
+<ul>
+<li>total bytes in or out per second (depends on network configuration)</li>
+<li>count of concurrent requests (scalable with additional metadata shards or API
+servers)</li>
+<li>count of compute tasks executed per second (scalable with additional storage
+nodes)</li>
+<li>count of concurrent compute tasks (could be measured in tasks, CPU cores
+available, or DRAM availability; scaled with additional storage node hardware)</li>
+</ul>
+
+<p>As described above, for most of these dimensions, Manta can be scaled
+horizontally by deploying more software instances (often on more hardware).  For
+a few of these, the limits are fixed, but we expect them to be high enough for
+most purposes.  For a few others, the limits are not known, and we've never (or
+rarely) run into them, but we may need to do additional work when we discover
+where these limits are.</p>
+
+<h1 id="planning-a-manta-deployment">Planning a Manta deployment</h1>
+
+<p>Before even starting to deploy Manta, you must decide:</p>
+
+<ul>
+<li>the number of datacenters</li>
+<li>the number of metadata shards</li>
+<li>the number of storage and non-storage compute nodes</li>
+<li>how to lay out the non-storage zones across the fleet</li>
+</ul>
+
+<h2 id="choosing-the-number-of-datacenters">Choosing the number of datacenters</h2>
+
+<p>You can deploy Manta across any odd number of datacenters in the same region
+(i.e., having a reliable low-latency, high-bandwidth network connection among
+all datacenters).  We've only tested one- and three-datacenter configurations.
+Even-numbered configurations are not supported.  See "Other configurations"
+below for details.</p>
+
+<p>A single-datacenter installation can be made to survive server failure, but
+obviously cannot survive datacenter failure.  The us-east deployment uses three
+datacenters.</p>
+
+<h2 id="choosing-the-number-of-metadata-shards">Choosing the number of metadata shards</h2>
+
+<p>Recall that each metadata shard has the storage and load capacity of a single
+postgres instance.  If you want more capacity than that, you need more shards.
+Shards can be added later without downtime, but it's a delicate operation.  The
+us-east deployment uses three metadata shards, plus a separate shard for the
+compute and storage capacity data.</p>
+
+<p>We recommend at least two shards so that the compute and storage capacity
+information can be fully separated from the remaining shards, which would be
+used for metadata.</p>
+
+<h2 id="choosing-the-number-of-storage-and-non-storage-compute-nodes">Choosing the number of storage and non-storage compute nodes</h2>
+
+<p>The two classes of node (storage nodes and non-storage nodes) usually have
+different hardware configurations.</p>
+
+<p>The number of storage nodes needed is a function of the expected data footprint
+and (secondarily) the desired compute capacity.</p>
+
+<p>The number of non-storage nodes required is a function of the expected load on
+the metadata tier.  Since the point of shards is to distribute load, each
+shard's postgres instance should be on a separate compute node.  So you want at
+least as many compute nodes as you will have shards.  The us-east deployment
+distributes the other services on those same compute nodes.</p>
+
+<p>For information on the latest recommended production hardware, see <a href="http://eng.joyent.com/manufacturing/matrix.html">Joyent
+Manufacturing Matrix</a> and
+<a href="http://eng.joyent.com/manufacturing/bom.html">Joyent Manufacturing Bill of
+Materials</a>.</p>
+
+<p>The us-east deployment uses older versions of the Tenderloin-A for service
+nodes and Mantis Shrimps for storage nodes.</p>
+
+<h2 id="choosing-how-to-lay-out-zones">Choosing how to lay out zones</h2>
+
+<p>Since there are so many different Manta components, and they're all deployed
+redundantly, there are a lot of different pieces to think about.  (The
+production deployment in us-east has 21 zones in <em>each</em> of the three
+datacenters, not including the Marlin compute zones.)  So when setting up a
+Manta deployment, it's very important to think ahead of time about which
+components will run where!</p>
+
+<p>While we intend to provide a tool to automatically lay out these zones
+(see MANTA-2023), that doesn't exist yet.  The most important production
+configurations are described below, but for reference, here are the principles
+to keep in mind:</p>
+
+<ul>
+<li><strong>Storage</strong> zones should only be colocated with <strong>marlin</strong> zones, and only on
+storage nodes.  Neither makes sense without the other, and we do not recommend
+combining them with other zones.  All other zones should be deployed onto
+non-storage compute nodes.</li>
+<li><strong>Nameservice</strong>: There must be an odd number of "nameservice" zones in order
+to achieve consensus, and there should be at least three of them to avoid a
+single point of failure.  There must be at least one in each DC to survive
+any combination of datacenter partitions, and it's recommended that they be
+balanced across DCs as much as possible.</li>
+<li>For the non-sharded, non-ops-related zones (which is everything except
+<strong>moray</strong>, <strong>postgres</strong>, <strong>ops</strong>, <strong>madtom</strong>, <strong>marlin-dashboard</strong>), there
+should be at least two of each kind of zone in the entire deployment (for
+availability), and they should not be in the same datacenter (in order to
+survive a datacenter loss).  For single-datacenter deployments, they should at
+least be on separate compute nodes.</li>
+<li>Only one <strong>madtom</strong> and <strong>marlin-dashboard</strong> zone is considered required.  It
+would be good to provide more than one in separate datacenters (or at least
+separate compute nodes) for maintaining availability in the face of a
+datacenter failure.</li>
+<li>There should only be one <strong>ops</strong> zone.  If it's unavailable for any reason,
+that will only temporarily affect metering, garbage collection, and reports.</li>
+<li>For <strong>postgres</strong>, there should be at least three instances in each shard.
+For multi-datacenter configurations, these instances should reside in
+different datacenters.  For single-datacenter configurations, they should be
+on different compute nodes.  (Postgres instances from different shards can be
+on the same compute node, though for performance reasons it would be better to
+avoid that.)</li>
+<li>For <strong>moray</strong>, there should be at least two instances per shard in the entire
+deployment, and these instances should reside on separate compute nodes (and
+preferably separate datacenters).</li>
+</ul>
+
+<p>Most of these constraints are required in order to maintain availability in the
+event of failure of any component, server, or datacenter.  Obviously they're
+pretty complicated, so we have some recommended configurations.</p>
+
+<h2 id="example-single-datacenter-multi-server-configuration">Example single-datacenter, multi-server configuration</h2>
+
+<p>On each storage node, you should deploy one "storage" zone.  We recommend
+deploying 128 "marlin" zones for systems with 256GB of DRAM.</p>
+
+<p>If you have N metadata shards, and assuming you'll be deploying 3 postgres
+instances in each shard, you'd ideally want to spread these over 3N compute
+nodes.  If you combine instances from multiple shards on the same host, you'll
+defeat the point of splitting those into shards.  If you combine instances from
+the same shard on the same host, you'll defeat the point of using replication
+for improved availability.</p>
+
+<p>You should deploy at least two Moray instances for each shard onto separate
+compute nodes.  The remaining services can be spread over the compute nodes
+in whatever way, as long as you avoid putting two of the same thing onto the
+same compute node.  Here's an example with two shards using six compute nodes:</p>
+
+<table>
+<thead>
+<tr>
+  <th>CN1</th>
+  <th>CN2</th>
+  <th>CN3</th>
+  <th>CN4</th>
+  <th>CN5</th>
+  <th>CN6</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>postgres 1</td>
+  <td>postgres 1</td>
+  <td>postgres 1</td>
+  <td>postgres 2</td>
+  <td>postgres 2</td>
+  <td>postgres 2</td>
+</tr>
+<tr>
+  <td>moray 1</td>
+  <td>moray 1</td>
+  <td>electric-moray</td>
+  <td>moray 2</td>
+  <td>moray 2</td>
+  <td>electric-moray</td>
+</tr>
+<tr>
+  <td>jobsupervisor</td>
+  <td>jobsupervisor</td>
+  <td>medusa</td>
+  <td>medusa</td>
+  <td>authcache</td>
+  <td>authcache</td>
+</tr>
+<tr>
+  <td>nameservice</td>
+  <td>nameservice</td>
+  <td>nameservice</td>
+  <td>webapi</td>
+  <td>webapi</td>
+  <td>webapi</td>
+</tr>
+<tr>
+  <td>ops</td>
+  <td>marlin-dash</td>
+  <td>madtom</td>
+  <td>loadbalancer</td>
+  <td>loadbalancer</td>
+  <td>loadbalancer</td>
+</tr>
+<tr>
+  <td>jobpuller</td>
+  <td>jobpuller</td>
+</tr>
+</tbody>
+</table>
+
+<p>In this notation, "postgres 1" and "moray 1" refer to an instance of "postgres"
+or "moray" for shard 1.</p>
+
+<h2 id="example-three-datacenter-configuration">Example three-datacenter configuration</h2>
+
+<p>All three datacenters should be in the same region, meaning that they share a
+reliable, low-latency, high-bandwidth network connection.</p>
+
+<p>On each storage node, you should deploy one "storage" zone.  We recommend
+deploying 128 "marlin" zones for systems with 256GB of DRAM.</p>
+
+<p>As with the single-datacenter configuration, you'll want to spread the postgres
+instances for N shards across 3N compute nodes, but you'll also want to deploy
+at least one postgres instance in each datacenter.  For four shards, we
+recommend the following in each datacenter:</p>
+
+<table>
+<thead>
+<tr>
+  <th>CN1</th>
+  <th>CN2</th>
+  <th>CN3</th>
+  <th>CN4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>postgres 1</td>
+  <td>postgres 2</td>
+  <td>postgres 3</td>
+  <td>postgres 4</td>
+</tr>
+<tr>
+  <td>moray    1</td>
+  <td>moray    2</td>
+  <td>moray    3</td>
+  <td>moray    4</td>
+</tr>
+<tr>
+  <td>nameservice</td>
+  <td>nameservice</td>
+  <td>electric-moray</td>
+  <td>authcache</td>
+</tr>
+<tr>
+  <td>ops</td>
+  <td>jobsupervisor</td>
+  <td>jobsupervisor</td>
+  <td>webapi</td>
+</tr>
+<tr>
+  <td>webapi</td>
+  <td>jobpuller</td>
+  <td>loadbalancer</td>
+  <td>loadbalancer</td>
+</tr>
+<tr>
+  <td>marlin-dashboard</td>
+  <td>madtom</td>
+</tr>
+</tbody>
+</table>
+
+<p>In this notation, "postgres 1" and "moray 1" refer to an instance of "postgres"
+or "moray" for shard 1.</p>
+
+<h2 id="other-configurations">Other configurations</h2>
+
+<p>For testing purposes, it's fine to deploy all of Manta on a single system.
+Obviously it won't survive server failure, and there are known issues around
+bringing the system back up after a reboot.  This is not supported for a
+production deployment.</p>
+
+<p>It's not supported to run Manta in an even number of datacenters since there
+would be no way to maintain availability in the face of an even split.  More
+specifically:</p>
+
+<ul>
+<li>A two-datacenter configuration is possible but cannot survive datacenter
+failure or partitioning.  That's because the metadata tier would require
+synchronous replication across two datacenters, which cannot be maintained in
+the face of any datacenter failure or partition.  If we relax the synchronous
+replication constraint, then data would be lost in the event of a datacenter
+failure, and we'd also have no way to resolve the split-brain problem where
+both datacenters accept conflicting writes after the partition.</li>
+<li>For even numbers N &gt;= 4, we could theoretically survive datacenter failure,
+but any N/2 -- N/2 split would be unresolvable.  You'd be better off with N -
+1 datacenters.</li>
+</ul>
+
+<p>It's not supported to run Manta across multiple datacenters not in the same
+region (i.e., not having a reliable, low-latency, high-bandwidth connection
+between all pairs of datacenters).</p>
+
+<h1 id="deploying-manta">Deploying Manta</h1>
+
+<p>Before you get started for anything other than a COAL or lab deployment, be
+sure to read and fully understand the section on "Planning a Manta deployment"
+above.</p>
+
+<p>These instructions assume a single-datacenter installation, but they work on
+anything from COAL to a multi-compute-node deployment.  The general process is:</p>
+
+<ol>
+<li>Set up SDC in each datacenter, including the headnode, all SDC services, and
+all compute nodes you intend to use.  For easier management of hosts, we
+reccommend that the hostname reflect the type of server and, possibly, the
+intended purpose of the host.  For example, we use the the "RA" or "RM"
+prefix for "Richmond-A" hosts and "MS" prefix for "Mantis Shrimp" hosts.</li>
+<li><p>In the global zone of the headnode, set up a manta deployment zone using:</p>
+
+<pre><code>/usbkey/scripts/setup_manta_zone.sh
+</code></pre></li>
+<li><p>Generate a Manta networking configuration file.</p>
+
+<p>a. For COAL, from the GZ, use:</p>
+
+<pre><code>headnode$ /zones/$(vmadm lookup alias=manta0)/root/opt/smartdc/manta-deployment/networking/gen-coal.sh &gt; /var/tmp/netconfig.json
+</code></pre>
+
+<p>b. For lab machines, run this from the <a href="https://mo.joyent.com/docs/lab/master/">lab.git
+   repo</a>:</p>
+
+<pre><code>lab.git$ node bin/genmanta.js -r RIG_NAME LAB_NAME
+</code></pre>
+
+<p>and copy that to the headnode GZ.</p>
+
+<p>c. For other deployments, see "Networking configuration" below.</p></li>
+<li><p>Once you've got the networking configuration file, configure networks by
+running this in the global zone of the headnode:</p>
+
+<pre><code>headnode$ ln -s /zones/$(vmadm lookup alias=manta0)/root/opt/smartdc/manta-deployment/networking /var/tmp/networking
+headnode$ cd /var/tmp/networking
+headnode$ ./manta-net.sh CONFIG_FILE
+</code></pre>
+
+<p>This step is idempotent.  Note that if you are setting up a multi-DC Manta,
+ensure that (1) your SDC networks have corss datacenter connectivity and
+routing set up and (2) the SDC firewalls allow TCP and UDP traffic cross-
+datacenter.</p></li>
+<li><p>Inside the manta deployment zone, run:</p>
+
+<pre><code>manta$ manta-init -s SIZE -e YOUR_EMAIL
+</code></pre>
+
+<p>SIZE must be one of "coal", "lab", or "production".  YOUR_EMAIL is used for
+configuring alarms.</p>
+
+<p>This step runs various initialization steps, including downloading all of
+the zone images required to deploy Manta.  This can take a while the first
+time you run it, so you may want to run it in a screen seesion.  It's
+idempotent.</p></li>
+<li><p>Inside the manta deployment zone, deploy Manta.</p>
+
+<p>a. In COAL, just run <code>manta-deploy-coal</code>.  This step is idempotent.</p>
+
+<p>b. For a lab machine, just run <code>manta-deploy-lab</code>.  This step is
+   idempotent.</p>
+
+<p>c. For any other installation (including a multi-CN installation), you'll
+   want to generate a "manta-adm" configuration file (see "manta-adm
+   configuration" below) and then run <code>manta-adm update config.json</code>.
+   You'll also need to run "manta-shardadm" and "manta-create-topology.sh".
+   These steps are idempotent.  See "manta-deploy-lab" for examples.</p></li>
+<li><p>If desired, set up connectivity to the "ops", "marlin-dashboard", and
+"madtom" zones.  See "Overview of Operating Manta" below for details.</p></li>
+</ol>
+
+<p>See the <a href="https://mo.joyent.com/docs/manta-deployment/master/service-checklist.html">Service Health
+Checklist</a>
+for details on how to check if services are healthy.</p>
+
+<h2 id="networking-configuration">Networking configuration</h2>
+
+<p>The networking configuration file is a per-datacenter JSON file with several
+properties:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Property</th>
+  <th>Kind</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>azs</code></td>
+  <td>array&nbsp;of&nbsp;strings</td>
+  <td>list of all availabililty zones (datacenters) participating in Manta in this region</td>
+</tr>
+<tr>
+  <td><code>this_az</code></td>
+  <td>string</td>
+  <td>string (in <code>azs</code>) denoting this availability zone</td>
+</tr>
+<tr>
+  <td><code>manta_nodes</code></td>
+  <td>array&nbsp;of&nbsp;strings</td>
+  <td>list of server uuid's for <em>all</em> servers participating in Manta in this AZ</td>
+</tr>
+<tr>
+  <td><code>marlin_nodes</code></td>
+  <td>array&nbsp;of&nbsp;strings</td>
+  <td>list of server uuid's (subset of <code>manta_nodes</code>) that are storage nodes</td>
+</tr>
+<tr>
+  <td><code>admin</code></td>
+  <td>object</td>
+  <td>describes the "admin" network in this datacenter (see below)</td>
+</tr>
+<tr>
+  <td><code>manta</code></td>
+  <td>object</td>
+  <td>describes the "manta" network in this datacenter (see below)</td>
+</tr>
+<tr>
+  <td><code>marlin</code></td>
+  <td>object</td>
+  <td>describes the "marlin" network in this datacenter (see below)</td>
+</tr>
+<tr>
+  <td><code>mac_mappings</code></td>
+  <td>object</td>
+  <td>maps each server uuid from <code>manta_nodes</code> to an object mapping each network name ("admin", "manta", and "marlin") to the MAC address on that server over which that network should be created.</td>
+</tr>
+</tbody>
+</table>
+
+<p>"admin", "manta", and "marlin" all describe these networks that are built into Manta:</p>
+
+<ul>
+<li><code>admin</code>: the SDC administrative network</li>
+<li><code>manta</code>: the Manta administrative network, used for high-volume communication
+between all Manta services.</li>
+<li><code>marlin</code>: the network used for compute zones.  This is usually a network that
+gives out private IPs that are NAT'd to the internet so that users can
+contact the internet from Marlin jobs, but without needing their own public
+IP for each zone.</li>
+</ul>
+
+<p>Each of these is an object with several properties:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Property</th>
+  <th>Kind</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>network</code></td>
+  <td>string</td>
+  <td>Name for the SDC network object (usually the same as the network name)</td>
+</tr>
+<tr>
+  <td><code>nic_tag</code></td>
+  <td>string</td>
+  <td>NIC tag name for this network (usually the same as the network name)</td>
+</tr>
+</tbody>
+</table>
+
+<p>Besides those two, each of these blocks has a property for the current
+availability zone that describes the "subnet", "gateway", "vlan_id", and
+"start" and "end" provisionable addresses.</p>
+
+<p>For reference, here's an example multi-datacenter configuration with one service
+node (aac3c402-3047-11e3-b451-002590c57864) and one storage node
+(445aab6c-3048-11e3-9816-002590c3f3bc):</p>
+
+<pre><code>{
+  "this_az": "staging-1",
+
+  "manta_nodes": [
+    "aac3c402-3047-11e3-b451-002590c57864",
+    "445aab6c-3048-11e3-9816-002590c3f3bc"
+  ],
+  "marlin_nodes": [
+    "445aab6c-3048-11e3-9816-002590c3f3bc"
+  ],
+  "azs": [
+    "staging-1",
+    "staging-2",
+    "staging-3"
+  ],
+
+  "admin": {
+    "nic_tag": "admin",
+    "network": "admin",
+    "staging-1": {
+      "subnet": "172.25.3.0/24",
+      "gateway": "172.25.3.1"
+    },
+    "staging-2": {
+      "subnet": "172.25.4.0/24",
+      "gateway": "172.25.4.1"
+    },
+    "staging-3": {
+      "subnet": "172.25.5.0/24",
+      "gateway": "172.25.5.1"
+    }
+  },
+
+  "manta": {
+    "nic_tag": "manta",
+    "network": "manta",
+    "staging-1": {
+      "vlan_id": 3603,
+      "subnet": "172.27.3.0/24",
+      "start": "172.27.3.4",
+      "end": "172.27.3.254",
+      "gateway": "172.27.3.1"
+    },
+    "staging-2": {
+      "vlan_id": 3604,
+      "subnet": "172.27.4.0/24",
+      "start": "172.27.4.4",
+      "end": "172.27.4.254",
+      "gateway": "172.27.4.1"
+    },
+    "staging-3": {
+      "vlan_id": 3605,
+      "subnet": "172.27.5.0/24",
+      "start": "172.27.5.4",
+      "end": "172.27.5.254",
+      "gateway": "172.27.5.1"
+    }
+  },
+
+  "marlin": {
+    "nic_tag": "mantanat",
+    "network": "mantanat",
+    "staging-1": {
+      "vlan_id": 3903,
+      "subnet": "172.28.64.0/19",
+      "start": "172.28.64.4",
+      "end": "172.28.95.254",
+      "gateway": "172.28.64.1"
+    },
+    "staging-2": {
+      "vlan_id": 3904,
+      "subnet": "172.28.96.0/19",
+      "start": "172.28.96.4",
+      "end": "172.28.127.254",
+      "gateway": "172.28.96.1"
+    },
+    "staging-3": {
+      "vlan_id": 3905,
+      "subnet": "172.28.128.0/19",
+      "start": "172.28.128.4",
+      "end": "172.28.159.254",
+      "gateway": "172.28.128.1"
+    }
+  },
+
+  "mac_mappings": {
+    "aac3c402-3047-11e3-b451-002590c57864": {
+      "manta": "90:e2:ba:4b:ec:d1"
+    },
+    "445aab6c-3048-11e3-9816-002590c3f3bc": {
+      "manta": "90:e2:ba:4a:32:71",
+      "mantanat": "90:e2:ba:4a:32:71"
+    }
+  }
+}
+</code></pre>
+
+<p>In a multi-datacenter configuration, this would be used to configure the
+"staging-1" datacenter.  There would be two more configuration files, one
+for "staging-2" and one for "staging-3".</p>
+
+<h2 id="manta-adm-configuration">manta-adm configuration</h2>
+
+<p>"manta-adm" is the tool we use both to deploy all of the Manta zones and then
+to provision new zones, deprovision old zones, or reprovision old zones with a
+new image.  "manta-adm" also has commands for viewing what's deployed, showing
+information about compute nodes, and more, but this section only discusses the
+configuration file format.</p>
+
+<p>A manta-adm configuration file takes the form:</p>
+
+<pre><code>{
+    "COMPUTE_NODE_UUID": {
+        "SERVICE_NAME": {
+            "IMAGE_UUID": COUNT_OF_ZONES
+        },
+        "SHARDED_SERVICE_NAME": {
+            "SHARD_NUMBER": {
+                "IMAGE_UUID": COUNT_OF_ZONES
+            },
+        }
+    },
+}
+</code></pre>
+
+<p>The file specifies how many of each kind of zone should be deployed on each
+compute node.  For most zones, the "kind" of zone is just the service name
+(e.g., "storage").  For sharded zones, you also have to specify the shard
+number.</p>
+
+<p>After you've run "manta-init", you can generate a sample configuration for a
+single-system install using "manta-adm genconfig".  Use that to give you an
+idea of what this looks like:</p>
+
+<pre class="shell"><code>manta-adm genconfig coal
+{
+    "&lt;any&gt;": {
+        "nameservice": {
+            "197e905a-d15d-11e3-90e2-6bf8f0ea92b3": 1
+        },
+        "postgres": {
+            "1": {
+                "92782f28-d236-11e3-9e6c-5f7613a4df37": 2
+            }
+        },
+        "moray": {
+            "1": {
+                "ef659002-d15c-11e3-a5f6-4bf577839d16": 1
+            }
+        },
+        "electric-moray": {
+            "e1043ddc-ca82-11e3-950a-ff14d493eebf": 1
+        },
+        "storage": {
+            "2306b44a-d15d-11e3-8f87-6b9768efe5ae": 2
+        },
+        "authcache": {
+            "5dff63a4-d15c-11e3-a312-5f3ea4981729": 1
+        },
+        "webapi": {
+            "319afbfa-d15e-11e3-9aa9-33ebf012af8f": 1
+        },
+        "loadbalancer": {
+            "7aac4c88-d15c-11e3-9ea6-dff0b07f5db1": 1
+        },
+        "jobsupervisor": {
+            "7cf43bb2-d16c-11e3-b157-cb0adb200998": 1
+        },
+        "jobpuller": {
+            "1b0f00e4-ca9b-11e3-ba7f-8723c9cd3ce7": 1
+        },
+        "medusa": {
+            "bb6e5424-d0bb-11e3-8527-676eccc2a50a": 1
+        },
+        "ops": {
+            "ab253aae-d15d-11e3-8f58-3fb986ce12b3": 1
+        },
+        "marlin": {
+            "1c18ae6e-cf70-473a-a22c-f3536d6ea789": 2
+        }
+    }
+}
+</code></pre>
+
+<p>This file effectively specifies all of the Manta components except for the
+platforms and Marlin agents.</p>
+
+<p>You can generate a configuration file that describes your current deployment
+with <code>manta-adm show -s -j</code>.</p>
+
+<p>For a coal or lab deployment, your best bet is to save the output of <code>manta-adm
+genconfig coal</code> or <code>manta-adm genconfig lab</code> to a file and use that.  This is
+what the <code>manta-deploy-coal</code> and <code>manta-deploy-lab</code> scripts do, and you may as
+well just use those.</p>
+
+<p>Once you have a file like this, you can pass it to "manta-adm update", which
+will show you what it will do in order to make the deployment match the
+configuration file, and then it will go ahead and do it.  For more information,
+see "manta-adm help update".</p>
+
+<h1 id="upgrading-manta-components">Upgrading Manta components</h1>
+
+<h2 id="manta-services-upgrades">Manta services upgrades</h2>
+
+<p>There are two distinct methods of updating instances: you may deploy additional
+instances, or you may reprovision existing instances.</p>
+
+<p>With the first method (new instances), additional instances are provisioned
+using a newer image. This approach allows you to add additional capacity without
+disrupting extant instances, and may prove useful when an operator needs to
+validate a new version of a service before adding it to the fleet.</p>
+
+<p>With the second method (reprovision), this update will swap one image out for a
+newer image, while preserving any data in the instance's delegated dataset. Any
+data or customizations in the instance's main dataset, i.e. zones/UUID, will be
+lost. Services which have persistent state (manatee, mako, redis) must use this
+method to avoid discarding their data. This update moves the service offline for
+15-30 seconds. If the image onto which an image is reprovisioned doesn't work,
+the instance can be reprovisioned back to its original image.</p>
+
+<p>This procedure use "manta-adm" to do the upgrade, which uses the reprovisioning
+method for all zones other than the "marlin" zones.</p>
+
+<h3 id="prerequisites">Prerequisites</h3>
+
+<ol>
+<li><p>Figure out which image you want to install. You can list available images by
+running updates-imgadm:</p>
+
+<pre><code>headnode$ updates-imgadm list name=manta-jobsupervisor | tail
+</code></pre>
+
+<p>Replace manta-jobsupervisor with some other image name, or leave it off to
+see all images. Typically you'll want the most recent one. Note the uuid of
+the image in the first column.</p></li>
+<li><p>Figure out which zones you want to reprovision. In the headnode GZ of a given
+datacenter, you can enumerate the zones and versions for a given manta_role
+using:</p>
+
+<pre><code>headnode$ manta-adm show jobsupervisor
+</code></pre>
+
+<p>You'll want to note the VM UUIDs for the instances you want to update.</p></li>
+</ol>
+
+<h3 id="procedure">Procedure</h3>
+
+<p>Run this in each datacenter:</p>
+
+<ol>
+<li><p>Download updated images.  The supported approach is to re-run the manta-init
+command that you used when initially deploying Manta inside the
+manta-deployment zone.  For us-east, that's:</p>
+
+<p>manta$ manta-init -e manta+us-east@joyent.com -s production -c 10</p></li>
+<li><p>Inside the Manta deployment zone, generate a configuration file representing
+the current deployment state:</p>
+
+<p>manta$ manta-adm show -s -j &gt; config.json</p></li>
+<li><p>Modify the file as desired.  See "manta-adm configuration" above for details
+on the format.  In most cases, you just need to change the image uuid for
+the service that you're updating.  You can get the latest image for a
+service with the following command:</p>
+
+<p>headnode$ sdc-sapi "/services?name=[service name]&amp;include_master=true" | \
+    json -Ha params.image_uuid</p></li>
+<li><p>Update the mantamon alarm configuration as needed.  If you provisioned a new
+zone, you'll likely want to "mantamon add" alarms for that zone.  If you
+deprovisioned a zone, you'll want to "mantamon close" the alarms for that
+now-non-existent zone.  If you reprovisioned a zone, no changes should be
+necessary.  See "Amon Alarm Updates" below for details.</p></li>
+</ol>
+
+<h2 id="marlin-agent-upgrades">Marlin agent upgrades</h2>
+
+<p>Run this procedure for each datacenter whose Marlin agents you want to upgrade.</p>
+
+<ol>
+<li><p>Find the build you want to use.  If you have access to the builds under
+/Joyent_Dev, you can run this from any machine with internet access and the
+Manta CLI tools:</p>
+
+<pre><code>headnode$ mfind -n 'marlin-master-.*\.tar.\gz' \
+    $(mget /Joyent_Dev/stor/builds/marlin/master-latest)/marlin
+</code></pre></li>
+<li><p>Fetch the desired marlin-master-.*.tar.gz tarball to /var/tmp on the
+headnode.  We'll call that file's name TARBALL.</p></li>
+<li><p>Copy the tarball to each of the storage nodes:</p>
+
+<pre><code>headnode$ sdc-oneachnode -n $(manta-adm cn -n storage) \
+    -d /var/tmp -g /var/tmp/TARBALL
+</code></pre></li>
+<li><p>Apply the update to all shrimps with:</p>
+
+<pre><code>headnode$ sdc-oneachnode -n $(manta-adm cn -n storage) \
+    '/opt/smartdc/agents/bin/apm install /var/tmp/TARBALL &amp;&amp; svcs marlin-agent'
+</code></pre></li>
+<li><p>Verify that agents are online with:</p>
+
+<pre><code>headnode$ sdc-oneachnode -n $(manta-adm cn -n storage) 'svcs marlin-agent'
+</code></pre></li>
+<li><p>Make sure most of the compute zones become ready. For this, you can use the
+dashboard or run this periodically:</p>
+
+<pre><code>headnode$ sdc-oneachnode -n $(manta-adm cn -n storage) mrzones
+</code></pre></li>
+</ol>
+
+<p>Note: The "apm install" operation will restart the marlin-agent service, which
+has the impact of aborting any currently-running tasks on that system and
+causing them to be retried elsewhere. They will be retried up to twice, and
+Marlin will avoid retrying in the same AZ if possible. (Of course, if you're not
+careful, it's possible to update the agents in a way that causes multiple
+retries for the same tasks, but as long as you don't bounce each agent more than
+once, this alone should not induce errors.)</p>
+
+<h2 id="manta-deployment-zone-upgrades">Manta deployment zone upgrades</h2>
+
+<pre><code>headnode$ sdcadm update manta
+</code></pre>
+
+<h2 id="amon-alarm-updates">Amon Alarm Updates</h2>
+
+<p>Alarm probes are managed via amon, and specifically in manta via mantamon.  When
+engineering delivers new probes as part of mantamon, the update procedure is to
+update the manta zone to latest (see above), and then:</p>
+
+<pre><code>headnode$ sdc-login manta
+manta$ mantamon alarms
+</code></pre>
+
+<p>At this point you must stop and address any open alarms; note that updating
+mantamon probes involves a full drop and re-add. To close all alarms blindly:</p>
+
+<pre><code>manta$ mantamon alarms -H | awk '{print $1}' | xargs -I {} mantamon close {}
+</code></pre>
+
+<p>Now drop all existing probes, and re-add them.</p>
+
+<pre><code>manta$ mantamon drop
+manta$ mantamon add
+</code></pre>
+
+<h2 id="sdc-zone-and-agent-upgrades">SDC zone and agent upgrades</h2>
+
+<p>SDC zones and agents are upgraded exactly as they are in non-Manta installs.</p>
+
+<p>Note that the SDC agents include the Marlin agent.  If you don't want to update
+the Marlin agent with the SDC agents, you'll need to manually exclude it.</p>
+
+<h2 id="platform-upgrades">Platform upgrades</h2>
+
+<p>Platform updates for compute nodes (including the headnode) are exactly the same
+as for any other SDC compute node.  For reference, this is documented here.</p>
+
+<ol>
+<li><p>Find the platform you want to use.  If you have access to the builds under
+/Joyent_Dev, then you can find the latest with:</p>
+
+<pre class="shell"><code>platform=$(mfind -n 'platform-master-.*.tgz' \
+    $(mget -q /Joyent_Dev/stor/builds/platform/master-latest))
+</code></pre></li>
+<li><p>Copy the platform to /var/tmp on the headnode.  If you have access to the
+builds under Joyent_Dev, you can use "msign" to sign a link to the platform
+from a system with internet access:</p>
+
+<pre class="shell"><code>url=$(msign "$platform")
+</code></pre>
+
+<p>and then download it on each headnode with:</p>
+
+<pre><code>headnode$ cd /var/tmp;
+headnode$ curl -o platform-master-DATESTAMP.tgz -k "URL"
+</code></pre>
+
+<p>where URL is the <code>$url</code> from above.</p></li>
+<li><p>On the headnode, run:</p>
+
+<pre><code>headnode$ /usbkey/scripts/install-platform.sh PATH_TO_PLATFORM
+</code></pre>
+
+<p>where the PATH_TO_PLATFORM is the path to the file in /var/tmp.</p></li>
+<li><p>Stage the new platform onto the compute nodes that you want to update.  This
+step does not actually reboot the node.</p>
+
+<p>a. To update the headnode, use:</p>
+
+<pre><code>headnode$ /usbkey/scripts/switch-platform.sh DATESTAMP
+</code></pre>
+
+<p>b. To update any other node with server uuid SERVER_UUID, use:</p>
+
+<pre><code>headnode$ sdc-cnapi /boot/SERVER_UUID -d '{"platform": "DATESTAMP"}' -X POST
+</code></pre></li>
+<li><p>As desired, reboot the CNs, with the following caveats:</p>
+
+<ul>
+<li>Rebooting the system hosting the ZooKeeper leader will trigger a new
+leader election.  Write service may be lost for a minute or two while this
+happens.</li>
+<li>Rebooting the leader of any manatee shard will trigger a manatee flip.
+Write service will be lost for a minute or two while this happens.</li>
+<li>Other than the above constraints, you may reboot any number of nodes
+within a single AZ at the same time, since Manta survives loss of an
+entire AZ.  If you reboot more than one CN from different AZs at the same
+time, you may lose availability of some services or objects.</li>
+</ul></li>
+<li><p>If you store authorized keys on compute nodes, you'll need to propagate these
+to whatever nodes you've rebooted:</p>
+
+<pre><code>headnode$ sdc-oneachnode -n SERVER_UUID 'mkdir /root/.ssh'
+...
+headnode$ sdc-oneachnode -n SERVER_UUID -d /root/.ssh -g /root/.ssh/authorized_keys
+</code></pre></li>
+</ol>
+
+<h2 id="ssl-certificate-updates">SSL Certificate Updates</h2>
+
+<ol>
+<li><p>Verify your PEM file.  Your PEM file should contain the private key and the
+certificate chain, including your leaf certificate.  Is should be in the
+format:</p>
+
+<pre><code>-----BEGIN RSA PRIVATE KEY-----
+[Base64 Encoded Private Key]
+-----END RSA PRIVATE KEY-----
+-----BEGIN CERTIFICATE-----
+[Base64 Encoded Certificate]
+-----END CERTIFICATE-----
+</code></pre>
+
+<p>You may need to include the certificate chain in the PEM file.  The chain
+should be a series of CERTIFICATE sections, each section having been signed
+by the next CERTIFICATE.  In other words, the PEM file should be ordered by
+the PRIVATE KEY, the leaf certificate, zero or more intermediate
+certificates, and, finally, the root certificate.</p></li>
+<li><p>Take a backup of your current certificate, just in case anything goes wrong.</p>
+
+<pre><code>headnode$ sdc-sapi /services?name=loadbalancer | \
+    json -Ha metadata.SSL_CERTIFICATE \
+    &gt;/var/tmp/manta_ssl_cert_backup.pem
+headnode$ mv /var/tmp/manta_ssl_cert_backup.pem \
+    /zones/$(vmadm lookup alias=~manta)/root/var/tmp/.
+</code></pre></li>
+<li><p>Copy your certificate to the Manta zone after getting your certificate on
+your headnode:</p>
+
+<pre><code>headnode$ mv /var/tmp/ssl_cert.pem \
+    /zones/$(vmadm lookup alias=~manta)/root/var/tmp/.
+</code></pre></li>
+<li><p>Replace your certificate in the loadbalancer application.  Log into the manta
+zone:</p>
+
+<pre><code>headnode$ sdc-login manta
+manta$ /opt/smartdc/manta-deployment/cmd/manta-replace-cert.js \
+    /var/tmp/ssl_cert.pem
+</code></pre></li>
+<li><p>Restart your loadbalancers.  For each <code>manta-login loadbalancer</code>:</p>
+
+<pre><code># Verify your new certificate is in place
+loadbalancer$ cat /opt/smartdc/muppet/etc/ssl.pem
+loadbalancer$ svcadm restart stud
+# Verify no errors in the log
+loadbalancer$ cat `svcs -L stud`
+# Verify the loadbalancer is serving the new certificate
+loadbalancer$ echo QUIT | openssl s_client -host 127.0.0.1 \
+        -port 443 -showcerts
+</code></pre>
+
+<p>An invalid certificate will result in an error like this in the stud logs:</p>
+
+<pre><code>[ Jun 20 18:01:18 Executing start method ("/opt/local/bin/stud --config=/opt/local/etc/stud.conf"). ]
+92728:error:0906D06C:PEM routines:PEM_read_bio:no start line:pem_lib.c:648:Expecting: TRUSTED CERTIFICATE
+92728:error:140DC009:SSL routines:SSL_CTX_use_certificate_chain_file:PEM lib:ssl_rsa.c:729:
+[ Jun 20 18:01:18 Method "start" exited with status 1. ]
+</code></pre></li>
+</ol>
+
+<h2 id="changing-mantamon-contact-methods">Changing Mantamon contact methods</h2>
+
+<p>Mantamon manages AMON alarms and can be reconfigured to use different contacts
+for specific alarms levels <code>alert</code> and <code>info</code>.  For example, you may want alerts
+to go to an alerts email address and info to go to an informational email
+address.  AMON can be configured to send alarms to multiple destinations.  See
+the AMON docs for how to configure contacts.  Alerts are configured via the
+<code>MANTAMON_ALERT</code> metadata field on the SAPI Manta <em>service</em>.  Info-level
+contacts are managed via the <code>MANTAMON_INFO</code> metadata field.  Here is an example
+update for alarms going to an email address and to an XMPP endpoint and info
+going just to XMPP:</p>
+
+<pre><code>headnode$ echo '{
+  "metadata": {
+    "MANTAMON_ALERT": [
+      { "contact": "email" },
+      { "contact": "mantaxmpp", "last": true }
+    ],
+    "MANTAMON_INFO": [
+      { "contact": "mantaxmpp", "last": true }
+    ]
+  }
+}' | sapiadm update $(sdc-sapi /services?name=manta | json -Ha uuid)
+</code></pre>
+
+<p>Note that the last object of the list must have the <code>"last": true</code> key/value.</p>
+
+<h1 id="overview-of-operating-manta">Overview of Operating Manta</h1>
+
+<h2 id="alarms">Alarms</h2>
+
+<p>Alarms are the primary mechanism for operators to discover that something's
+wrong with a Manta deployment.  Manta integrates with <strong>amon</strong>, the SDC alarming
+and monitoring system.  Manta deployment automatically configures alarms for
+each Manta components when they dump core, log serious errors, or experience
+other known kinds of issues.</p>
+
+<p>In order to view and manage all alarms, login to the <code>manta</code> zone on the
+headnode (per datacenter) and run <code>mantamon</code>.  The command is already installed
+and setup; additionally there is a man page for the tool, which you can access
+by just running <code>man mantamon</code> inside the manta zone.  That said, you typically
+will want:</p>
+
+<pre><code>manta$ mantamon alarms
+manta$ mantamon close ...
+</code></pre>
+
+<p>Probes are managed by mantamon, and are centrally checked in via the
+mantamon.git repository.</p>
+
+<p>Unfortunately, at present the alarms are not generally clear about the severity
+of the problem, the impact, or the suggested operator action.  In the Joyent
+Manta deployment, the standard procedure in response to an alarm is to assess
+the system's actual state (by using the command-line tools).  If the system is
+actually data-down (or customers report that it is for them), an engineer is
+paged to assess the problem and correct the issue.</p>
+
+<h2 id="madtom-dashboard-service-health">Madtom dashboard (service health)</h2>
+
+<p>Madtom is a dashboard that presents the state of all Manta components in a
+region-wide deployment.  You can access the Madtom dashboard by pointing a web
+browser to port 80 at the IP address of the "madtom" zone that's deployed with
+Manta.  For the JPC deployment, this is usually accessed through an ssh tunnel
+to the corresponding headnode.</p>
+
+<h2 id="marlin-dashboard-compute-activity">Marlin dashboard (compute activity)</h2>
+
+<p>The Marlin dashboard shows the state of all supervisors and agents and the last
+time each was restarted; the state of all compute zones, which gives a sense of
+overall system health and utilization; and information about jobs, groups, and
+task streams, which represent all the work in the system.  That includes both
+work that's currently executing and work that's queued up to execute.</p>
+
+<p>You can access the Marlin dashboard by pointing a web browser to port 80 on
+the IP address of the "marlin-dashboard" zone that's deployed with Manta.  For
+the JPC deployment, this is usually accessed through an ssh tunnel to the
+corresponding headnode.</p>
+
+<h2 id="marlin-tools">Marlin tools</h2>
+
+<p>Marlin has a few tools to help understand what's going on with a compute job:</p>
+
+<ul>
+<li><code>mrjob</code>: list jobs and fetch details about specific jobs</li>
+<li><code>mrerrors</code>: list errors from recently-executed jobs</li>
+<li><code>mrgroups</code>: list activity <em>on a storage node</em> (must be run on that storage
+node)</li>
+<li><code>mrzones</code>: list zones on a storage node (must be run on that storage node)</li>
+<li><code>mrextractjob</code>: extracts information about a job that completed over 24 hours
+ago from a manatee database dump.</li>
+</ul>
+
+<p>You can run "mrjob" and "mrerrors" directly from the "ops" zone.  "mrgroups" and
+"mrzones" should be run from an individual storage node.  There's a lot more
+information about using these tools under the various "Debugging Marlin"
+sections below.</p>
+
+<p>"mrextractjob" is pretty special-purpose.  For details, see "Fetching
+information about historical jobs" below.</p>
+
+<h2 id="manta-tools">Manta tools</h2>
+
+<p>Unlike Marlin, which keeps track of a lot of state for each job, most Manta
+services are stateless, so there aren't a lot of tools to fetch details about
+their state.  The main one is "mlocate", which takes a Manta object name (like
+"/dap/stor/cmd.tgz"), figures out which shard it's stored on, and prints out the
+internal metadata for it.  You run this inside any "muskie" zone:</p>
+
+<pre><code>[root@204ac483 (webapi) ~]$ /opt/smartdc/muskie/bin/mlocate /dap/stor/cmd.tgz | json
+{
+  "dirname": "/bc8cd146-fecb-11e1-bd8a-bb6f54b49808/stor",
+  "key": "/bc8cd146-fecb-11e1-bd8a-bb6f54b49808/stor/cmd.tgz",
+  "headers": {},
+  "mtime": 1396994173363,
+  "name": "cmd.tgz",
+  "creator": "bc8cd146-fecb-11e1-bd8a-bb6f54b49808",
+  "owner": "bc8cd146-fecb-11e1-bd8a-bb6f54b49808",
+  "type": "object",
+  "contentLength": 17062152,
+  "contentMD5": "vVRjo74mJquDRsoW2HJM/g==",
+  "contentType": "application/octet-stream",
+  "etag": "cb1036e4-3b57-c118-cd46-961f6ebe12d0",
+  "objectId": "cb1036e4-3b57-c118-cd46-961f6ebe12d0",
+  "sharks": [
+    {
+      "datacenter": "staging-2",
+      "manta_storage_id": "2.stor.staging.joyent.us"
+    },
+    {
+      "datacenter": "staging-1",
+      "manta_storage_id": "1.stor.staging.joyent.us"
+    }
+  ],
+  "_moray": "tcp://electric-moray.staging.joyent.us:2020",
+  "_node": {
+    "pnode": "tcp://3.moray.staging.joyent.us:2020",
+    "vnode": 7336153,
+    "data": 1
+  }
+}
+</code></pre>
+
+<p>All of these implementation details are subject to change, but for reference,
+you can see the internal name of the object, its type, content length, size,
+etag, and which sharks store copies of it.</p>
+
+<h2 id="logs">Logs</h2>
+
+<p>Unfortunately, logging is not standardized across all Manta components.  There
+are three common patterns:</p>
+
+<ul>
+<li>Services log to their SMF log file (usually in the
+<a href="https://github.com/trentm/node-bunyan">bunyan</a> format, though startup scripts
+tend to log with bash(1) xtrace output).</li>
+<li>Services log to a service-specific log file in bunyan format (e.g.,
+/var/log/muskie.log).</li>
+<li>Services log to an application-specific log file (e.g., haproxy, postgres).</li>
+</ul>
+
+<p>In all cases, for all components, all logs of interest are rotated hourly into
+/var/log/manta/upload.  Those log files are subsequently uploaded into Manta
+under <code>/poseidon/stor/logs/COMPONENT/YYYY/MM/DD/HH</code>.  As a result, historical
+logs are always available in Manta.</p>
+
+<p>Most custom services use the bunyan format.  The "bunyan" tool is installed in
+/usr/bin to view these logs.  You can also <a href="http://www.joyent.com/blog/node-js-in-production-runtime-log-snooping">snoop logs of running services in
+more detail using bunyan's built-in DTrace
+probes</a>.
+If you find yourself needing to look at the <em>current</em> log file for a component
+(i.e., can't wait for the next hourly upload into Manta), here's a reference for
+the service's that <em>don't</em> use the SMF log file:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Service</th>
+  <th>Path</th>
+  <th>Format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>muskie</td>
+  <td>/var/log/muskie.log</td>
+  <td>bunyan</td>
+</tr>
+<tr>
+  <td>moray</td>
+  <td>/var/log/muskie.log</td>
+  <td>bunyan</td>
+</tr>
+<tr>
+  <td>mbackup<br />(the log file uploader itself)</td>
+  <td>/var/log/mbackup.log</td>
+  <td>bash xtrace</td>
+</tr>
+<tr>
+  <td>haproxy</td>
+  <td>/var/log/haproxy.log</td>
+  <td>haproxy-specific</td>
+</tr>
+<tr>
+  <td>mackerel (metering)</td>
+  <td>/var/log/mackerel.log</td>
+  <td>bunyan</td>
+</tr>
+<tr>
+  <td>mola</td>
+  <td>/var/log/mola*.log</td>
+  <td>bunyan</td>
+</tr>
+<tr>
+  <td>zookeeper</td>
+  <td>/var/log/zookeeper/zookeeper.log</td>
+  <td>zookeeper-specific</td>
+</tr>
+<tr>
+  <td>redis</td>
+  <td>/var/log/redis/redis.log</td>
+  <td>redis-specific</td>
+</tr>
+</tbody>
+</table>
+
+<p>Most of the remaining components log in bunyan format to their service log file
+(including binder, config-agent, electric-moray, jobsupervisor, manatee-sitter,
+marlin-agent, and others).</p>
+
+<h2 id="job-archives">Job archives</h2>
+
+<p>For every job that's ever run on the system, the system records the final
+"job.json" file into Manta under
+<code>/poseidon/stor/job_archives/YYYY/MM/DD/HH/$JOBID.json</code>.  This can be useful for
+limited analysis of jobs run as well as for debugging specific jobs run in the
+past.</p>
+
+<h1 id="debugging-general-tasks">Debugging: general tasks</h1>
+
+<h2 id="locating-systems">Locating systems</h2>
+
+<p>Each physical server has several unique identifers: the server UUID, the
+hostname, the manta compute id, and the manta storage id.  It also has a
+hardware configuration type (Shrimp, Richmond, Tenderloin, etc), a global zone
+IP, and a service processor IP.  Most of these are available from the "manta-adm
+cn" command.</p>
+
+<p>As an example, to fetch the server uuid and global zone IP for RM08218, use:</p>
+
+<pre><code>headnode$ manta-adm cn -o host,server_uuid,admin_ip RM08218
+HOST     SERVER UUID                          ADMIN IP
+RM08218  00000000-0000-0000-0000-00259094c058 10.10.0.34
+</code></pre>
+
+<p>For more information, see <code>manta-adm help cn</code>.</p>
+
+<p>To find a manta zone, log into one of the headnodes and run <code>manta-adm show</code>.</p>
+
+<h2 id="accessing-systems">Accessing systems</h2>
+
+<table>
+<thead>
+<tr>
+  <th>To access ...</th>
+  <th>do this...</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>a&nbsp;headnode</td>
+  <td>ssh directly to the headnode.</td>
+</tr>
+<tr>
+  <td>a&nbsp;compute&nbsp;node</td>
+  <td>ssh to the headnode for that datacenter, then ssh to the CN's GZ ip<br />(see "manta-adm cn" above)</td>
+</tr>
+<tr>
+  <td>a&nbsp;compute&nbsp;zone</td>
+  <td>ssh to the headnode for that datacenter, then use <code>manta-login ZONETYPE</code> or <code>manta-login ZONENAME</code>, where ZONENAME can actually be any unique part of the zone's name.</td>
+</tr>
+<tr>
+  <td>a&nbsp;compute&nbsp;node's&nbsp;console</td>
+  <td>ssh to the headnode for that datacenter, find the compute node's service processor IP, then:<br/><code>ipmitool -I lanplus -H SERVICE_PROCESS_IP -U ADMIN -P ADMIN sol activate</code><br />To exit the console, press enter, then <code>~.</code>, prefixed with as many "~"s as you have ssh sessions. (If ssh'd to the headnode, use enter, then <code>~~.</code>) If you don't use the prefix <code>~</code>s, you'll kill your ssh connection too.</td>
+</tr>
+<tr>
+  <td>a&nbsp;headnode's&nbsp;console</td>
+  <td>ssh to the headnode of one of the other datacenters, then "sdc-login" to the "manta" zone. From there, use the above "ipmitool" command in the usual way with the headnode's SP IP.</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="translating-from-mantacomputeid-or-mantastorageid-to-hostname">Translating from mantaComputeId or mantaStorageId to hostname</h2>
+
+<p>While each system has its own hostname and server_uuid, Manta also assigns a
+separate "storage id" (mantaStorageId) for storage nodes and a "compute id"
+(mantaComputeId) for all nodes.  These identifiers are distinct from the
+hostname and server_uuid in order to support recovery from a failed system.</p>
+
+<p>To translate from a mantaComputeId or a mantaStorageId to a server name, use
+"manta-adm cn":</p>
+
+<pre><code>[root@headnode (us-east-2) ~]# manta-adm cn -o host,compute_id,storage_ids
+HOST     COMPUTE ID               STORAGE IDS
+RM08213  12.cn.us-east.joyent.us  2.stor.us-east.joyent.us
+RM08211  20.cn.us-east.joyent.us  1.stor.us-east.joyent.us
+RM08216  19.cn.us-east.joyent.us  3.stor.us-east.joyent.us
+RM08219  11.cn.us-east.joyent.us  4.stor.us-east.joyent.us
+RA09040  17.cn.us-east.joyent.us  -
+RA09022  16.cn.us-east.joyent.us  -
+RA09027  18.cn.us-east.joyent.us  -
+RA09041  15.cn.us-east.joyent.us  -
+</code></pre>
+
+<p>Note that the column name is "storage_ids" (with a trailing "s") because it's
+technically possible to have multiple storage nodes per host, though you'd only
+ever do that in development.</p>
+
+<h1 id="debugging-marlin-distributed-state">Debugging Marlin: distributed state</h1>
+
+<p>The "mrjob" and "mrerrors" tools summarize Marlin state by reading it directly
+from Moray.  This is usually the first step towards figuring out what's going on
+with Marlin overall or with a particular job.  You should be able to run these
+tools directly from the "ops" zone, but you can also set them up by cloning the
+marlin.git repo and running "npm install" to build the tools.  Some examples
+below use the Moray client tools, which should also be available if you follow
+the above procedure.</p>
+
+<h2 id="list-running-jobs">List running jobs</h2>
+
+<p>Use <code>mrjob list -s running</code>:</p>
+
+<pre><code>ops$ mrjob list -s running
+JOBID                                LOGIN          S NOUT NERR NRET NDISP NCOMM
+b1f8c8ce-8afe-445e-8846-484ac908ebd0 jason          R    0    0    0     1     0
+</code></pre>
+
+<h2 id="list-recently-completed-jobs">List recently completed jobs</h2>
+
+<p>Use <code>mrjob list -t 60</code>, where "60" is the number of seconds back to look:</p>
+
+<pre><code>ops$ mrjob list -t 60
+JOBID                                LOGIN          S NOUT NERR NRET NDISP NCOMM
+ed4eff3c-5e2e-4fcb-ad67-3ac09629056f jason          D    1    0    0   485   485
+</code></pre>
+
+<h2 id="fetch-details-about-a-job">Fetch details about a job</h2>
+
+<p>Use <code>mrjob get</code>:</p>
+
+<pre><code>ops$ mrjob get a2922490-c8de-e4b3-abbc-f3367464b651
+       Job a2922490-c8de-e4b3-abbc-f3367464b651
+  Job name interactive compute job
+      User thoth (aed35417-4c53-4d6c-a127-fd8a6e55723b)
+     State running
+Supervisor dd55ea98-9dc9-4b57-84ab-380ba5252fed
+   Created 2014-01-16T22:22:49.173Z (1h10m12.679s ago)
+  Progress 1 inputs read, 1 tasks dispatched, 0 tasks committed
+   Results 0 outputs, 0 errors, 0 retries
+   Pending 0 uncommitted done, 0 intermediate objects
+   Phase 0 map
+</code></pre>
+
+<p>You can use <code>-p</code> to get details about what the job runs in each phase:</p>
+
+<pre><code>ops$ mrjob get -p a2922490-c8de-e4b3-abbc-f3367464b651
+       Job a2922490-c8de-e4b3-abbc-f3367464b651
+  Job name interactive compute job
+      User thoth (aed35417-4c53-4d6c-a127-fd8a6e55723b)
+     State running
+Supervisor dd55ea98-9dc9-4b57-84ab-380ba5252fed
+   Created 2014-01-16T22:22:49.173Z (1h11m00.527s ago)
+  Progress 1 inputs read, 1 tasks dispatched, 0 tasks committed
+   Results 0 outputs, 0 errors, 0 retries
+   Pending 0 uncommitted done, 0 intermediate objects
+   Phase 0 map
+     asset /poseidon/public/medusa/agent.sh
+     asset /thoth/stor/medusa-config-fa937d4b-f699-4f1b-bea5-69147fa97977.json
+     asset /thoth/stor/thoth/analyzers/.thoth.87707.1389910968.355
+      exec "/assets/poseidon/public/medusa/agent.sh"
+</code></pre>
+
+<p>See <code>mrjob --help</code> for more options.</p>
+
+<p>If the job completed more than 24 hours ago, then mrjob may report an error
+like:</p>
+
+<pre><code>ops$ mrjob get 43a9949b-4fab-4037-a32a-371146ac44f9
+mrjob: failed to fetch job: failed to fetch job: marlin_jobs_v2::43a9949b-4fab-4037-a32a-371146ac44f9 does not exist
+</code></pre>
+
+<p>That's because jobs are removed from the live database about 24 hours after they
+complete.  In that case, see "Fetching information about older jobs".</p>
+
+<h2 id="list-job-inputs-outputs-retries-and-errors-as-a-user-would-see-them">List job inputs, outputs, retries, and errors (as a user would see them)</h2>
+
+<p>All of these are capped at 1000 results by default.</p>
+
+<p><code>mrjob inputs JOBID</code>: list input objects for a job (capped at 1000)</p>
+
+<p><code>mrjob outputs JOBID</code>: list output objects from a job (capped at 1000)</p>
+
+<p><code>mrjob errors JOBID</code>: list retries from a job (capped at 1000)</p>
+
+<p><code>mrjob retries JOBID</code>: list retries from a job (capped at 1000)</p>
+
+<h2 id="fetch-summary-of-errors-for-a-job">Fetch summary of errors for a job</h2>
+
+<p>Use <code>mrerrors -j JOBID</code>.  The output includes internal error messages and
+retried errors, which are not exposed to end users.</p>
+
+<h2 id="list-tasks-not-yet-completed-for-a-given-job-and-see-where-theyre-running">List tasks not-yet-completed for a given job (and see where they're running)</h2>
+
+<p>Use <code>mrjob where</code> to list uncompleted tasks and see where they're running:</p>
+
+<pre><code>ops$ mrjob where e493ab87-fcf0-e991-8b82-8f649696d197
+TASKID                               PH       NIN SERVER
+6ce64b78-691b-4703-970a-de2fb84b69f1  0         - 1.cn.us-east.joyent.us
+     map: /dap/stor/mdb.log
+</code></pre>
+
+<p>Note that physical storage nodes in Manta are identified by mantaComputeId
+rather than server_uuid or hostname.  You need to translate this to figure out
+which physical server that corresponds to.</p>
+
+<h2 id="see-the-history-of-a-given-task">See the history of a given task</h2>
+
+<p>You may find a task through <code>mrjob get</code> or <code>mrjob where</code> and want to know its
+history: what inputs or previous-phase tasks caused this task to be created?  Is
+it a retry of a previous task?  How many times was it retried, and on which
+hosts?  <code>mrjob taskhistory</code> helps answer these questions.</p>
+
+<p>The point of this tool is to show two things: how a given input moved through
+multiple phases in Marlin, and how individual tasks are retried.  The goal is
+that given any taskid, it will find predecessors in previous phases,
+predecessors in the same phase (retries), successors in the same phase
+(retries), and successors in subsequent phases.  The main thing it doesn't do
+is go <em>through</em> reduce phases, because that's usually counter-productive and in
+general it's not possible to correlate inputs with outputs across a reduce
+phase.</p>
+
+<p>Here's an example usage.  I ran this job (note the phases):</p>
+
+<pre><code>ops$ mrjob get -p ea784e03-a735-cd29-d913-b1b9cb5f0503
+       Job ea784e03-a735-cd29-d913-b1b9cb5f0503
+      User dap (ddb63097-4093-4a74-b8e8-56b23eb253e0)
+     State done
+Supervisor eff884b4-f678-4069-8522-1bbe2e4fcb90
+   Created 2014-01-17T19:22:02.326Z (16m38.446s ago)
+      Done 2014-01-17T19:22:35.110Z (32.784s total)
+  Archived 2014-01-17T19:22:38.064Z (16m02.708s ago)
+  Progress 100 inputs read, 242 tasks dispatched, 242 tasks committed
+   Results 15 outputs, 0 errors, 12 retries
+   Phase 0 map
+      exec "wc"
+   Phase 1 map
+      exec "wc"
+   Phase 2 reduce (15)
+      exec "wc"
+   Phase 3 map
+      exec "wc"
+</code></pre>
+
+<p>So it's 100 inputs -> map -> map -> 15 reducers -> map.  Because Marlin is
+currently disabled on 9.stor in production, there were retries in both map
+phases and reduce phases, so this is a good example to show what
+<code>mrjob taskhistory</code> does.  I used <code>mrjob get -t</code> to find some of these tasks,
+although if a job was currently stuck, you could also use <code>mrjob where</code>.</p>
+
+<p>Here's a normal history for one of the first phase tasks:</p>
+
+<pre><code>ops$ mrjob taskhistory 33b7f617-141e-4673-8056-a27a6f511b60
+2014-01-17T19:22:02.814Z  jobinput   318ed0ad-8aed-4f74-af90-a7cfefc87880
+    /dap/stor/datasets/cmd/cmd/acct/acctcms.c
+
+2014-01-17T19:22:03.746Z  map task   33b7f617-141e-4673-8056-a27a6f511b60
+                                     (attempt 1, host 11.cn.us-east.joyent.us)
+    /dap/stor/datasets/cmd/cmd/acct/acctcms.c
+
+2014-01-17T19:22:04.142Z  taskoutput b9bb82de-416d-4ac3-a962-09f75a140932
+    /dap/jobs/ea784e03-a735-cd29-d913-b1b9cb5f0503/stor/dap/stor/datasets/cmd/cmd/acct/acctcms.c.0.33b7f617-141e-4673-8056-a27a6f511b60
+
+2014-01-17T19:22:08.663Z  map task   1b370599-90b3-4c03-a388-c8967798d396
+                                     (attempt 1, host 25.cn.us-east.joyent.us)
+
+2014-01-17T19:22:09.078Z  taskoutput c98b68d1-1b76-4adf-845c-f7392d860694
+    /dap/jobs/ea784e03-a735-cd29-d913-b1b9cb5f0503/stor/dap/stor/datasets/cmd/cmd/acct/acctcms.c.1.1b370599-90b3-4c03-a388-c8967798d396
+
+2014-01-17T19:22:13.398Z  taskinput  1d4cf4de-9c4c-4841-b801-0595f69b2ff0
+    /dap/jobs/ea784e03-a735-cd29-d913-b1b9cb5f0503/stor/dap/stor/datasets/cmd/cmd/acct/acctcms.c.1.1b370599-90b3-4c03-a388-c8967798d396
+
+2014-01-17T19:22:02.447Z  reducer    015f6dbb-8bb3-4b07-b806-12bdf46fd8a8
+                                     (attempt 1, host 11.cn.us-east.joyent.us)
+                                     4 inputs
+</code></pre>
+
+<p>This shows the jobinput that created the task, the output from the task that
+created the next map task, the output from that task that becamse a taskinput
+for the reducer, and the reducer.  For each task, it shows the host assigned to
+run it.  You'd get the exact same output if you specified tasks
+1b370599-90b3-4c03-a388-c8967798d396 or 015f6dbb-8bb3-4b07-b806-12bdf46fd8a8.</p>
+
+<p>Here's an example where one of the early phase map tasks failed and had to be retried:</p>
+
+<pre><code>ops$ mrjob taskhistory a322ebe6-3279-40ee-8c7e-88130def17b4
+2014-01-17T19:22:03.220Z  jobinput   5f72c373-9155-459e-9032-0ac18ecaef6a
+    /dap/stor/datasets/cmd/cmd/addbadsec/addbadsec.c
+
+2014-01-17T19:22:03.660Z  map task   a322ebe6-3279-40ee-8c7e-88130def17b4
+                                     (attempt 1, host 9.cn.us-east.joyent.us)
+    /dap/stor/datasets/cmd/cmd/addbadsec/addbadsec.c
+
+2014-01-17T19:22:06.411Z  error      bb08a232-75d6-4b59-a80c-3f369f84d64a
+                                     InternalError
+                                     internal error: agent timed out
+
+2014-01-17T19:22:07.551Z  map task   e4c80edb-5302-4f6f-af19-336be9834e92
+                                     (attempt 2, host 26.cn.us-east.joyent.us)
+    /dap/stor/datasets/cmd/cmd/addbadsec/addbadsec.c
+
+2014-01-17T19:22:07.679Z  taskoutput c79dc94d-5800-4e59-b808-998c94024c2f
+    /dap/jobs/ea784e03-a735-cd29-d913-b1b9cb5f0503/stor/dap/stor/datasets/cmd/cmd/addbadsec/addbadsec.c.0.e4c80edb-5302-4f6f-af19-336be9834e92
+
+2014-01-17T19:22:12.279Z  map task   c6cbe67f-2c9d-4c50-ae0c-53590303f544
+                                     (attempt 1, host 19.cn.us-east.joyent.us)
+
+2014-01-17T19:22:12.529Z  taskoutput 70275969-c92f-4700-96c2-9564158be0b2
+    /dap/jobs/ea784e03-a735-cd29-d913-b1b9cb5f0503/stor/dap/stor/datasets/cmd/cmd/addbadsec/addbadsec.c.1.c6cbe67f-2c9d-4c50-ae0c-53590303f544
+
+2014-01-17T19:22:15.271Z  taskinput  22b96b55-86f2-43a1-9271-9a9334726a61
+    /dap/jobs/ea784e03-a735-cd29-d913-b1b9cb5f0503/stor/dap/stor/datasets/cmd/cmd/addbadsec/addbadsec.c.1.c6cbe67f-2c9d-4c50-ae0c-53590303f544
+
+2014-01-17T19:22:02.447Z  reducer    6e009faa-a0d8-478a-9b66-ae82852fbf45
+                                     (attempt 1, host 25.cn.us-east.joyent.us)
+                                     7 inputs
+</code></pre>
+
+<p>In this case, we see the map task we asked about, the error it produced, and the map retry task below it on a different host.</p>
+
+<p>Here's what happens when we select a reducer that failed:</p>
+
+<pre><code>ops$ mrjob taskhistory 3ac67932-75ba-4ce0-891e-1b295949a3be
+2014-01-17T19:22:02.447Z  reducer    3ac67932-75ba-4ce0-891e-1b295949a3be
+                                     (attempt 1, host 9.cn.us-east.joyent.us)
+                                     input stream open
+
+2014-01-17T19:22:06.424Z  error      c3923a5f-93ea-425e-92c3-694b6bf08b3d
+                                     InternalError
+                                     internal error: agent timed out
+
+2014-01-17T19:22:07.542Z  reducer    c98bd373-6c08-4032-b405-bf0a0e18f820
+                                     (attempt 2, host 12.cn.us-east.joyent.us)
+                                     9 inputs
+</code></pre>
+
+<p>We don't see any of the previous or subsequent phase tasks because
+"taskhistory" doesn't cross reduce phases.  (That would usually degenerate to
+showing everything in the job, which isn't useful here.)</p>
+
+<p>Here's a particularly complicated case.  The input went through two normal map
+phases, then became a taskinput to the <em>second</em> attempt for a reducer.  We
+still show the first reducer here in the output, but it shows up before the
+taskinput, indicating that the first reducer failed logically before this
+object was assigned to the reducer, so it was assigned directly to the second
+attempt:</p>
+
+<pre><code>ops$ mrjob taskhistory 94851372-49b9-48fd-b5ca-b51b330561ab
+2014-01-17T19:22:03.024Z  jobinput   237d6925-75e4-4a0a-9186-cd214b510e6a
+    /dap/stor/datasets/cmd/cmd/acct/acctwtmp.c
+
+2014-01-17T19:22:03.633Z  map task   4906e7b9-c65e-4655-95d0-5bdcbda62b39
+                                     (attempt 1, host 26.cn.us-east.joyent.us)
+    /dap/stor/datasets/cmd/cmd/acct/acctwtmp.c
+
+2014-01-17T19:22:04.164Z  taskoutput 41dd8fac-2923-42ec-a893-43318596472b
+    /dap/jobs/ea784e03-a735-cd29-d913-b1b9cb5f0503/stor/dap/stor/datasets/cmd/cmd/acct/acctwtmp.c.0.4906e7b9-c65e-4655-95d0-5bdcbda62b39
+
+2014-01-17T19:22:07.380Z  map task   94851372-49b9-48fd-b5ca-b51b330561ab
+                                     (attempt 1, host 293.cn.us-east.joyent.us)
+
+2014-01-17T19:22:07.604Z  taskoutput 5cbb34ab-a0f4-4144-9629-629d323cc1f0
+    /dap/jobs/ea784e03-a735-cd29-d913-b1b9cb5f0503/stor/dap/stor/datasets/cmd/cmd/acct/acctwtmp.c.1.94851372-49b9-48fd-b5ca-b51b330561ab
+
+2014-01-17T19:22:02.447Z  reducer    660f7838-4055-49b3-8376-dec9648ec2a5
+                                     (attempt 1, host 9.cn.us-east.joyent.us)
+                                     input stream open
+
+2014-01-17T19:22:06.397Z  error      4263bcc0-3a5e-433b-9460-b5970044cb51
+                                     InternalError
+                                     internal error: agent timed out
+
+2014-01-17T19:22:12.279Z  taskinput  686236b8-1de2-4ef6-aa6b-e4f908c2497a
+    /dap/jobs/ea784e03-a735-cd29-d913-b1b9cb5f0503/stor/dap/stor/datasets/cmd/cmd/acct/acctwtmp.c.1.94851372-49b9-48fd-b5ca-b51b330561ab
+
+2014-01-17T19:22:07.539Z  reducer    318b47e5-a234-4fa0-b11e-e80701cfc90d
+                                     (attempt 2, host 9.cn.us-east.joyent.us)
+                                     input stream open
+
+2014-01-17T19:22:11.437Z  error      681faf97-2ae5-4938-89a8-d422e7156d11
+                                     InternalError
+                                     internal error: agent timed out
+
+2014-01-17T19:22:12.689Z  reducer    721187a7-5df1-4ce1-9c3b-9e54ffd71cce
+                                     (attempt 3, host 20.cn.us-east.joyent.us)
+                                     6 inputs
+</code></pre>
+
+<h2 id="using-the-moray-tools-to-fetch-detailed-state">Using the Moray tools to fetch detailed state</h2>
+
+<p>Sometimes it's necessary to dig into the Moray state directly because "mrjob"
+doesn't have a subcommand to fetch exactly what you want.  Please file tickets
+for such things, but in the meantime, you can use the Moray client tools to
+extract state directly.  The Moray client tools should be available on your
+PATH if you've set up the Marlin tools.</p>
+
+<h2 id="figuring-out-which-jobsupervisor-is-managing-a-job">Figuring out which jobsupervisor is managing a job</h2>
+
+<p>You can find the jobsupervisor that's managing a job with:</p>
+
+<pre><code>ops$ getobject marlin_jobs_v2 994703de-0c5c-49e8-ba98-8361d1624ae1 | \
+    json value.worker
+4fdcffe8-30ef-476e-8266-279a241c76c0
+</code></pre>
+
+<p>where 994703de-0c5c-49e8-ba98-8361d1624ae1 is the jobid.</p>
+
+<p>The returned value is the zonename of the jobsupervisor that <em>normally</em> manages
+the job.  In most cases, this is also the jobsupervisor that's currently
+managing the job.  However, it's possible for one jobsupervisor to take over for
+another.  You can check this with:</p>
+
+<pre><code>ops$ findobjects marlin_health_v2 instance=4fdcffe8-30ef-476e-8266-279a241c76c0 | \
+    json value
+{
+  "component": "worker",
+  "instance": "4fdcffe8-30ef-476e-8266-279a241c76c0",
+  "generation": "2013-07-02T16:23:36.810Z"
+}
+</code></pre>
+
+<p>This case indicates that the supervisor is functioning normally.  If one
+supervisor takes over for another, you'll see an "operatedBy" field with the
+uuid of the supervisor that's taken over for this supervisor.</p>
+
+<h1 id="debugging-marlin-storage-nodes">Debugging Marlin: storage nodes</h1>
+
+<h2 id="figuring-out-whats-running">Figuring out what's running</h2>
+
+<p>mrjob only shows overall system state.  Once a task is issued to a server, you
+have to contact the agent running on that server to figure out the status.  The
+dashboard shows running groups and streams, but you can get more information by
+logging into the box and running the "mrgroups" and "mrzones" tools.
+Continuing the above example, 25.cn.us-east.joyent.us corresponds to MS08214 in
+us-east-1, so we can log into that box and run <code>mrgroups</code>:</p>
+
+<pre><code>[root@MS08214 (us-east-1) ~]# mrgroups
+JOBID                                PH NTASKS RUN SHARE  LOGIN
+4ff04c4d-4540-483d-94ca-d515320d2b9d  0      0   1      1 dap
+946587d1-3ef6-46d5-b139-186d59813f9d  3      1   0      1 poseidon
+</code></pre>
+
+<p>"Groups" refer to a bunch of tasks from the same job and phase.  A two-phase
+job will have two groups on each physical server where it's running.  Each
+group may have multiple "streams" associated with it, each corresponding to a
+compute zone where tasks are running.  We can see these with:</p>
+
+<pre><code>[root@MS08214 (us-east-1) ~]# mrgroups -s
+JOBID       PH ZONE                                 LAST START
+4ff04c4d...  0 1118c00b-4729-4c18-a289-f54afe2d9e9d 2013-07-02T22:16:17.746Z
+946587d1...  3 4836fd7b-d80d-4b2d-8519-8955ca5621ff 2013-07-02T22:20:30.068Z
+</code></pre>
+
+<p>In this simple case, each of the two jobs running on this box has one group,
+and each group has one zone.  But in general:</p>
+
+<ul>
+<li>On a given box, you can have many groups for each job -- one for each phase.</li>
+<li>On a given box, for a given group, you can have many streams -- one for each
+zone that's been assigned to that group.</li>
+</ul>
+
+<p>You can even see exactly what processes the user's job is running:</p>
+
+<pre><code>[root@MS08214 (us-east-1) ~]# mrgroups -sv
+JOBID       PH ZONE                                 LAST START
+4ff04c4d...  0 1118c00b-4729-4c18-a289-f54afe2d9e9d 2013-07-02T22:16:17.746Z
+  90397 ./node lib/agent.js
+    90403 /bin/bash --norc
+</code></pre>
+
+<p>This is useful when a customer complains of a hung job or something and you
+want to go see exactly what it's doing.  The full procedure is:</p>
+
+<ul>
+<li>Use "mrjob" or "findobjects" to find the task of interest (usually, one of
+the only running tasks) and figure out which machine it's running on.</li>
+<li>ssh to the machine it's running on.</li>
+<li>Run <code>mrgroups -sv</code> to view running streams on that box and the processes
+they're running</li>
+<li>Use truss, DTrace, or whatever other tools you usually use for inspecting
+process state -- with the usual caveats about interfering with production
+systems.</li>
+</ul>
+
+<p>The user task's stdout and stderr are saved to /var/tmp/marlin_task inside the
+zone.  These are the stdout and stderr files that will be saved to Manta when
+the task completes, so do not modify or remove them!</p>
+
+<h2 id="figuring-out-what-ran-in-the-past">Figuring out what ran in the past</h2>
+
+<p>After the job has completed, all we save is the lackey log (see above).  That's
+currently saved for a few days in the global zone, under
+/var/smartdc/marlin/log/zones.  Files are named JOBID.PHASENUM.UUID.  The usual
+way to find the right one is to find the taskId that you're debugging as
+described above, and then:</p>
+
+<pre><code>shrimp-gz$ grep -l TASKID /var/smartdc/marlin/log/zones/JOBID.*
+</code></pre>
+
+<p>That usually returns pretty quickly, and you can view the file with bunyan(1).</p>
+
+<p>Lackey logs are not currently rotated up to Manta.  They are removed after a
+few days.</p>
+
+<h1 id="debugging-marlin-anticipated-frequent-issues">Debugging Marlin: anticipated frequent issues</h1>
+
+<h2 id="users-want-more-information-about-job-progress">Users want more information about job progress</h2>
+
+<p>The "mjob get" output for a job includes a count of tasks issued and tasks
+completed.  This can be used to measure progress.  If you've got a 100-object
+map job where each input produces one output, there will be 100 tasks issued,
+and when they all complete, the job is done.  If you tack on a second phase to
+that job with count=2 reducers, there will be 102 tasks, and so on.</p>
+
+<p>In general, the user can figure out how many tasks a job <em>should</em> have, but
+Manta can't necessarily infer this in many cases.  That's because each task can
+emit any number of output objects.  So if you have a two-phase map-map job and
+feed in 100 inputs, you could emit 1, 2, 5, or 100 outputs from <em>each</em> task in
+the first phase, and Manta has know way to know.  That's why the only progress
+Manta provides is number of tasks issued and number of tasks completed, from
+which a user may be able to compute their own measure of progress.</p>
+
+<h2 id="users-observe-non-zero-count-of-errors-from-mjob-get">Users observe non-zero count of errors from "mjob get"</h2>
+
+<p>See "Fetch summary of errors for a job" above.  Most error messages should be
+pretty self-explanatory, but some of the more complicated ones are described
+below.</p>
+
+<h2 id="users-observe-non-zero-count-of-retries-from-mjob-get">Users observe non-zero count of retries from "mjob get"</h2>
+
+<p>Besides the "tasks issued", "tasks completed", and error counters, the "mjob
+get" output for a job also shows a count of retries.  These aren't generally
+actionable for users except to explain latency.</p>
+
+<p>Retries represent internal failures that the system believes may be transient.
+There are currently three causes:</p>
+
+<ul>
+<li>An agent crashed.  This is the most common.  When an agent crashes, all tasks
+that were running or queued on that system are retried, preferably on other
+systems.  There may be a latency hit for restarting or requeueing the task,
+but it shouldn't impact correctness.</li>
+<li>An agent failed to heartbeat for a full minute, possibly a result of a system
+panic, network partition, or excessive load.  The same thing happens as for an
+agent crash.</li>
+<li>The user hits a condition where Marlin allocated a large number of zones to
+the job, but later decided to forcibly take some of those zones back.</li>
+</ul>
+
+<p>You can find out exactly what caused the retries using "mrerrors -j JOBID".  See
+"Fetch summary of errors for a job" above.</p>
+
+<h2 id="user-observes-job-in-queued-state">User observes job in "queued" state</h2>
+
+<p>Jobs enter the "queued" state when they're submitted, but should move to
+"running" very quickly, even if Manta's compute resources are all tied up.  If
+jobs remain in state "queued" for more than a minute, there are several things
+to check:</p>
+
+<ul>
+<li>Run a simple no-op job, like "mjob create -m wc &lt; /dev/null".  That job
+should complete within a second or two without dispatching any tasks.  If it
+does, there's likely something invalid about the user's job that the system
+failed to handle properly.  Check the corresponding jobsupervisor's log (see
+"Figuring out which jobsupervisor is managing a job").</li>
+<li>If that test job remains queued for a minute, check that the jobsupervisor
+services are healthy (namely, that the SMF service is running, not in
+maintenance).  If they're maintenance, try clearing one.  If it comes up, it
+should pick up your test job and run it.</li>
+<li>If any jobsupervisors are healthy but all jobs are still queued, check the
+supervisor logs for recent errors (with "bunyan -lerror").  It's likely that
+they're not able to connect to the Marlin Moray shard, in which case the next
+step is to check whether Moray is working.</li>
+</ul>
+
+<h2 id="job-hung-not-making-forward-progress">Job hung (not making forward progress)</h2>
+
+<p>A job is making forward progress if any of the counters shown by "mjob get" are
+incremented over time.  If the counters stay steady, there may be a Marlin
+issue, but there may also be a user error or simply a long-running task.</p>
+
+<ul>
+<li>The first thing to check is whether the user has ended the input stream.
+"mjob get" will report "inputDone": true once the input stream has been ended.
+If the input stream is not ended, Marlin is waiting for the user to submit
+inputs.</li>
+<li>Check if there are any tasks outstanding.  See "List tasks not-yet-completed
+for a given job", and then investigate with "Figuring out what's running".</li>
+<li>If nothing's running, check that the jobsupervisor responsible for this job is
+healthy.  See "Figuring out which jobsupervisor is managing a job".</li>
+</ul>
+
+<h2 id="poor-job-performance">Poor job performance</h2>
+
+<p>Alongside "mrjob" and "mrerrors" is a tool called "mrjobreport" which prints out
+a summary of time spent processing a job.  This can be used to tell where time
+was spent: dispatching tasks, queued behind other tasks, executing, or
+committing the results.  It can also identify the slowest tasks.  You can then
+look at the lackey log from those jobs to figure out why they took so long.</p>
+
+<p>For smaller jobs, you can also use "mrjob log JOBID", which prints out a log of
+everything that happened for a job.  You can use this to find long periods where
+nothing happened.</p>
+
+<h2 id="error-user-task-error-for-unknown-reason">Error: User Task Error (for unknown reason)</h2>
+
+<p>User task errors usually indicate that the user's script either exited with a
+non-zero status, or one of the user's processes dumped core.  The error message
+should generally be pretty clear, and where appropriate should have a link to
+the stderr and core file.  (Stderr is not saved for successful tasks.)</p>
+
+<p>If a user can't figure out why their bash script exited with non-zero status,
+check if they're running afoul of bash's pipeline exit semantics.  From bash(1):</p>
+
+<pre><code>The  return  status of a pipeline is the exit status of the last com-
+mand, unless the pipefail option is enabled.  If pipefail is enabled,
+the  pipeline's  return  status  is the value of the last (rightmost)
+command to exit with a non-zero status, or zero if all commands  exit
+successfully.
+</code></pre>
+
+<p>Users likely want to be setting pipefail, which you can do using "set -o
+pipefail" right in the bash script.</p>
+
+<h2 id="error-task-init-error">Error: Task Init Error</h2>
+
+<p>There are several common causes of TaskInitErrors, and the error message should
+generally be clear in each case:</p>
+
+<ul>
+<li>an asset failed to be downloaded (the HTTP status code will be included in
+the error message)</li>
+<li>the user had an "init" script which either returned a non-zero exit status or
+dumped core</li>
+<li>Requested image is not available: this is supposed to be emitted when the user
+asks for an image that is not supported using the "image" property of a job.
+If the user did not ask for any image, see below.</li>
+<li>Not enough memory available: the user asked for more memory than the default,
+and all of the memory on the system they were assigned to was spoken for.
+The task may succeed later.  We should be keeping track of these stats so
+that we can see if we need to allocate more memory to Marlin.</li>
+<li>Not enough disk available: same as memory, but for disk.</li>
+</ul>
+
+<p>Note that the memory and disk errors are different from the similar
+UserTaskErrors "user task ran out of memory" and "user task ran out of local
+disk space", which mean that the task actually did run, but bumped up against
+the requested limits.  The user should ask for more memory or disk,
+respectively.</p>
+
+<p>More esoteric errors indicate more serious Marlin issues:</p>
+
+<ul>
+<li>"Requested image is not available," and the user did not request any
+particular image.  We've seen this in cases where the Marlin agent was enabled
+on a node <em>other</em> than a Manta storage node (e.g., a CN hosting the metadata
+services).  Audit that the only instances of marlin-agent enabled in the whole
+fleet are the ones on the Manta storage nodes (shrimps).</li>
+</ul>
+
+<h2 id="error-internal-error">Error: Internal Error</h2>
+
+<p>Users should never see internal errors.  Transient ones are generally retried,
+and persistent ones often represent serious issues.  Use "mrerrors -j JOBID" to
+see the details, including the internal error message.</p>
+
+<p>The most common cause is "lackey timeout".  This can be a result of user error
+(e.g., if the user pstops the lackey, or kills it, possibly by trying to halt
+the zone), or it can indicate that the lackey crashed.  Look for core files in
+the zone and file a bug.  You can also look in the lackey log to see why it
+crashed.</p>
+
+<p>One error we've seen is ": not connected: ".  This is issued by a jobsupervisor
+when attempting to locate an object, but when it fails to contact the
+electric-moray service.  Check supervisor health, look for errors in the log,
+and check whether electric-moray is online.</p>
+
+<h2 id="zones-not-resetting">Zones not resetting</h2>
+
+<p>There have been a few bugs where Marlin zone resets hang.  For a single zone,
+this just reduces capacity, usually by an immeasurable amount.  In some cases,
+this ends up affecting all zones on a system, in which case forward progress for
+nearly all jobs can be impacted.  These situations are always bugs, and if
+possible they should be root-caused so they can be fixed.  There are open
+tickets for improving the system's resilience to this kind of problem.</p>
+
+<p>When you suspect a particular zone's reset is hung (e.g., because it's been
+resetting for at least 10 minutes), log into the GZ of that system and look at
+processes in the Marlin agent service.  Here's what a normal service looks like:</p>
+
+<pre><code>[root@RA10146 (staging-1) ~]# svcs -p marlin-agent
+STATE          STIME    FMRI
+online         Sep_15   svc:/smartdc/agent/marlin-agent:default
+               Sep_15      27668 node
+               Sep_15      28118 node
+</code></pre>
+
+<p>The marlin agent normally comprises two node processes, and their STIME
+indicates when they started.  If you see a number of other processes that have
+been running for several minutes, that's generally a sign that things are in
+bad shape.  Here's an example:</p>
+
+<pre><code>[root@RM08211 (us-east-2) ~]# svcs -p marlin-agent
+STATE          STIME    FMRI
+online         Dec_20   svc:/smartdc/agent/marlin-agent:default
+               16:54:16    15450 vmadm
+                9:47:17    20230 zfs
+               Dec_20      95665 node
+               Dec_20      95666 node
+</code></pre>
+
+<p>This output shows that the "zfs" process has been hung for at least 7 hours.
+At that point, the next step in root cause analysis would be to understand why
+the "zfs" process is hung using the usual tools (ps(1), pstack(1), pfiles(1),
+mdb(1), and so on).  The details depend on the specific bug you've found.</p>
+
+<p>This is just an example.  The hung process may be something other than "zfs".</p>
+
+<p>For some pathologies, a zone reset may be hung without an associated process.
+This can happen when a zone fails to boot properly.  In this case, use the Kang
+output from the Marlin agent to see what stage of boot is hung.  See "Kang
+state" below.  For example, you may see a zone's kang state that looks like
+this:</p>
+
+<pre><code>    "070fbff6-1579-4147-a539-b43b3aa54306": {
+      "zonename": "070fbff6-1579-4147-a539-b43b3aa54306",
+      "state": "uninit",
+      "pipeline": {
+        "operations": [
+          {
+            "funcname": "maZoneCleanupServer",
+            "status": "ok"
+          },
+          ...
+          {
+            "funcname": "maZoneReadyBoot",
+            "status": "ok",
+            "err": null,
+            "result": ""
+          },
+          {
+            "funcname": "maZoneReadyWaitBooted",
+            "status": "pending"
+          },
+</code></pre>
+
+<p>The "Boot" stage, which issues the command to boot the zone, has completed
+successfully.  The "WaitBooted" stage is "pending".  This output indicates that
+Marlin is waiting for the zone to boot up.  It's worth checking that Marlin
+really is watching the zone's state (and hasn't somehow forgotten about it).
+The easiest way to do that is to use a D script to watch processes that the
+agent forks, like this:</p>
+
+<pre><code># dtrace -n 'exec-success/ppid == 95665 || ppid == 95666/{ printf("%s", curpsinfo-&gt;pr_psargs); }'
+dtrace: description 'exec-success' matched 1 probe
+CPU     ID                    FUNCTION:NAME
+  8  14952         exec_common:exec-success svcs -H -z 070fbff6-1579-4147-a539-b43b3aa54306 -ostate milestone/multi-user:de
+ 19  14952         exec_common:exec-success svcs -H -z 070fbff6-1579-4147-a539-b43b3aa54306 -ostate milestone/multi-user:de
+</code></pre>
+
+<p>(You'll need to replace the two ppid conditions with the two Marlin agent
+processes on your system.)  We can see from this output that Marlin <em>is</em>
+checking the status of that zone as expected, so the problem is that the zone
+isn't coming up.  Again, the next step depends on the specific bug you've run
+into.</p>
+
+<h1 id="debugging-marlin-zones">Debugging Marlin: Zones</h1>
+
+<h2 id="clearing-disabled-zones">Clearing Disabled Zones</h2>
+
+<p>On occasion, a compute zone may transition to the "disabled" state.  These zones
+appear red on the Marlin dashboard and mrzones will report the same:</p>
+
+<pre><code>[root@RM08211 (us-east-2) ~]# mrzones
+   5 busy
+   1 disabled
+ 122 ready
+   1 uninit
+</code></pre>
+
+<p>Use <code>mrzones -x</code> to determine the reason for the zone being disabled:</p>
+
+<pre><code>[root@RM08211 (us-east-2) ~]# mrzones -x
+3cf7ccc4-4da2-4a0a-b111-ef4e0c2e04cc (since 2014-07-25T03:00:28.001Z)
+    zone not ready: command "zfs rollback zones/3cf7ccc4-4da2-4a0a-b111-ef4e0c2e04cc@marlin_init" failed with stderr: cannot open 'zones/3cf7ccc4-4da2-4a0a-b111-ef4e0c2e04cc@marlin_init': dataset does not exist : child exited with status 1
+</code></pre>
+
+<p>Alternatively, the Marlin Dashboard lists the disabled zones and the cause under
+the "Disabled Zones" tab on the bottom section.  Common problems and solutions
+are listed below.</p>
+
+<p><strong>zone not ready: command "zfs rollback zones/[zonename]@marlin_init" failed with
+ stderr: cannot open 'zones/zonename@marlin_init': dataset does not exist :
+ child exited with status 1</strong></p>
+
+<p>This is an aborted zfs create/destroy.  The solution is to <code>manta-undeploy</code>
+the zone and <code>manta-deploy</code> a new one.</p>
+
+<p><strong>zone failed (lackey timed out)</strong></p>
+
+<p>Usually a lackey timeout can be fixed by re-registering the zone with
+the marlin agent.  From the global zone where the disabled zone is, run:</p>
+
+<pre><code>mrzone [zonename]
+</code></pre>
+
+<p>Alternatively, you can <code>manta-undeploy</code> and <code>manta-deploy</code> a new one on that
+compute node.</p>
+
+<h1 id="controlling-marlin">Controlling Marlin</h1>
+
+<p>Occasionally it may be necessary or desirable to modify the running Marlin
+system.</p>
+
+<h2 id="cancel-a-running-job">Cancel a running job</h2>
+
+<p>Use <code>mrjob cancel JOBID</code>, which produces no output on success.  This is a last
+resort option for jobs that have run amok.  Any time this is necessary, there's
+likely an underlying software bug that needs to be filed and fixed.</p>
+
+<h2 id="deleting-a-job">Deleting a job</h2>
+
+<p>In rare instances (always involving a serious Marlin bug), the presence of a job
+may disrupt the system so much that cancelling it is not tenable or not
+sufficient to stabilize the system.  In such cases, it's possible to delete the
+job, which removes all records associated with the job from Moray.</p>
+
+<p>If the job has already been completed and archived (has "timeArchiveDone" set),
+deleting a job has only a small user-facing impact: the user will no longer be
+able to fetch inputs, outputs, errors, and so on from the "live" API.  They will
+be able to fetch them through the archived objects (in.txt, out.txt, and so on).
+See the user-facing REST API documentation for details.  This transition happens
+anyway for all jobs after a few hours; deleting an archived job only has the
+effect of making this transition happen immediately.</p>
+
+<p><strong>If the job has not been completed or has not been archived, deleting the job
+will result in data loss for the user.</strong>  In particular, the inputs, outputs,
+errors, and so on will all be lost permanently.  <strong>This can also have an
+unpredictable impact on the rest of Marlin, which is not designed to have state
+removed while a job is running.</strong>  This operation should be used with extreme
+care, and likely only in emergencies.</p>
+
+<p>To delete a job, use <code>mrjob delete JOBID</code>.  Be sure to have read the above
+caveats.</p>
+
+<h2 id="quiescing-a-supervisor">Quiescing a supervisor</h2>
+
+<p>It's possible to <em>quiesce</em> a supervisor, which causes that supervisor to
+continue processing whatever jobs it's working on, but to avoid picking up new
+jobs.  This is useful when the supervisor is being removed from service (as
+during some upgrades), or in cases where the supervisor has become clogged due
+to a bug but is still picking up new jobs (that are then becoming hung).</p>
+
+<p>The "mrsup" command can be used to both quiesce and unquiesce a supervisor.
+These commands produce no output on success, but cause entries to be written to
+the supervisor log.  The quiesce state is not persistent, so if the supervisor
+crashes or restarts for another reason, it will start picking up new jobs when
+it comes up again.</p>
+
+<h1 id="advanced-deployment-notes">Advanced deployment notes</h1>
+
+<p>These notes are intended primarily for developers.</p>
+
+<h2 id="size-overrides">Size Overrides</h2>
+
+<p>Application and service configs can be found under the <code>config</code> directory in
+manta-deployment.git.  For example:</p>
+
+<pre><code>config/application.json
+config/services/jobsupervisor/service.json
+config/services/webapi/service.json
+</code></pre>
+
+<p>Sometimes it is necessary to have size-specific overrides for these services
+within these configs that apply during setup.  The size-specific override
+is in the same directory as the "normal" file and has <code>.[size]</code> as a suffix.
+For example, this is the service config and the production override for the
+jobsupervisor:</p>
+
+<pre><code>config/services/jobsupervisor/service.json
+config/services/jobsupervisor/service.json.production
+</code></pre>
+
+<p>The contents of the override are only the <em>differences</em>.  Taking the above
+example:</p>
+
+<pre class="shell"><code>cat config/services/jobsupervisor/service.json
+{
+  "params": {
+    "networks": [ "manta", "admin" ],
+    "ram": 256
+  }
+}
+$ cat config/services/jobsupervisor/service.json.production
+{
+  "params": {
+    "ram": 16384,
+    "quota": 100
+  }
+}
+</code></pre>
+
+<p>You can see what the merged config with look like with the
+<code>./bin/manta-merge-config</code> command.  For example:</p>
+
+<pre class="shell"><code>./bin/manta-merge-config -s coal jobsupervisor
+{
+  "params": {
+    "networks": [
+      "manta",
+      "admin"
+    ],
+    "ram": 256
+  }
+}
+$ ./bin/manta-merge-config -s production jobsupervisor
+{
+  "params": {
+    "networks": [
+      "manta",
+      "admin"
+    ],
+    "ram": 16384,
+    "quota": 100
+  }
+}
+</code></pre>
+
+<p>Note that after setup, the configs are stored in SAPI.  Any changes to these
+files will <em>not</em> result in accidental changes in production (or any other
+stage).  Changes must be made via the SAPI api (see the SAPI docs for details).</p>
+
+<h2 id="development-tools">Development tools</h2>
+
+<p>Downloading the images take a long time, so in the manta-deployment repository
+there's the tools/install_marlin_image.sh script.  This script:</p>
+
+<pre><code>manta$ ./tools/install_marlin_image.sh &lt;machine&gt;
+</code></pre>
+
+<p>will download the latest marlin image from updates.joyent.com, save it on that
+machine on which the script is run, and copy it to the machine's IMGAPI.  On
+subsequent runs, this script will copy the image from the local machine and
+avoid downloading it again from updates.joyent.com.  Because the manta-compute
+image is larger than all other images combined, using install_marlin_image.sh
+will shorten the development cycle.</p>
+
+<p>To update the manta-deployment zone on a machine with changes you've made to
+sdc-manta:</p>
+
+<pre><code>sdc-manta.git$ ./tools/update_manta_zone.sh &lt;machine&gt;
+</code></pre>
+
+<p>To see which manta zones are deployed, use manta-adm show:</p>
+
+<pre><code>headnode$ manta-adm show
+</code></pre>
+
+<p>To tear down an existing manta deployment, use manta-factoryreset:</p>
+
+<pre><code>manta$ manta-factoryreset
+</code></pre>
+
+<h2 id="configuring-nat-for-marlin-compute-zones">Configuring NAT for Marlin compute zones</h2>
+
+<p>Recall that while we want customers to be able to access the internet from
+Marlin zones, we don't want to give each zone a public IP.  In production,
+we've configured a hardware NAT on the private network that the compute zones
+use, but in development, this connectivity is usually absent.  As a result,
+among other things, mlogin(1) doesn't work.</p>
+
+<p>If you want to set up NAT for your marlin compute zones in development, you can
+do so by creating a NAT zone.  The following procedure is inspired by the
+analogous <a href="http://wiki.smartos.org/display/DOC/NAT+using+Etherstubs">SmartOS
+procedure</a>.</p>
+
+<p>First, create a VMAPI CreateVM payload that looks like this:</p>
+
+<pre><code>{
+    "uuid": "49f6a6d6-82df-11e3-bb95-4f10bd8af0dd",
+    "owner_uuid": "66bc8d77-2024-4a88-ba2a-e5e85e565059",
+    "brand": "joyent",
+    "ram": 256,
+    "image_uuid": "01b2c898-945f-11e1-a523-af1afbe22822",
+    "networks": [ {
+            "name": "external",
+            "primary": true
+    }, {
+            "name": "mantanat"
+    } ],
+
+    "alias": "forwarder",
+    "hostname": "forwarder",
+    "server_uuid": "00000000-0000-0000-0000-002590943378"
+}
+</code></pre>
+
+<p><strong>Be sure to make the following changes:</strong></p>
+
+<ul>
+<li><strong>uuid</strong> should be a randomly-generated uuid (e.g., from the uuid(1) command)</li>
+<li><strong>owner_uuid</strong> should be poseidon's uuid (i.e., from "sdc-ldap search
+objectclass=sdcperson")</li>
+<li><strong>server_uuid</strong> should be your development server's uuid (e.g., "sdc-cnapi
+/servers | json -Ha uuid")</li>
+</ul>
+
+<p>The <strong>image_uuid</strong> can be any reasonable SmartOS image.  The above example
+uses smartos-1.6.3, since it's currently guaranteed to be available.</p>
+
+<p>Once you've made those changes, you can create the VM with:</p>
+
+<pre class="shell"><code>sdc-vm create -f YOURFILE.json
+</code></pre>
+
+<p>Once the VM is provisioned, you'll want to explicitly enable IP spoofing in the
+zone.  Construct an "update" file like this one:</p>
+
+<pre><code>{
+        "update_nics": [ {
+                "mac": "90:b8:d0:5f:bc:e4",
+                "allow_ip_spoofing": "1"
+        }, {
+                "mac": "90:b8:d0:c4:87:54",
+                "allow_ip_spoofing": "1"
+        } ]
+}
+</code></pre>
+
+<p><strong>Be sure to update the two "mac" properties based on the MACs assigned to the
+zone you created above.</strong>  See "vmadm get YOUR_VM_UUID | json nics".</p>
+
+<h2 id="configuration">Configuration</h2>
+
+<p>Manta is deployed as a single SAPI application.  Each manta service (moray,
+postgres, storage, etc.) has a corresponding SAPI service.  Every zone which
+implements a manta service had a corresponding SAPI instance.</p>
+
+<p>Within the config/ and manifests/ directories, there are several subdirectories
+which provide the SAPI configuration used for manta.</p>
+
+<pre><code>config/application.json     Application definition
+config/services             Service definitions
+manifests                   Configuration manifests
+manifests/applications      Configuration manifests for manta application
+</code></pre>
+
+<p>There's no static information for certain instances.  Instead, manta-deploy will
+set a handful of instance-specific metadata (e.g. shard membership).</p>
+
+<h3 id="configuration-updates">Configuration Updates</h3>
+
+<p>Once Manta has been deployed there will be cases where the service manifests
+must be changed.  Only changing the manifest in this repository isn't
+sufficient.  The manifests used to configure running instances (new and old) are
+the ones stored in SAPI.  The service templates in the zone are <strong>not used after
+initial setup</strong>.  To update service templates in a running environment (coal or
+production, for example):</p>
+
+<p>1) Verify that your changes to configuration are backward compatible or that the
+   updates will have no effect on running services.</p>
+
+<p>2) Get the current configuration for your service:</p>
+
+<pre><code>headnode$ sdc-sapi /services?name=[service name]
+</code></pre>
+
+<p>If you can't find your service name, look for what you want with the following
+command:</p>
+
+<pre><code>headnode$ sdc-sapi /services?application_uuid=$(sdc-sapi /applications?name=manta | \
+  json -gHa uuid) | json -gHa uuid name
+</code></pre>
+
+<p>Take note of the service uuid and make sure you can fetch it with:</p>
+
+<pre><code>headnode$ sdc-sapi /services/[service uuid]
+</code></pre>
+
+<p>3) Identify the differences between the template in this repository and what is
+   in SAPI.</p>
+
+<p>4) Update the service template in SAPI.  If it is a simple, one-parameter
+   change, and the value of the key is a string type, it can be done like this:</p>
+
+<pre><code>headnode$ sapiadm update [service uuid] json.path=value
+#Examples:
+headnode$ sapiadm update 8386d8f5-d4ff-4b51-985a-061832b41179 \
+  params.tags.manta_storage_id=2.stor.us-east.joyent.us
+headnode$ sapiadm update update 0b48c067-01bd-41ca-9f70-91bda65351b2 \
+  metadata.PG_DIR=/manatee/pg/data
+</code></pre>
+
+<p>If you require a complex type (an object or array) or a value that is not a
+string, you will need to hand-craft the differences and <code>|</code> to <code>sapiadm</code>.  For
+example:</p>
+
+<pre><code>headnode$ echo '{ "metadata": { "PORT": 5040 } }' | \
+  sapiadm update fde6c6ed-eab6-4230-bb39-69c3cba80f15
+</code></pre>
+
+<p>Or if you want to "edit" what comes back from sapi:</p>
+
+<pre><code>headnode$ sapiadm get [service uuid] | json params &gt;/tmp/params.json
+#Edit params.txt to wrap the json structure in { "params": ... }
+headnode$ cat /tmp/params.json | json -o json-0 | sapiadm update [service uuid]
+</code></pre>
+
+<p>5) Once the service in SAPI has been modified, make sure to get it to verify
+   what SAPI has is what it should be.</p>
+
+<h2 id="shard-management">Shard Management</h2>
+
+<p>A shard is a set of moray buckets, backed by &gt;1 moray instances and &gt;=3
+Postgres instances.  No data is shared between any two shards.  Many other manta
+services may said to be "in a shard", but more accurately, they're using a
+particular shard.</p>
+
+<p>There are three pieces of metadata which define how shards are used:</p>
+
+<pre><code>INDEX_MORAY_SHARDS          Shards used for the indexing tier
+MARLIN_MORAY_SHARD          Shard used for marlin job records
+STORAGE_MORAY_SHARD         Shard used for minnow (manta_storage) records
+</code></pre>
+
+<p>Right now, marlin uses only a single shard.</p>
+
+<p>Currently, the hash ring topology for electric-moray is created once during
+Manta setup and stored as an image in an SDC imgapi.  The image uuid and
+imgapi endpoint are stored in the following sapi parameters:</p>
+
+<pre><code>HASH_RING_IMAGE             The hash rimg image uuid
+HASH_RING_IMGAPI_SERVICE    The imageapi that stores the image.
+</code></pre>
+
+<p>In a cross-datacenter deployment, the HASH_RING_IMGAPI_SERVICE may be in
+another datacenter.  This limits your ability to deploy new electric-moray
+instances in the event of DC failure.</p>
+
+<p>This topology is <strong>independent</strong> of what's set in manta-shardadm. <strong>WARNING
+UNDER NO CIRCUMSTANCES SHOULD THIS TOPOLOGY BE CHANGED ONCE MANTA HAS BEEN
+DEPLOYED, DOING SO WILL RESULT IN DATA CORRUPTION</strong></p>
+
+<p>See manta-deploy-lab for hash-ring generation examples.</p>
+
+<p>The manta-shardadm tool lists shards and allows the addition of new ones:</p>
+
+<pre><code>manta$ manta-shardadm
+Manage manta shards
+
+Usage:
+    manta-shardadm [OPTIONS] COMMAND [ARGS...]
+    manta-shardadm help COMMAND
+
+Options:
+    -h, --help      Print help and exit.
+    --version       Print version and exit.
+
+Commands:
+    help (?)        Help on a specific sub-command.
+    list            List manta shards.
+    set             Set manta shards.
+</code></pre>
+
+<p>In addition, the -z flag to manta-deploy specifies a particular shard for that
+instance.  In the case of moray and postgres, that value defines which shard
+that instance participates in.  For all other services, that value defines which
+shard an instance will consume.</p>
+
+<p>Note that deploying a postgres or moray instance into a previously undefined
+shard will not automatically update the set of shards for the indexing tier.
+Because of the presence of the electric-moray proxy, adding an additional shard
+requires coordination with all existing shards, lest objects and requests be
+routed to an incorrect shard (and thereby inducing data corruption).  If you
+find yourself adding additional capacity, deploy the new shard first, coordinate
+with all existing shards, then use manta-shardadm to add the shard to list of
+shards for the indexing tier.</p>
+
+<h2 id="working-with-a-development-vm-that-talks-to-coal">Working with a Development VM that talks to COAL</h2>
+
+<p>Some people set up a distinct SmartOS VM that is a stable dev environment and
+point it at COAL.  Since the manta networking changes, you'll need to setup your
+zone(s) with a NIC on the <code>10.77.77.X</code> network.  Fortunately this is easy, so
+get on your dev VM's GZ, and run:</p>
+
+<pre><code>dev-gz$ nictagadm add manta $(ifconfig e1000g0 | grep ether | awk '{print $2}')`
+dev-gz$ echo '{ "add_nics": [ { "ip": "10.77.77.250", "netmask": "255.255.255.0", "nic_tag": "manta" } ] }' | vmadm update &lt;VM&gt;
+</code></pre>
+
+<p>Then reboot the zone.</p>
+
+<h2 id="adding-a-new-service">Adding a new service</h2>
+
+<h3 id="prerequisites-2">Prerequisites</h3>
+
+<p>When adding a new service to manta, there are several prerequisites:</p>
+
+<ul>
+<li><p>Your software must be delivered in an SDC image.  This process requires
+changes to the mountain-gorilla.git Makefile and targets.json.  In addition,
+your repository's Makefile will likely need "release" and "publish" targets.</p></li>
+<li><p>That image must be available in the updates.joyent.com IMGAPI.  It should be
+named "manta-SERVICE", as in:</p>
+
+<p>[root@headnode (bh1-kvm6) ~]# updates-imgadm list name=manta-postgres | tail -3 | awk '{print $1, $2, $3 }'
+a54c49d4-68c8-41b8-906e-0eb0d84fe3f7 manta-postgres master-20130621T213801Z-g94b316a
+a579d45b-6703-4d18-8673-c35202490d37 manta-postgres master-20130621T224758Z-g94b316a
+5d9524cf-67e4-43c5-a77d-72a1b43cfa9f manta-postgres master-20130624T162632Z-g1f6c2f7
+[root@headnode (bh1-kvm6) ~]#</p></li>
+</ul>
+
+<p>If you implement Makefile rules similarly to other repositories, then the image
+upload will happen as part of the standard "make publish" target.</p>
+
+<ul>
+<li><p>Add any SAPI manifests required for your service.  Traditionally these are
+delivered in /opt/smartdc/$SERIVCE/sapi_manifests.  There are many examples of
+services following this pattern: see mako.git, muskie.git, manatee.git, and
+others.  That manifest defines the config.json file which will be used for
+configuring your service.</p></li>
+<li><p>Your image should provide a script in /opt/smartdc/boot/configure.sh.  That
+script will be run every time an instance boots, and that script should
+configure your instance appropriately (enable config-agent, enable other
+services, update ~/.profile, etc.).</p></li>
+</ul>
+
+<h3 id="local-changes">Local Changes</h3>
+
+<p>Once your image has been loaded into the updates.joyent.com IMGAPI (check with
+<code>updates-imgadm list name=manta-SERVICE</code>), you're ready to add your service to
+this repository.  There are several steps involved there:</p>
+
+<ul>
+<li>Add a manta-deployment.git/config/services/SERVICE.json file for your
+service.  This JSON file defines the SAPI service, which includes your zone
+parameters and metadata used in deployment.  Look through the existing files to
+see which options are available, and consult the SAPI documentation for a full
+explanation.</li>
+<li>You probably want to update bin/manta-deploy-svcs to deploy your service in a
+standard deployment.</li>
+</ul>
+
+<h1 id="advanced-marlin-reference">Advanced Marlin Reference</h1>
+
+<p>The information in this section may be useful once you're familiar with Marlin
+internals.  These are internal implementation details intended to help
+<em>understand</em> the system.  It is completely unsupported to make any changes to
+the system outside of using a documented tool or following a Joyent support
+procedure.  <strong>Everything in this section is subject to change without
+notice!</strong></p>
+
+<h2 id="internal-state">Internal state</h2>
+
+<p>As mentioned above, all of Marlin's state is stored using JSON records in Moray
+using several buckets:</p>
+
+<ul>
+<li><strong>marlin_jobs_v2</strong>: When the user creates a job, muskie creates a record in
+this bucket.  The global job state is stored in this record, and is
+periodically updated by the supervisor as execution progresses.</li>
+<li><strong>marlin_jobinputs_v2</strong>: As users submit inputs, muskie creates records in
+this bucket.</li>
+<li><strong>marlin_tasks_v2</strong>: Supervisors poll for new jobinputs, locate the
+corresponding objects, and assign work to agents by writing new records into
+this bucket.  Agents poll for new tasks assigned to them in this bucket and
+then execute them.</li>
+<li><strong>marlin_taskinputs_v2</strong>: For reduce tasks, which operate on many objects,
+the supervisor writes a separate record in this bucket for each input object.</li>
+<li><strong>marlin_taskoutputs_v2</strong>: As tasks emit outputs, the agent writes records
+into this bucket.  If the job has a subsequent phase, these outputs will
+become tasks or inputs for the next phase.  Otherwise, they'll be marked job
+outputs.</li>
+<li><strong>marlin_errors_v2</strong>: When supervisors or agents emit errors (including
+retryable errors), they write records into this bucket.</li>
+<li><strong>marlin_health_v2</strong>: Unlike the other buckets, where each record is
+associated with a particular job, this bucket is only used by supervisors and
+agents to report health.  There's one record per supervisor and per agent.
+See "Health checking" below.</li>
+</ul>
+
+<p>This design may seem unnecessarily indirect in some cases, but it keeps each
+record small so that we can support streaming arbitrary numbers of objects
+through the system.</p>
+
+<p>The schema for these buckets is not documented or stable, but you can find the
+latest version (with comments) on
+<a href="https://github.com/joyent/manta-marlin/blob/master/common/lib/schema.js">github</a>.</p>
+
+<h2 id="heartbeats-failures-and-health-checking">Heartbeats, failures, and health checking</h2>
+
+<p>Supervisors and agents heartbeat periodically by writing records into the
+<strong>marlin_health_v2</strong> bucket.  Heartbeats are monitored by all supervisors.</p>
+
+<p>The most common failure mode is a restart (crash).  Since the supervisor state
+is entirely reconstructible from what's in Moray, supervisor restarts are pretty
+straightforward.  For simplicity, agents always reset the world and start from a
+clean state when they come up.  Supervisors detect agent restarts and abort and
+re-issue all outstanding tasks for that agent.</p>
+
+<p>The other main failure mode is a hang or partition, manifested as a failure to
+heartbeat for an extended period.  If this happens to a supervisor, another
+supervisor takes over the failed supervisor's jobs.  When the failed one comes
+back, it coordinates to take over its work.  If an agent disappears for an
+extended period, supervisors treat this much like a restart, by failing
+outstanding tasks and re-issuing them on other servers.</p>
+
+<p>Lackeys heartbeat periodically by making HTTP requests to the agent.  On
+failure, the agent fails the task.</p>
+
+<p>If wrasse fails, archiving is delayed, but this has little effect on users.
+Wrasse recovers from restarts by rerunning any archives that were in progress.</p>
+
+<p>Muskie instances are totally stateless.  Restarts are trivially recoverable, and
+extended failures and partitions cause requests to be vectored to other
+instances.</p>
+
+<h2 id="kang-state">Kang state</h2>
+
+<p>Jobsupervisors and agents export Kang entry points that describe their internal
+state.  For agents, the HTTP server runs on port 9080, and you can get this
+state with:</p>
+
+<pre><code>headnode$ curl -si http://GZ_IP_ADDRESS:9080/kang/snapshot | json
+</code></pre>
+
+<p>For jobsupervisors, you can get this with:</p>
+
+<pre><code>headnode$ curl -si http://ZONE_IP_ADDRESS/kang/snapshot | json
+</code></pre>
+
+<p>This API is undocumented and unstable.  It's the same one that feeds the
+marlin dashboard.</p>
+
+<h2 id="fetching-information-about-historical-jobs">Fetching information about historical jobs</h2>
+
+<p>Jobs are <em>archived</em> once they complete.  This process saves the job's public
+json representation and the full lists of inputs, outputs, and errors into the
+job's directory (<code>/$MANTA_USER/jobs/$JOBID</code>).  The job's json representation is
+also saved into <code>/poseidon/stor/job_archives/YYYY/MM/DD/HH</code>.  For more on the
+user-facing implications of archiving, see the <a href="http://apidocs.joyent.com/manta/jobs-reference.html#job-completion-and-archival">public
+docs</a>.</p>
+
+<p>About 24 hours after a job is archived, all of its records are removed from the
+database.  This is necessary to keep the jobs database from growing without
+bound.  At that point, none of the usual tools will work on that job, including
+<code>mrjob</code>, <code>mrjobreport</code>, <code>mrerrors -j</code>, and so on.</p>
+
+<p>However, because we dump copies of the jobs database into Manta itself hourly,
+you can still get all the information about the job.  The <code>mrextractjob</code> tool
+takes a database dump directory (in Manta), a jobid, and a destination
+directory.  It scans the database dump and extracts all records related to the
+job.</p>
+
+<p>In summary, to get details about a job that has already been removed from the
+database:</p>
+
+<ol>
+<li><p>Starting with the jobid, you'll need to figure out which hour's database dump
+the job's details will be stored in.  You should use the database dump
+labeled after the job's "done" time, but within 24 hours of job completion.</p>
+
+<p>a. If you don't know what date and time the job completed, but you know
+   which account ran the job, then you can fetch the job's user-facing JSON
+   file with:</p>
+
+<pre class="shell"><code>mget /$MANTA_USER/jobs/$JOBID/job.json
+</code></pre>
+
+<p>You should probably do this as <code>poseidon</code> in the <code>ops</code> zone, which will
+   avoid logging the request in the customer's usage data (and charging the
+   customer for it).</p>
+
+<p>b. If you don't know what date and time the job completed or even which user
+   ran it, or if the user already removed the job's directory, you can still
+   find the job's JSON file under <code>/poseidon/stor/job_archives</code>.  You'll run
+   something like:</p>
+
+<pre class="shell"><code>mfind -t d -n $JOBID /poseidon/stor/job_archives
+</code></pre>
+
+<p>This will take a long time.  The more you can narrow it down (by
+   searching subdirectories of "job_archives"), the faster it will be.
+   Assuming this returns a result, look for the job.json file inside that
+   directory, which will have the job's completion time in it.</p></li>
+<li><p>At this point, you should have the jobid <em>and</em> the job's completion time,
+which will tell you which database dump the job's records will be in.  For
+example, if the job completed at 2014-05-05T11:07:05.519Z, you'll look at the
+dump for 2014/05/06/00 (the first dump after the completion time).  All of
+the dumps are stored in <code>/poseidon/stor/manatee_backups</code>, under the shard
+designated as the jobs shard.  For the us-east Manta deployment, the jobs
+shard is 1.moray.us-east.joyent.us.  Putting all this together, the database
+dumps we care about would be in:</p>
+
+<pre><code>/poseidon/stor/manatee_backups/1.moray.us-east.joyent.us/2014/05/06/00
+</code></pre>
+
+<p>Next, you'll run <code>mrextractjob</code> (from the <code>ops</code> zone).  You can run it with
+no arguments for details, but basically you'll run something like this:</p>
+
+<pre class="shell"><code>mrextractjob \
+    /poseidon/stor/manatee_backups/1.moray.us-east.joyent.us/2014/05/06/00 \
+    /poseidon/stor/debug-fe4c6e2a \
+    fe4c6e2a-bc78-4c94-d4cd-c9f6a8931855
+</code></pre>
+
+<p>You should replace <code>/poseidon/stor/debug-fe4c6e2a</code> with whatever directory in
+Manta you want the extracted job files to go.</p>
+
+<p>This command should output something like this:</p>
+
+<pre><code>19f3d2fa-0dde-436f-a719-e250596298b9
+added 6 inputs to 19f3d2fa-0dde-436f-a719-e250596298b9
+mls -l "/dap/stor/debug-fe4c6e2a":
+-rwxr-xr-x 1 dap             0 May 29 17:00 errors.json
+-rwxr-xr-x 1 dap           694 May 29 17:00 jobinputs.json
+-rwxr-xr-x 1 dap          2875 May 29 17:00 jobs.json
+-rwxr-xr-x 1 dap             0 May 29 17:00 taskinputs.json
+-rwxr-xr-x 1 dap           955 May 29 17:00 taskoutputs.json
+-rwxr-xr-x 1 dap          2050 May 29 17:00 tasks.json
+</code></pre>
+
+<p>In this case, 19f3d2fa-0dde-436f-a719-e250596298b9 is the jobid for the Manta
+job that was used to extract the job we're interested in, which is
+fe4c6e2a-bc78-4c94-d4cd-c9f6a8931855.  Now, the errors, job inputs,
+taskinputs, task outputs, tasks, and the raw job record are available in
+those directories.  Unfortunately, there's not great tooling for summarizing
+extracted jobs (i.e., there's no analog to <code>mrjob log</code> or <code>mrjobreport</code>), but
+you can use the <code>json</code> and <code>daggr</code> tools to pick apart these records.</p></li>
+</ol>
+
+<h1>.</h1>
+
+    </div> <!-- #content -->
+<script type="text/javascript" charset="utf-8">
+$(function() {
+    var headerHeight = $("#header").height();
+
+    var sections = $("#content h1[id], #content h2[id]");
+    var sectionOffsets = [];
+    var slack = 100;  // Give the section scroll some slack (in pixels).
+    sections.each(function(elem) {
+        sectionOffsets.push($(this).offset().top - headerHeight - slack);
+    });
+
+    var currSectionIdx = -1;
+    function getSectionIdx(scrollDistance) {
+        if (scrollDistance < sectionOffsets[0]) {
+            return -1;
+        } else {
+            for (var id = sectionOffsets.length; id > 0; id--) {
+                if (scrollDistance > sectionOffsets[id - 1]) {
+                    return id - 1;
+                    break;
+                }
+            }
+        }
+    }
+
+    /** {{{ http://code.activestate.com/recipes/577787/ (r2) */
+    _slugify_strip_re = /[^\w\s-]/g;
+    _slugify_hyphenate_re = /[-\s]+/g;
+    function slugify(s) {
+      s = s.replace(_slugify_strip_re, '').trim().toLowerCase();
+      s = s.replace(_slugify_hyphenate_re, '-');
+      return s;
+    }
+    /** end of http://code.activestate.com/recipes/577787/ }}} */
+
+    /* See <https://github.com/trentm/restdown/issues/11>. */
+    function safechars(s) {
+      return s.replace(_slugify_strip_re, '');
+    }
+
+    $("#content").scroll(function() {
+        var scrollDistance = $("#content").scrollTop();
+        var sectionIdx = getSectionIdx(scrollDistance);
+
+        if (sectionIdx !== currSectionIdx) {
+            $("#sidebar li>div").removeClass("current");
+            currSectionIdx = sectionIdx;
+            if (currSectionIdx >= 0) {
+                var heading = $(sections[currSectionIdx]).text();
+                var possibleAnchors = [
+                    slugify(heading), // h1 or non-method h2
+                    heading.replace(/ /g, '-'), // h2 method, just name or just endpoint
+                    heading.slice(0, heading.lastIndexOf(' (')).trimRight().replace(/ /g, '-'), // h2 method, name and endpoint
+                ];
+                for (var i=0; i < possibleAnchors.length; i++) {
+                    var anchor = safechars(possibleAnchors[i]);
+                    try {
+                        $("#sidebar a[href=#" + anchor + "]").parent().addClass("current");
+                    } catch (e) {
+                        /* Ignore error if no such element. */
+                        console.log(e)
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+
+</body>
+</html>
