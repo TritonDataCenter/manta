@@ -68,6 +68,9 @@ Community discussion about Manta happens in two main places:
 * In the *#manta* IRC channel on the [Freenode IRC
   network](https://freenode.net/).
 
+You can also follow [@MantaStorage](https://twitter.com/MantaStorage) on
+Twitter for updates.
+
 ## Dependencies
 
 Manta is deployed on top of Joyent's
