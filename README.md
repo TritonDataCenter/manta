@@ -80,7 +80,7 @@ nodes), deploying services in containers, monitoring services, transmitting and
 visualizing real-time performance data, and a bunch more.  Manta primarily uses
 SDC for initial deployment, service upgrade, and service monitoring.
 
-SDC itself depends on [SmartOS](https://smartos.org).  Manta also directly
+SDC itself depends on [SmartOS](http://smartos.org).  Manta also directly
 depends on several SmartOS features, notably: ZFS pooled storage, ZFS rollback,
 and
 [hyprlofs](https://github.com/joyent/illumos-joyent/blob/master/usr/src/uts/common/fs/hyprlofs/hyprlofs_vfsops.c).
