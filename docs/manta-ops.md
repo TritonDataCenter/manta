@@ -146,23 +146,24 @@ services.
 
 ### Manta components at a glance
 
-| Kind    | Major subsystem | Service          | Purpose                               | Components              |
-| ------- | --------------- | ---------------- | ------------------------------------- | ----------------------- |
-| Service | Consensus       | nameservice      | Service discovery                     | ZooKeeper, binder (DNS) |
-| Service | Front door      | loadbalancer     | SSL termination and load balancing    | stud, haproxy/muppet    |
-| Service | Front door      | webapi           | Manta HTTP API server                 | muskie                  |
-| Service | Front door      | authcache        | Authentication cache                  | mahi (redis)            |
-| Service | Metadata        | postgres         | Metadata storage and replication      | postgres, manatee       |
-| Service | Metadata        | moray            | Key-value store                       | moray                   |
-| Service | Metadata        | electric-moray   | Consistent hashing (sharding)         | electric-moray          |
-| Service | Storage         | storage          | Object storage and capacity reporting | mako (nginx), minnow    |
-| Service | Operations      | ops              | GC, audit, and metering cron jobs     | mola, mackerel          |
-| Service | Operations      | madtom           | Web-based Manta monitoring            | madtom                  |
-| Service | Operations      | marlin-dashboard | Web-based Marlin monitoring           | marlin-dashboard        |
-| Service | Compute         | jobsupervisor    | Distributed job orchestration         | jobsupervisor           |
-| Service | Compute         | jobpuller        | Job archival                          | wrasse                  |
-| Service | Compute         | marlin           | Compute containers for end users      | marlin-lackey           |
-| Agent   | Compute         | marlin-agent     | Job execution on each storage node    | marlin-agent            |
+| Kind    | Major subsystem | Service          | Purpose                               | Components                                                                                             |
+| ------- | --------------- | ---------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Service | Consensus       | nameservice      | Service discovery                     | ZooKeeper, [binder](https://github.com/joyent/binder) (DNS)                                            |
+| Service | Front door      | loadbalancer     | SSL termination and load balancing    | stud, haproxy/[muppet](https://github.com/joyent/muppet)                                               |
+| Service | Front door      | webapi           | Manta HTTP API server                 | [muskie](https://github.com/joyent/manta-muskie)                                                       |
+| Service | Front door      | authcache        | Authentication cache                  | [mahi](https://github.com/joyent/mahi) (redis)                                                         |
+| Service | Metadata        | postgres         | Metadata storage and replication      | postgres, [manatee](https://github.com/joyent/manta-manatee)                                           |
+| Service | Metadata        | moray            | Key-value store                       | [moray](https://github.com/joyent/moray)                                                               |
+| Service | Metadata        | electric-moray   | Consistent hashing (sharding)         | [electric-moray](https://github.com/joyent/electric-moray)                                             |
+| Service | Storage         | storage          | Object storage and capacity reporting | [mako](https://github.com/joyent/manta-mako) (nginx), [minnow](https://github.com/joyent/manta-minnow) |
+| Service | Operations      | ops              | GC, audit, and metering cron jobs     | [mola](https://github.com/joyent/manta-mola), [mackerel](https://github.com/joyent/manta-mackerel)     |
+| Service | Operations      | madtom           | Web-based Manta monitoring            | [madtom](https://github.com/joyent/manta-madtom)                                                       |
+| Service | Operations      | marlin-dashboard | Web-based Marlin monitoring           | [marlin-dashboard](https://github.com/joyent/manta-marlin-dashboard)                                   |
+| Service | Compute         | jobsupervisor    | Distributed job orchestration         | jobsupervisor                                                                                          |
+| Service | Compute         | jobpuller        | Job archival                          | [wrasse](https://github.com/joyent/manta-wrasse)                                                       |
+| Service | Compute         | marlin           | Compute containers for end users      | [marlin-lackey](https://github.com/joyent/manta-marlin)                                                |
+| Agent   | Compute         | marlin-agent     | Job execution on each storage node    | [marlin-agent](https://github.com/joyent/manta-marlin)                                                 |
+| Agent   | Compute         | medusa           | Interactive Session Engine            | [medusa](https://github.com/joyent/manta-medusa)                                                       |
 
 
 ## Consensus and internal service discovery
@@ -772,7 +773,7 @@ anything from COAL to a multi-compute-node deployment.  The general process is:
         headnode$ ./manta-net.sh CONFIG_FILE
 
    This step is idempotent.  Note that if you are setting up a multi-DC Manta,
-   ensure that (1) your SDC networks have corss datacenter connectivity and
+   ensure that (1) your SDC networks have cross datacenter connectivity and
    routing set up and (2) the SDC firewalls allow TCP and UDP traffic cross-
    datacenter.
 
