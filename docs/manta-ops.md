@@ -163,6 +163,7 @@ services.
 | Service | Compute         | jobpuller        | Job archival                          | [wrasse](https://github.com/joyent/manta-wrasse)                                                       |
 | Service | Compute         | marlin           | Compute containers for end users      | [marlin-lackey](https://github.com/joyent/manta-marlin)                                                |
 | Agent   | Compute         | marlin-agent     | Job execution on each storage node    | [marlin-agent](https://github.com/joyent/manta-marlin)                                                 |
+| Agent   | Compute         | medusa           | Interactive Session Engine            | [medusa](https://github.com/joyent/manta-medusa)                                                       |
 
 
 ## Consensus and internal service discovery
