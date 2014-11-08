@@ -772,7 +772,7 @@ anything from COAL to a multi-compute-node deployment.  The general process is:
         headnode$ ./manta-net.sh CONFIG_FILE
 
    This step is idempotent.  Note that if you are setting up a multi-DC Manta,
-   ensure that (1) your SDC networks have corss datacenter connectivity and
+   ensure that (1) your SDC networks have cross datacenter connectivity and
    routing set up and (2) the SDC firewalls allow TCP and UDP traffic cross-
    datacenter.
 
