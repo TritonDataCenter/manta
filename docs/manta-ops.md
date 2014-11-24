@@ -1365,8 +1365,8 @@ Unfortunately, at present the alarms are not generally clear about the severity
 of the problem, the impact, or the suggested operator action.  In the Joyent
 Manta deployment, the standard procedure in response to an alarm is to assess
 the system's actual state (by using the command-line tools).  If the system is
-actually data-down (or customers report that it is for them), an engineer is
-paged to assess the problem and correct the issue.
+actually data-down (or users report that it is for them), an engineer is paged
+to assess the problem and correct the issue.
 
 
 ## Madtom dashboard (service health)
@@ -1461,6 +1461,27 @@ etag, and which sharks store copies of it.
 
 ## Logs
 
+### Historical logs
+
+Historical logs for all components are uploaded to Manta hourly at
+`/poseidon/stor/logs/COMPONENT/YYYY/MM/DD/HH`.  This works by rotating them
+hourly into /var/log/manta/upload inside each zone, and then uploading the files
+in that directory to Manta.
+
+The most commonly searched logs are the muskie logs, since these contain logs
+for all requests to the public API.  As with all logs, these are pushed to Manta
+hourly, and they're stored at /poseidon/stor/logs/YYYY/MM/DD/HH.  There's one
+object in that directory per muskie server instance.  If you need to look at the
+live logs (because you're debugging a problem within the hour that it happened,
+or because Manta is currently down), see "real-time logs" below.  Either way, if
+you have the x-server-name from a request, that will tell you which muskie
+instance handled the request so that you don't need to search all of them.
+
+If Manta is not up, then the first priority is generally to get Manta up, and
+you'll have to use the real-time logs to do that.
+
+### Real-time logs and log formats
+
 Unfortunately, logging is not standardized across all Manta components.  There
 are three common patterns:
 
@@ -1470,11 +1491,6 @@ are three common patterns:
 * Services log to a service-specific log file in bunyan format (e.g.,
   /var/log/muskie.log).
 * Services log to an application-specific log file (e.g., haproxy, postgres).
-
-In all cases, for all components, all logs of interest are rotated hourly into
-/var/log/manta/upload.  Those log files are subsequently uploaded into Manta
-under `/poseidon/stor/logs/COMPONENT/YYYY/MM/DD/HH`.  As a result, historical
-logs are always available in Manta.
 
 Most custom services use the bunyan format.  The "bunyan" tool is installed in
 /usr/bin to view these logs.  You can also [snoop logs of running services in
@@ -1491,7 +1507,7 @@ the service's that *don't* use the SMF log file:
 | mbackup<br />(the log file uploader itself) | /var/log/mbackup.log             | bash xtrace        |
 | haproxy                                     | /var/log/haproxy.log             | haproxy-specific   |
 | mackerel (metering)                         | /var/log/mackerel.log            | bunyan             |
-| mola                                        | /var/log/mola*.log               | bunyan             |
+| mola                                        | /var/log/mola\*.log               | bunyan             |
 | zookeeper                                   | /var/log/zookeeper/zookeeper.log | zookeeper-specific |
 | redis                                       | /var/log/redis/redis.log         | redis-specific     |
 
@@ -1564,6 +1580,107 @@ To translate from a mantaComputeId or a mantaStorageId to a server name, use
 Note that the column name is "storage_ids" (with a trailing "s") because it's
 technically possible to have multiple storage nodes per host, though you'd only
 ever do that in development.
+
+
+## Debugging: was there an outage?
+
+When debugging their own programs, in effort to rule out Manta as the cause (or
+when they suspect Manta as the cause), users sometimes ask if there was a Manta
+outage at a given time.  In rare cases when there was a major Manta-wide outage
+at that time, the answer to the user's question may be "yes".  More often,
+though, there may have been very transient issues that went unnoticed or that
+only affected some of that user's requests.
+
+First, it's important to understand what an "outage" actually means.  Manta
+provides two basic services: an HTTP-based request API and a compute service
+managed by the same API.  As a result, an "outage" usually translates to
+elevated error rates from either the HTTP API or the compute service.
+
+**To check for a major event affecting the API**, locate the muskie logs for the
+hour in question (see "Logs" above) and look for elevated server-side error
+rates.  An easy first cut is to count requests and group by HTTP status code.
+You can run this from the ops zone (or any environment configured with a Manta
+account that can access the logs):
+
+    # mfind -t o /poseidon/stor/logs/muskie/2014/11/21/22 | \
+        mjob create -o
+	   -m "grep '\"audit\"' | json -ga res.statusCode | sort | uniq -c" \
+	   -r "awk '{ s[\$2] += \$1; } END { 
+	      for(code in s) { printf(\"%8d %s\n\", s[code], code); } }'"
+
+That example searches all the logs from 2014-11-21 hour 22 (22:00 to 23:00 UTC)
+for requests ("audit" records), pulls out the HTTP status code from each one,
+and then counts the number of requests for each status code.  The reduce phase
+combines the outputs from scanning each log file by adding the counts for each
+status code and then printing out the aggregated results.  The end output might
+look something like this:
+
+      293950 200
+         182 201
+         179 202
+      267786 204
+      ...
+
+(You can also use [Dragnet](https://github.com/joyent/dragnet) to scan logs more
+quickly.)
+
+That output indicates 294,000 requests with code 200, 268,000 requests with code
+204, and so on.  In HTTP, codes under 300 are normal.  Codes from 400 to 500
+(including 400, not 500) are generally client problems.  Codes over 500 indicate
+server problems.  Some number of 500 errors don't necessarily indicate a problem
+with the service -- it could be a bug or a transient problem -- but if the
+number is high (particularly compared to normal hours), then that may indicate a
+serious Manta issue at the time in question.
+
+If the number of 500-level requests is not particularly high, then that may
+indicate a problem specific to this user or even just a few of their requests.
+See "Debugging API failures" below.
+
+
+## Debugging API failures
+
+Users often report problems with their own programs acting as Manta clients
+(possibly using our Node client library).  This may manifest as an error message
+from the program or an error reported in the program's log.  Users may ask
+simply: "was there a Manta outage at such-and-such time?"  To answer that
+question, see "was there an outage?" above.  If you've established that there
+wasn't an outage, here's how you can get more information about what happened.
+
+For most problems that are caused by the Manta service itself (as opposed to
+client-side problems), there will be information in the Manta server logs that
+will help explain the root cause.  **The best way to locate the corresponding
+log entries is for clients to log the request id of failed requests and for
+users to provide the request ids when seeking support.**  The request id is
+reported by a server HTTP header, and it's normally logged by the Node client
+library.  While it's possible to search for log entries by timestamp, account
+name, Manta path, or status code, not only is it much slower, but it's also not
+sufficient for many client applications that end up performing a lot of similar
+operations on similar paths for the same user around the same time (e.g.,
+creating a directory tree).  **For requests within the last hour, it's very
+helpful to get the x-server-name header as well.**
+
+To find the logs you need, see "Logs" above.  Once you've found the logs (either
+in Manta or inside the muskie zones, depending on whether you're looking at
+a historical or very recent request):
+
+1. If you have a request id and server name, pick the log for that server name
+   and grep for the request id.
+1. If you have a request id, grep all the logs for that hour for that request
+   id.
+1. If you don't have either of these, you can try grepping for the user's
+   account uuid (which you can retrieve by searching adminui for the user's
+   account login) or other relevant parameters of the request.  This process is
+   specific to whatever information you have.  The logs are just plaintext JSON.
+
+You should find exactly one request matching a given request id.  The log entry
+for the request itself should include a lot of details about the request and
+response, including internal error messages.  For 500-level errors (server
+errors), there will be additional log entries for all the debug-level logging
+for that request.
+
+Obviously, most of this requires Manta to be operating.  If it's not, that's
+generally the top priority, and you can use the local log files on muskie
+servers to debug that.
 
 
 # Debugging Marlin: distributed state
@@ -1925,8 +2042,8 @@ You can even see exactly what processes the user's job is running:
       90397 ./node lib/agent.js
         90403 /bin/bash --norc
 
-This is useful when a customer complains of a hung job or something and you
-want to go see exactly what it's doing.  The full procedure is:
+This is useful when a user complains of a hung job or something and you want to
+go see exactly what it's doing.  The full procedure is:
 
 * Use "mrjob" or "findobjects" to find the task of interest (usually, one of
   the only running tasks) and figure out which machine it's running on.
@@ -2410,11 +2527,11 @@ To tear down an existing manta deployment, use manta-factoryreset:
 
 ## Configuring NAT for Marlin compute zones
 
-Recall that while we want customers to be able to access the internet from
-Marlin zones, we don't want to give each zone a public IP.  In production,
-we've configured a hardware NAT on the private network that the compute zones
-use, but in development, this connectivity is usually absent.  As a result,
-among other things, mlogin(1) doesn't work.
+Recall that while we want users to be able to access the internet from Marlin
+zones, we don't want to give each zone a public IP.  In production, we've
+configured a hardware NAT on the private network that the compute zones use, but
+in development, this connectivity is usually absent.  As a result, among other
+things, mlogin(1) doesn't work.
 
 If you want to set up NAT for your marlin compute zones in development, you can
 do so by creating a NAT zone.  The following procedure is inspired by the
@@ -2797,8 +2914,8 @@ database:
         $ mget /$MANTA_USER/jobs/$JOBID/job.json
 
        You should probably do this as `poseidon` in the `ops` zone, which will
-       avoid logging the request in the customer's usage data (and charging the
-       customer for it).
+       avoid logging the request in the user's usage data (and charging the user
+       for it).
 
     b. If you don't know what date and time the job completed or even which user
        ran it, or if the user already removed the job's directory, you can still
