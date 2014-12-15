@@ -1198,24 +1198,19 @@ the Marlin agent with the SDC agents, you'll need to manually exclude it.
 Platform updates for compute nodes (including the headnode) are exactly the same
 as for any other SDC compute node.  For reference, this is documented here.
 
-1. Find the platform you want to use.  If you have access to the builds under
-   /Joyent_Dev, then you can find the latest with:
+1. Find the platform you want to use.  Joyent's public builds are stored under
+   /Joyent\_Dev/public.  You can find the latest with:
 
         $ platform=$(mfind -n 'platform-master-.*.tgz' \
-            $(mget -q /Joyent_Dev/stor/builds/platform/master-latest))
+            $(mget -q /Joyent_Dev/public/builds/platform/master-latest))
 
-2. Copy the platform to /var/tmp on the headnode.  If you have access to the
-   builds under Joyent_Dev, you can use "msign" to sign a link to the platform
-   from a system with internet access:
-
-        $ url=$(msign "$platform")
-
-   and then download it on each headnode with:
+2. Copy the platform to /var/tmp on the headnode.  You can download that build
+   with:
 
         headnode$ cd /var/tmp;
-        headnode$ curl -o platform-master-DATESTAMP.tgz -k "URL"
+        headnode$ curl -O -k $MANTA_URL$platform
 
-   where URL is the `$url` from above.
+   where $platform is from step 1 above.
 
 3. On the headnode, run:
 
