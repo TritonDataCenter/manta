@@ -1633,26 +1633,20 @@ the Marlin agent with the SDC agents, you'll need to manually exclude it.</p>
 as for any other SDC compute node.  For reference, this is documented here.</p>
 
 <ol>
-<li><p>Find the platform you want to use.  If you have access to the builds under
-/Joyent_Dev, then you can find the latest with:</p>
+<li><p>Find the platform you want to use.  Joyent's public builds are stored under
+/Joyent_Dev/public.  You can find the latest with:</p>
 
 <pre class="shell"><code>platform=$(mfind -n 'platform-master-.*.tgz' \
-    $(mget -q /Joyent_Dev/stor/builds/platform/master-latest))
+    $(mget -q /Joyent_Dev/public/builds/platform/master-latest))
 </code></pre></li>
-<li><p>Copy the platform to /var/tmp on the headnode.  If you have access to the
-builds under Joyent_Dev, you can use "msign" to sign a link to the platform
-from a system with internet access:</p>
-
-<pre class="shell"><code>url=$(msign "$platform")
-</code></pre>
-
-<p>and then download it on each headnode with:</p>
+<li><p>Copy the platform to /var/tmp on the headnode.  You can download that build
+with:</p>
 
 <pre><code>headnode$ cd /var/tmp;
-headnode$ curl -o platform-master-DATESTAMP.tgz -k "URL"
+headnode$ curl -O -k $MANTA_URL$platform
 </code></pre>
 
-<p>where URL is the <code>$url</code> from above.</p></li>
+<p>where $platform is from step 1 above.</p></li>
 <li><p>On the headnode, run:</p>
 
 <pre><code>headnode$ /usbkey/scripts/install-platform.sh PATH_TO_PLATFORM
