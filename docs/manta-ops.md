@@ -1600,7 +1600,7 @@ account that can access the logs):
     # mfind -t o /poseidon/stor/logs/muskie/2014/11/21/22 | \
         mjob create -o
 	   -m "grep '\"audit\"' | json -ga res.statusCode | sort | uniq -c" \
-	   -r "awk '{ s[\$2] += \$1; } END { 
+	   -r "awk '{ s[\$2] += \$1; } END {
 	      for(code in s) { printf(\"%8d %s\n\", s[code], code); } }'"
 
 That example searches all the logs from 2014-11-21 hour 22 (22:00 to 23:00 UTC)
@@ -1677,6 +1677,10 @@ Obviously, most of this requires Manta to be operating.  If it's not, that's
 generally the top priority, and you can use the local log files on muskie
 servers to debug that.
 
+
+## Running Garbage Collection, Audit, Cruft Collection
+
+Please see the docs included in the manta-mola repository.
 
 # Debugging Marlin: distributed state
 
