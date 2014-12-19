@@ -1663,8 +1663,8 @@ metadata is located in the `manta` table.  Here is an example:
 ```
 
 If you are in an environment with multiple shards you may need to specify the
-electric moray hostname.  You can find you dns domain in the ops zone by looking
-at the registrar config (shown below), then replacing `ops` with
+electric moray hostname.  You can find your DNS domain in the ops zone by
+looking at the registrar config (shown below), then replacing `ops` with
 `electric-moray`:
 
 ```
@@ -1708,8 +1708,8 @@ moray=# select _key from manta where objectId = 'cd3251bb-eea8-e8b2-b089-8954429
 
 ### Locating Object Contents
 
-Now that you know what sharks the object is on you can pull it directly from
-the ops box by creating a URL with the format:
+Now that you know what sharks the object is on you can pull the object contents
+directly from the ops box by creating a URL with the format:
 
 ```
 http://[manta_storage_id]/[creator]/[objectId]
@@ -1722,8 +1722,8 @@ For example, using our previous example:
 foo
 ```
 
-Otherwise, we can also translate the `manta_storage_id` to a zone and find
-the object.  First, translate the id and log into the storage zone:
+Otherwise, you can also translate the `manta_storage_id` to a zone and find
+the object.  First, translate the storage id and log into the storage zone:
 
 ```
 [root@headnode (coal) ~]# manta-adm show -o zonename,storage_id storage | grep 1.stor.coal.joyent.us
@@ -1746,8 +1746,8 @@ In our case:
 foo
 ```
 
-There will be one copy of the object on each of the storage `sharks` in the
-same location.
+There will be one copy of the object on each of the storage `sharks` in that
+location.
 
 ## Debugging: was there an outage?
 
