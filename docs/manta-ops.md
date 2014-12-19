@@ -1576,6 +1576,178 @@ Note that the column name is "storage_ids" (with a trailing "s") because it's
 technically possible to have multiple storage nodes per host, though you'd only
 ever do that in development.
 
+## Locating Object Data
+
+This section explains how to locate persisted object data throughout Manta.
+There are only two places where data is persisted:
+
+1. In `postgres` zones: Object metadata, in a Postgres database.
+1. In `storage` zones: Object contents, as a file on disk
+
+### Locating Object Metadata
+
+Usually you will want to locate an object using the Manta path.  For example,
+we will be using the following object:
+
+```
+[root@e19ae56a (ops) ~]$ echo 'foo' | mput /poseidon/stor/foo
+/poseidon/stor/foo                                         4B
+[root@e19ae56a (ops) ~]$
+```
+
+It never hurts to get the object id from the front door to verify that you
+are (eventually) looking at the right thing.  The object id is the same as
+the etag:
+
+```
+[root@e19ae56a (ops) ~]$ minfo /poseidon/stor/foo | grep etag
+etag: cd3251bb-eea8-e8b2-b089-8954429dc1b5
+```
+
+You first need to translate the account login to the account uuid:
+
+```
+[root@headnode (coal) ~]# sdc-ldap search login=poseidon uuid
+dn: uuid=074d493f-c3e5-cf02-bb85-c30c1bf85de5, ou=users, o=smartdc
+uuid: 074d493f-c3e5-cf02-bb85-c30c1bf85de5
+```
+
+Then you can construct the metadata path for the object by replacing the account
+login with the account uuid:
+
+```
+/poseidon/stor/foo => /074d493f-c3e5-cf02-bb85-c30c1bf85de5/stor/foo
+```
+
+Then from the ops box you can fetch the object metadata from Moray.  Object
+metadata is located in the `manta` table.  Here is an example:
+
+```
+[root@e19ae56a (ops) ~]$ getobject manta /074d493f-c3e5-cf02-bb85-c30c1bf85de5/stor/foo
+{
+  "bucket": "manta",
+  "key": "/074d493f-c3e5-cf02-bb85-c30c1bf85de5/stor/foo",
+  "value": {
+    "dirname": "/074d493f-c3e5-cf02-bb85-c30c1bf85de5/stor",
+    "key": "/074d493f-c3e5-cf02-bb85-c30c1bf85de5/stor/foo",
+    "headers": {},
+    "mtime": 1419027443247,
+    "name": "foo",
+    "creator": "074d493f-c3e5-cf02-bb85-c30c1bf85de5",
+    "owner": "074d493f-c3e5-cf02-bb85-c30c1bf85de5",
+    "roles": [],
+    "type": "object",
+    "contentLength": 4,
+    "contentMD5": "07BzhNET7exJ6qYjitX/AA==",
+    "contentType": "application/octet-stream",
+    "etag": "cd3251bb-eea8-e8b2-b089-8954429dc1b5",
+    "objectId": "cd3251bb-eea8-e8b2-b089-8954429dc1b5",
+    "sharks": [
+      {
+        "datacenter": "coal",
+        "manta_storage_id": "1.stor.coal.joyent.us"
+      },
+      {
+        "datacenter": "coal",
+        "manta_storage_id": "2.stor.coal.joyent.us"
+      }
+    ],
+    "vnode": 20382
+  },
+  "_id": 457,
+  "_etag": "C5DF8282",
+  "_mtime": 1419027443253,
+  "_txn_snap": null,
+  "_count": null
+}
+```
+
+If you are in an environment with multiple shards you may need to specify the
+electric moray hostname.  You can find you dns domain in the ops zone by looking
+at the registrar config (shown below), then replacing `ops` with
+`electric-moray`:
+
+```
+[root@e19ae56a (ops) ~]$ json -f /opt/smartdc/registrar/etc/config.json registration.domain
+ops.coal.joyent.us
+[root@e19ae56a (ops) ~]$ getobject -h electric-moray.coal.joyent.us manta /074d493f-c3e5-cf02-bb85-c30c1bf85de5/stor/foo | head -3
+{
+  "bucket": "manta",
+  "key": "/074d493f-c3e5-cf02-bb85-c30c1bf85de5/stor/foo",
+```
+
+Once you've located the object metadata, you can pull out the parts that you'll
+need to figure out where you data is located:
+
+```
+[root@e19ae56a (ops) ~]$ getobject manta /074d493f-c3e5-cf02-bb85-c30c1bf85de5/stor/foo | json -H value.creator value.objectId value.sharks
+074d493f-c3e5-cf02-bb85-c30c1bf85de5
+cd3251bb-eea8-e8b2-b089-8954429dc1b5
+[
+  {
+    "datacenter": "coal",
+    "manta_storage_id": "1.stor.coal.joyent.us"
+  },
+  {
+    "datacenter": "coal",
+    "manta_storage_id": "2.stor.coal.joyent.us"
+  }
+]
+```
+
+You can also log into postgres manually and run a SQL command on the `manta`
+table:
+
+```
+moray=# select _key from manta where objectId = 'cd3251bb-eea8-e8b2-b089-8954429dc1b5';
+                      _key
+------------------------------------------------
+ /074d493f-c3e5-cf02-bb85-c30c1bf85de5/stor/foo
+(1 row)
+```
+
+### Locating Object Contents
+
+Now that you know what sharks the object is on you can pull it directly from
+the ops box by creating a URL with the format:
+
+```
+http://[manta_storage_id]/[creator]/[objectId]
+```
+
+For example, using our previous example:
+
+```
+[root@e19ae56a (ops) ~]$ curl -s http://1.stor.coal.joyent.us/074d493f-c3e5-cf02-bb85-c30c1bf85de5/cd3251bb-eea8-e8b2-b089-8954429dc1b5
+foo
+```
+
+Otherwise, we can also translate the `manta_storage_id` to a zone and find
+the object.  First, translate the id and log into the storage zone:
+
+```
+[root@headnode (coal) ~]# manta-adm show -o zonename,storage_id storage | grep 1.stor.coal.joyent.us
+bcfa928c-7af3-4c99-9483-cf39e4712adf 1.stor.coal.joyent.us
+[root@headnode (coal) ~]# manta-login bcfa928c-7af3-4c99-9483-cf39e4712adf
+[root@bcfa928c (storage) ~]$
+```
+
+All objects are located under a path constructed from the `creator` and the
+`objectId`:
+
+```
+/manta/[creator]/[objectId]
+```
+
+In our case:
+
+```
+[root@bcfa928c (storage) ~]$ cat /manta/074d493f-c3e5-cf02-bb85-c30c1bf85de5/cd3251bb-eea8-e8b2-b089-8954429dc1b5
+foo
+```
+
+There will be one copy of the object on each of the storage `sharks` in the
+same location.
 
 ## Debugging: was there an outage?
 
