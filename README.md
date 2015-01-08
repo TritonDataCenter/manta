@@ -5,7 +5,7 @@
 -->
 
 <!--
-    Copyright (c) 2014, Joyent, Inc.
+    Copyright (c) 2015, Joyent, Inc.
 -->
 
 # Manta: object storage with integrated compute
@@ -179,6 +179,9 @@ deployment.  Except for the last category of non-data-path services, these can
 all be deployed redundantly for availability and additional instances can be
 deployed to increase capacity.
 
+Finally, scripts used to set up these component zones live in the
+[https://github.com/joyent/manta-scripts](manta-scripts) repo.
+
 For more details on the architecture, including how these pieces actually fit
 together, see "Architecture Basics" in the 
 [Manta Operator's
@@ -278,6 +281,53 @@ Github.  If you're asking for help with Joyent's production Manta service,
 you should contact Joyent support instead.  If you're contributing code, start
 with a pull request.  If you're contributing something substantial, you should
 contact developers on the mailing list or IRC first.
+
+
+## Manta zone build and setup
+
+You should look at the above instructions for actually building and deploying
+Manta.  This section is a reference for developers to understand how those
+procedures work under the hood.
+
+Most Manta components are deployed as *zones*, based on *images* built from a
+single *repo*.  Examples include *muppet* and *muskie*.  For more details and
+the full list of zones, see the [https://github.com/joyent/manta](manta) repo.
+
+For a typical zone (take "muppet"), the process from source code to deployment
+works like this:
+
+1. Build the repository itself.
+2. Build an image (which is basically a zone filesystem template) from the
+   contents of the built repository.
+3. Publish the image to updates.joyent.com.
+4. Import the image into an SDC instance.
+5. Provision a new zone from the imported image.
+6. During the first boot, the zone executes a one-time setup script.
+7. During the first and all subsequent boots, the zone executes another
+   configuration script.
+
+There are tools to automate most of this (and again, for using them, see the
+links above):
+
+* Mountain Gorilla (MG), part of the [http://github.com/joyent/sdc](SDC) build
+  process, takes care of steps (1) through (3).  It does this by cloning the
+  repo, using a "make" target to build a tarball to be splatted down onto a bare
+  zone, deploys a bare zone, splats down the tarball, and uses the SDC APIs to
+  create a new image from that zone.  This image basically represents a template
+  filesystem with which instances of this component will be stamped out.  After
+  the image is built, it gets uploaded to updates.joyent.com.
+* The "manta-init" command takes care of step 4.  You run this as part of any
+  deployment.  See the [Manta Operator's Guide](https://joyent.github.io/manta)
+  for details.  After the first run, basically all it does is find new images in
+  updates.joyent.com, import them into the current SDC instance, and mark them
+  for use by "manta-deploy".
+* The "manta-adm" and "manta-deploy" commands (whichever you choose to use) take
+  care of step 5.  See the Manta Operator's Guide for details.
+* Steps 6 and 7 happen automatically when the zone boots as a result of the
+  previous steps.
+
+For more information on the zone setup and boot process, see the
+[manta-scripts](https://github.com/joyent/manta-scripts) repo.
 
 
 ## Design principles
