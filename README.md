@@ -290,8 +290,7 @@ Manta.  This section is a reference for developers to understand how those
 procedures work under the hood.
 
 Most Manta components are deployed as *zones*, based on *images* built from a
-single *repo*.  Examples include *muppet* and *muskie*.  For more details and
-the full list of zones, see the [https://github.com/joyent/manta](manta) repo.
+single *repo*.  Examples are above, and include *muppet* and *muskie*.
 
 For a typical zone (take "muppet"), the process from source code to deployment
 works like this:
