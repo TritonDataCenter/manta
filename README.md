@@ -308,7 +308,7 @@ works like this:
 There are tools to automate most of this (and again, for using them, see the
 links above):
 
-* Mountain Gorilla (MG), part of the [http://github.com/joyent/sdc](SDC) build
+* Mountain Gorilla (MG), part of the [SDC](http://github.com/joyent/sdc) build
   process, takes care of steps (1) through (3).  It does this by cloning the
   repo, using a "make" target to build a tarball to be splatted down onto a bare
   zone, deploys a bare zone, splats down the tarball, and uses the SDC APIs to
