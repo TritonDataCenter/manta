@@ -10,7 +10,7 @@ apisections: .
 -->
 
 <!--
-    Copyright (c) 2014, Joyent, Inc.
+    Copyright (c) 2015, Joyent, Inc.
 -->
 
 # Manta Operator's Guide
@@ -2911,54 +2911,6 @@ get on your dev VM's GZ, and run:
     dev-gz$ echo '{ "add_nics": [ { "ip": "10.77.77.250", "netmask": "255.255.255.0", "nic_tag": "manta" } ] }' | vmadm update <VM>
 
 Then reboot the zone.
-
-
-## Adding a new service
-
-### Prerequisites
-
-When adding a new service to manta, there are several prerequisites:
-
- * Your software must be delivered in an SDC image.  This process requires
-   changes to the mountain-gorilla.git Makefile and targets.json.  In addition,
-   your repository's Makefile will likely need "release" and "publish" targets.
-
- * That image must be available in the updates.joyent.com IMGAPI.  It should be
-   named "manta-SERVICE", as in:
-
-    [root@headnode (bh1-kvm6) ~]# updates-imgadm list name=manta-postgres | tail -3 | awk '{print $1, $2, $3 }'
-    a54c49d4-68c8-41b8-906e-0eb0d84fe3f7 manta-postgres master-20130621T213801Z-g94b316a
-    a579d45b-6703-4d18-8673-c35202490d37 manta-postgres master-20130621T224758Z-g94b316a
-    5d9524cf-67e4-43c5-a77d-72a1b43cfa9f manta-postgres master-20130624T162632Z-g1f6c2f7
-    [root@headnode (bh1-kvm6) ~]#
-
-If you implement Makefile rules similarly to other repositories, then the image
-upload will happen as part of the standard "make publish" target.
-
- * Add any SAPI manifests required for your service.  Traditionally these are
-   delivered in /opt/smartdc/$SERIVCE/sapi_manifests.  There are many examples of
-   services following this pattern: see mako.git, muskie.git, manatee.git, and
-   others.  That manifest defines the config.json file which will be used for
-   configuring your service.
-
- * Your image should provide a script in /opt/smartdc/boot/configure.sh.  That
-   script will be run every time an instance boots, and that script should
-   configure your instance appropriately (enable config-agent, enable other
-   services, update ~/.profile, etc.).
-
-### Local Changes
-
-Once your image has been loaded into the updates.joyent.com IMGAPI (check with
-`updates-imgadm list name=manta-SERVICE`), you're ready to add your service to
-this repository.  There are several steps involved there:
-
- * Add a manta-deployment.git/config/services/SERVICE.json file for your
-   service.  This JSON file defines the SAPI service, which includes your zone
-   parameters and metadata used in deployment.  Look through the existing files to
-   see which options are available, and consult the SAPI documentation for a full
-   explanation.
- * You probably want to update bin/manta-deploy-svcs to deploy your service in a
-   standard deployment.
 
 
 # Advanced Marlin Reference
