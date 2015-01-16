@@ -55,6 +55,9 @@ article on its design and implementation.
 see [Dave Pacheco](https://github.com/davepacheco)'s blog entry on
 [Fault Tolerence in Manta](http://dtrace.org/blogs/dap/2013/07/03/fault-tolerance-in-manta/) -- which, it must be said, received [the highest possible praise](https://twitter.com/eric_brewer/status/352804538769604609).
 
+* For help with working on Manta and testing your changes, see the [developer
+  notes](docs/dev-notes.md)
+
 ## Community
 
 Community discussion about Manta happens in two main places:
