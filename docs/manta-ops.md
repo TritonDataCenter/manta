@@ -756,8 +756,8 @@ anything from COAL to a multi-compute-node deployment.  The general process is:
 
         headnode$ /zones/$(vmadm lookup alias=manta0)/root/opt/smartdc/manta-deployment/networking/gen-coal.sh > /var/tmp/netconfig.json
 
-    b. For lab machines, run this from the [lab.git
-       repo](https://mo.joyent.com/docs/lab/master/):
+    b. For those using the internal Joyent Engineering lab, run this from
+       the [lab.git repo](https://mo.joyent.com/docs/lab/master/):
 
         lab.git$ node bin/genmanta.js -r RIG_NAME LAB_NAME
 
