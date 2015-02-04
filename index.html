@@ -1125,8 +1125,8 @@ prefix for "Richmond-A" hosts and "MS" prefix for "Mantis Shrimp" hosts.</li>
 <pre><code>headnode$ /zones/$(vmadm lookup alias=manta0)/root/opt/smartdc/manta-deployment/networking/gen-coal.sh &gt; /var/tmp/netconfig.json
 </code></pre>
 
-<p>b. For lab machines, run this from the <a href="https://mo.joyent.com/docs/lab/master/">lab.git
-   repo</a>:</p>
+<p>b. For those using the internal Joyent Engineering lab, run this from
+   the <a href="https://mo.joyent.com/docs/lab/master/">lab.git repo</a>:</p>
 
 <pre><code>lab.git$ node bin/genmanta.js -r RIG_NAME LAB_NAME
 </code></pre>
@@ -1146,6 +1146,13 @@ headnode$ ./manta-net.sh CONFIG_FILE
 ensure that (1) your SDC networks have cross datacenter connectivity and
 routing set up and (2) the SDC firewalls allow TCP and UDP traffic cross-
 datacenter.</p></li>
+<li><p>If you'll be deploying a loadbalancer on any compute nodes <em>other</em> than a
+headnode, then you'll need to create the "external" NIC tag on those CNs.
+For common single-system configurations (for dev and test systems), you don't
+usually need to do anything for this step.  For multi-CN configurations,
+you probably <em>will</em> need to do this.  See the SDC documentation for
+<a href="https://docs.joyent.com/sdc7/nic-tags#AssigningaNICTagtoaComputeNode">how to add a NIC tag to a
+CN</a>.</p></li>
 <li><p>Inside the manta deployment zone, run:</p>
 
 <pre><code>manta$ manta-init -s SIZE -e YOUR_EMAIL
