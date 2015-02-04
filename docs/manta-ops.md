@@ -777,7 +777,15 @@ anything from COAL to a multi-compute-node deployment.  The general process is:
    routing set up and (2) the SDC firewalls allow TCP and UDP traffic cross-
    datacenter.
 
-5. Inside the manta deployment zone, run:
+5. If you'll be deploying a loadbalancer on any compute nodes *other* than a
+   headnode, then you'll need to create the "external" NIC tag on those CNs.
+   For common single-system configurations (for dev and test systems), you don't
+   usually need to do anything for this step.  For multi-CN configurations,
+   you probably *will* need to do this.  See the SDC documentation for
+   [how to add a NIC tag to a
+   CN](https://docs.joyent.com/sdc7/nic-tags#AssigningaNICTagtoaComputeNode).
+
+6. Inside the manta deployment zone, run:
 
         manta$ manta-init -s SIZE -e YOUR_EMAIL
 
@@ -789,7 +797,7 @@ anything from COAL to a multi-compute-node deployment.  The general process is:
    time you run it, so you may want to run it in a screen seesion.  It's
    idempotent.
 
-6. Inside the manta deployment zone, deploy Manta.
+7. Inside the manta deployment zone, deploy Manta.
 
     a. In COAL, just run `manta-deploy-coal`.  This step is idempotent.
 
@@ -802,7 +810,7 @@ anything from COAL to a multi-compute-node deployment.  The general process is:
        You'll also need to run "manta-shardadm" and "manta-create-topology.sh".
        These steps are idempotent.  See "manta-deploy-lab" for examples.
 
-7. If desired, set up connectivity to the "ops", "marlin-dashboard", and
+8. If desired, set up connectivity to the "ops", "marlin-dashboard", and
    "madtom" zones.  See "Overview of Operating Manta" below for details.
 
 See the [Service Health
