@@ -805,10 +805,15 @@ anything from COAL to a multi-compute-node deployment.  The general process is:
        idempotent.
 
     c. For any other installation (including a multi-CN installation), you'll
-       want to generate a "manta-adm" configuration file (see "manta-adm
-       configuration" below) and then run `manta-adm update config.json`.
-       You'll also need to run "manta-shardadm" and "manta-create-topology.sh".
-       These steps are idempotent.  See "manta-deploy-lab" for examples.
+       need to run several more steps: assign shards for storage and object
+       metadata with "manta-shardadm"; create a hash ring with
+       "manta-create-topology.sh"; generate a "manta-adm" configuration file
+       (see "manta-adm configuration" below); and finally run "manta-adm update
+       config.json" to deploy those zones.  Your best bet is to examine the
+       "manta-deploy-dev" script to see how it uses these tools.  See
+       "manta-adm configuration" below for details on the input file to
+       "manta-adm update".  Each of these steps is idempotent, but the shard and
+       hash ring must be set up before deploying any zones.
 
 8. If desired, set up connectivity to the "ops", "marlin-dashboard", and
    "madtom" zones.  See "Overview of Operating Manta" below for details.
