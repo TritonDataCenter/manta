@@ -1111,22 +1111,26 @@ Run this in each datacenter:
    command that you used when initially deploying Manta inside the
    manta-deployment zone.  For us-east, that's:
 
-    manta$ manta-init -e manta+us-east@joyent.com -s production -c 10
+        $ manta-init -e manta+us-east@joyent.com -s production -c 10
 
 2. Inside the Manta deployment zone, generate a configuration file representing
    the current deployment state:
 
-    manta$ manta-adm show -s -j > config.json
+        $ manta-adm show -s -j > config.json
 
 3. Modify the file as desired.  See "manta-adm configuration" above for details
    on the format.  In most cases, you just need to change the image uuid for
    the service that you're updating.  You can get the latest image for a
    service with the following command:
 
-    headnode$ sdc-sapi "/services?name=[service name]&include_master=true" | \
-        json -Ha params.image_uuid
+        $ sdc-sapi "/services?name=[service name]&include_master=true" | \
+            json -Ha params.image_uuid
 
-4. Update the mantamon alarm configuration as needed.  If you provisioned a new
+4. Pass the updated file to "manta-adm update":
+
+        $ manta-adm update config.json
+
+5. Update the mantamon alarm configuration as needed.  If you provisioned a new
    zone, you'll likely want to "mantamon add" alarms for that zone.  If you
    deprovisioned a zone, you'll want to "mantamon close" the alarms for that
    now-non-existent zone.  If you reprovisioned a zone, no changes should be
