@@ -1146,9 +1146,9 @@ Run this procedure for each datacenter whose Marlin agents you want to upgrade.
    Manta CLI tools:
 
         headnode$ mfind -n 'marlin-master-.*\.tar.\gz' \
-            $(mget /Joyent_Dev/stor/builds/marlin/master-latest)/marlin
+            $(mget /Joyent_Dev/public/builds/marlin/master-latest)/marlin
 
-2. Fetch the desired marlin-master-.*.tar.gz tarball to /var/tmp on the
+2. Fetch the desired marlin-master-.\*.tar.gz tarball to /var/tmp on the
    headnode.  We'll call that file's name TARBALL.
 
 3. Copy the tarball to each of the storage nodes:
