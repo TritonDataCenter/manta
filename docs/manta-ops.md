@@ -1537,6 +1537,36 @@ limited analysis of jobs run as well as for debugging specific jobs run in the
 past.
 
 
+## Usage reports and storage capacity
+
+Usage reports for compute, storage, and requests are generated regularly by the
+metering service. Marlin jobs are kicked off via cron in the ops zone to
+process Marlin logs for compute usage, metadata tier dumps for storage usage,
+and muskie logs for request and bandwidth. Additionally, a summary of the three
+reports is generated from the primary usage reports. These reports are saved to
+Manta under the following paths:
+
+| Usage report | Path | Frequency |
+| ------------ | ---- | --------- |
+| compute      | `/poseidon/stor/usage/compute/YYYY/MM/DD/HH/hHH.json` | hourly |
+| request      | `/poseidon/stor/usage/request/YYYY/MM/DD/HH/hHH.json` | hourly |
+| storage      | `/poseidon/stor/usage/storage/YYYY/MM/DD/00/h00.json` | daily |
+| summary      | `/poseidon/stor/usage/summary/YYYY/MM/DD/dDD.json`    | daily |
+
+Usage output from storage metering is useful for determining logical usage for
+each user in Manta. For a good idea of system-wide logical storage usage, sum
+up the usage for each user, e.g., with
+`mget /poseidon/stor/usage/YYYY/MM/DD/HH/hHH.json |\
+ json -ga storage.public.bytes storage.stor.bytes storage.jobs.bytes storage.reports.bytes |\
+ awk '{sum+=$1+$2+$3+$4}END{print sum}'`
+
+Note, however, that the logical usage can be a poor indicator of **physical**
+usage. Since a Manta object ultimately lives on a ZFS filesystem with
+compression, physical usage may be less than the logical usage that metering
+reports indicate. Storage reports also count cross-account links once for each
+account, even though there is only a single set of copies of the objects.
+
+
 # Debugging: general tasks
 
 ## Locating systems
@@ -1867,9 +1897,89 @@ generally the top priority, and you can use the local log files on muskie
 servers to debug that.
 
 
-## Running Garbage Collection, Audit, Cruft Collection
+## Debugging System Crons
+
+### Manatee Dumps
+
+Several system crons depend on SQL dumps generated from each manatee shard. If
+the dumps are missing, some system maintenance jobs will fail.
+
+Manatee dumps of the moray database are uploaded to
+`/poseidon/stor/manatee_backups` by the async peer of each shard. A Marlin job
+created via cron takes the dump and processes each table into a streaming JSON
+format that is consumed by the system crons. These are JSON objects are
+uploaded to the same directory:
+
+    # mls /poseidon/stor/manatee_backups/2.moray.us-east.joyent.us/2015/06/02/00
+    buckets_config-2015-06-02-00-00-33.gz
+    manta-2015-06-02-00-00-33.gz
+    manta_delete_log-2015-06-02-00-00-33.gz
+    manta_directory_counts-2015-06-02-00-00-33.gz
+    medusa_sessions-2015-06-02-00-00-33.gz
+    moray-2015-06-02-00-00-33.gz
+
+If the "moray-\*.gz" object is missing, then the manatee peer failed to
+successfully upload a dump. If the other tables are missing when expected, then
+the "pg_transform" Marlin job that processes the raw dump failed.
+
+### Backfilling a Postgres Dump
+
+Manatee takes and keeps several ZFS snapshots for the purposes of disaster
+recovery. The backfill process involves spinning up a Postgres instance on the
+ZFS snapshot and running the `pg_dump` script.
+
+1. Identify the async peer of the shard(s) with the missing data.
+   `manatee-stat` on any peer shows which peer is the async.
+1. Log in to the peer and list the ZFS snapshots to identify the snapshot you
+   want to use to regenerate the dump. This command is useful to generate
+   human-readable timestamps:
+
+      for i in $(zfs list -H -t snapshot | tail -100 | cut -f1); do node -e "console.log(\"$i\", new Date(+\"$i\".split('@')[1]).toISOString())"; done
+
+1. Run the `pg_custom_dump.sh` script located in the manatee directory using the
+   identified snapshot.
+
+       /opt/smartdc/manatee/pg_dump/pg_custom_dump.sh zones/a5fa2966-0dd5-40ac-9a63-14d91343c196/data/manatee@1421885974910
+
+
+### Generating JSON Table Dumps
+
+Run the pg_transform mola script from the ops zone with the dump as the input
+for backfill.
+
+    /opt/smartdc/mola/bin/kick_off_pg_transform.js -b /poseidon/stor/manatee_backups/2.moray.us-east.joyent.us/2015/06/02/00/moray-2015-06-02-00-00-37.gz 2>&1 | bunyan
+
+If table dumps are missing, storage metering, GC, audit and cruft jobs will not
+succeed. GC, audit and cruft are not time sensitive and do not need to be
+re-run if they fail as long as the jobs succeed eventually. Storage metering
+(and the daily summary job afterward) will need to be re-run.
+
+### Running Metering Jobs
+
+Rerun a metering job using the "meter" command with a specified date in the ops
+zone. Metering scripts poll for job completion in order to create the "latest"
+link once the job is done. If the "latest" link is not necessary, you can
+interrupt the metering script after job input has been closed.
+
+    /opt/smartdc/mackerel/bin/meter -j "storage" -d "2015-06-02" 2>&1 | bunyan
+    /opt/smartdc/mackerel/bin/meter -j "request" -d "2015-06-02T05:00:00" 2>&1 | bunyan
+    /opt/smartdc/mackerel/bin/meter -j "compute" -d "2015-06-02T07:00:00" 2>&1 | bunyan
+    /opt/smartdc/mackerel/bin/meter -j "accessLogs" -d "2015-06-02T11:00:00" 2>&1 | bunyan
+    /opt/smartdc/mackerel/bin/meter -j "summarizeDaily" -d "2015-06-02" 2>&1 | bunyan
+
+Note that the "summarizeDaily" job depends on the output of the "storage",
+"request" and "compute" jobs from the previous day. If any of the previous
+day's jobs were incomplete, the "summarizeDaily" job will have to be re-run
+after the backfilling of the previous day's jobs is complete.
+
+### Running Garbage Collection, Audit, Cruft Collection
 
 Please see the docs included in the manta-mola repository.
+
+
+## Authcache (mahi) issues
+
+Please see the docs included in the mahi repository.
 
 # Debugging Marlin: distributed state
 
