@@ -1565,6 +1565,7 @@ usage. Since a Manta object ultimately lives on a ZFS filesystem with
 compression, physical usage may be less than the logical usage that metering
 reports indicate. Storage reports also count cross-account links once for each
 account, even though there is only a single set of copies of the objects.
+Metering also rounds up small objects to a minimum object size.
 
 
 # Debugging: general tasks
