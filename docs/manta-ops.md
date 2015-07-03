@@ -797,6 +797,11 @@ anything from COAL to a multi-compute-node deployment.  The general process is:
    time you run it, so you may want to run it in a screen seesion.  It's
    idempotent.
 
+   A common failure mode for those without quite fast internet links is a
+   failure to import the "manta-marlin" image. The manta-marlin image is the
+   multi-GB image that is used for zones in which Manta compute jobs run.
+   See the "Workaround for manta-marlin image import failure" section below.
+
 7. Inside the manta deployment zone, deploy Manta.
 
     a. In COAL, just run `manta-deploy-coal`.  This step is idempotent.
@@ -963,6 +968,46 @@ node (aac3c402-3047-11e3-b451-002590c57864) and one storage node
 In a multi-datacenter configuration, this would be used to configure the
 "staging-1" datacenter.  There would be two more configuration files, one
 for "staging-2" and one for "staging-3".
+
+
+## Workaround for manta-marlin image import failure
+
+A common failure mode with `manta-init ...` for those without a fast internet
+link is a failure to import the large "manta-marlin" image. This is a multi-GB
+image used for the zones in which Manta compute jobs run. The problem is that
+the large image can make it easy to hit the one hour timeout for the
+[IMGAPI AdminImportRemoteImage](https://github.com/joyent/sdc-imgapi/blob/master/docs/index.md#adminimportremoteimage-post-imagesuuidactionimport-remote)
+endpoint used to import Manta images. Neither this endpoint nor the
+<https://updates.joyent.com> server hosting the images supports resumable
+downloads.
+
+Here is a manual workaround (run the following from the headnode global zone):
+
+```
+cd /var/tmp
+
+# Determine the UUID of the latest "manta-marlin" image on updates.joyent.com.
+muuid=$(updates-imgadm list name=manta-marlin --latest -H -o uuid)
+
+# Download directly from a separate manual download area in Manta.
+curl -kO https://us-east.manta.joyent.com/Joyent_Dev/public/Manta/manta-marlin-image/$muuid.imgmanifest
+
+# If that failed, then the separate download area doesn't have a recent
+# image. Please log an issue.
+[[ $? -ne 0 ]] && echo log an issue at https://github.com/joyent/manta/issues/
+
+# If the following is interrupted, then re-run the same command to resume:
+curl -kO -C - https://us-east.manta.joyent.com/Joyent_Dev/public/Manta/manta-marlin-image/$muuid.file.gz
+
+# Verify the download checksum
+[[ $(json -f $muuid.imgmanifest | json files.0.sha1) \
+    == $(openssl dgst -sha1 $muuid.file.gz | awk '{print $2}') ]] \
+    || echo "error downloading, please delete and retry"
+
+# Then install this image into the DC's IMGAPI:
+sdc-imgadm import -m $muuid.imgmanifest -f $muuid.file.gz
+```
+
 
 ## manta-adm configuration
 
