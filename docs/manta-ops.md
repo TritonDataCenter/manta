@@ -983,30 +983,28 @@ downloads.
 
 Here is a manual workaround (run the following from the headnode global zone):
 
-```
-cd /var/tmp
-
-# Determine the UUID of the latest "manta-marlin" image on updates.joyent.com.
-muuid=$(updates-imgadm list name=manta-marlin --latest -H -o uuid)
-
-# Download directly from a separate manual download area in Manta.
-curl -kO https://us-east.manta.joyent.com/Joyent_Dev/public/Manta/manta-marlin-image/$muuid.imgmanifest
-
-# If that failed, then the separate download area doesn't have a recent
-# image. Please log an issue.
-[[ $? -ne 0 ]] && echo log an issue at https://github.com/joyent/manta/issues/
-
-# If the following is interrupted, then re-run the same command to resume:
-curl -kO -C - https://us-east.manta.joyent.com/Joyent_Dev/public/Manta/manta-marlin-image/$muuid.file.gz
-
-# Verify the download checksum
-[[ $(json -f $muuid.imgmanifest | json files.0.sha1) \
-    == $(openssl dgst -sha1 $muuid.file.gz | awk '{print $2}') ]] \
-    || echo "error downloading, please delete and retry"
-
-# Then install this image into the DC's IMGAPI:
-sdc-imgadm import -m $muuid.imgmanifest -f $muuid.file.gz
-```
+    cd /var/tmp
+    
+    # Determine the UUID of the latest "manta-marlin" image on updates.joyent.com.
+    muuid=$(updates-imgadm list name=manta-marlin --latest -H -o uuid)
+    
+    # Download directly from a separate manual download area in Manta.
+    curl -kO https://us-east.manta.joyent.com/Joyent_Dev/public/Manta/manta-marlin-image/$muuid.imgmanifest
+    
+    # If that failed, then the separate download area doesn't have a recent
+    # image. Please log an issue.
+    [[ $? -ne 0 ]] && echo log an issue at https://github.com/joyent/manta/issues/
+    
+    # If the following is interrupted, then re-run the same command to resume:
+    curl -kO -C - https://us-east.manta.joyent.com/Joyent_Dev/public/Manta/manta-marlin-image/$muuid.file.gz
+    
+    # Verify the download checksum
+    [[ $(json -f $muuid.imgmanifest | json files.0.sha1) \
+        == $(openssl dgst -sha1 $muuid.file.gz | awk '{print $2}') ]] \
+        || echo "error downloading, please delete and retry"
+    
+    # Then install this image into the DC's IMGAPI:
+    sdc-imgadm import -m $muuid.imgmanifest -f $muuid.file.gz
 
 
 ## manta-adm configuration
