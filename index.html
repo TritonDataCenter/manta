@@ -42,6 +42,16 @@
   <li><div><a href="#deploying-manta">Deploying Manta</a></div>
   <ul>
     <li><div><a href="#networking-configuration">Networking configuration</a></div></li>
+    <li><div><a href="#workaround-for-manta-marlin-image-import-failure">Workaround for manta-marlin image import failure</a></div></li>
+  </ul></li>
+  <li><div><a href="#determine-the-uuid-of-the-latest-manta-marlin-image-on-updatesjoyentcom">Determine the UUID of the latest "manta-marlin" image on updates.joyent.com.</a></div></li>
+  <li><div><a href="#download-directly-from-a-separate-manual-download-area-in-manta">Download directly from a separate manual download area in Manta.</a></div></li>
+  <li><div><a href="#if-that-failed-then-the-separate-download-area-doesnt-have-a-recent">If that failed, then the separate download area doesn't have a recent</a></div></li>
+  <li><div><a href="#image-please-log-an-issue">image. Please log an issue.</a></div></li>
+  <li><div><a href="#if-the-following-is-interrupted-then-re-run-the-same-command-to-resume">If the following is interrupted, then re-run the same command to resume:</a></div></li>
+  <li><div><a href="#verify-the-download-checksum">Verify the download checksum</a></div></li>
+  <li><div><a href="#then-install-this-image-into-the-dcs-imgapi">Then install this image into the DC's IMGAPI:</a></div>
+  <ul>
     <li><div><a href="#manta-adm-configuration">manta-adm configuration</a></div></li>
   </ul></li>
   <li><div><a href="#upgrading-manta-components">Upgrading Manta components</a></div>
@@ -64,6 +74,7 @@
     <li><div><a href="#manta-tools">Manta tools</a></div></li>
     <li><div><a href="#logs">Logs</a></div></li>
     <li><div><a href="#job-archives">Job archives</a></div></li>
+    <li><div><a href="#usage-reports-and-storage-capacity">Usage reports and storage capacity</a></div></li>
   </ul></li>
   <li><div><a href="#debugging-general-tasks">Debugging: general tasks</a></div>
   <ul>
@@ -74,7 +85,8 @@
     <li><div><a href="#_key">                      _key</a></div></li>
     <li><div><a href="#debugging-was-there-an-outage">Debugging: was there an outage?</a></div></li>
     <li><div><a href="#debugging-api-failures">Debugging API failures</a></div></li>
-    <li><div><a href="#running-garbage-collection-audit-cruft-collection">Running Garbage Collection, Audit, Cruft Collection</a></div></li>
+    <li><div><a href="#debugging-system-crons">Debugging System Crons</a></div></li>
+    <li><div><a href="#authcache-mahi-issues">Authcache (mahi) issues</a></div></li>
   </ul></li>
   <li><div><a href="#debugging-marlin-distributed-state">Debugging Marlin: distributed state</a></div>
   <ul>
@@ -1164,7 +1176,12 @@ configuring alarms.</p>
 <p>This step runs various initialization steps, including downloading all of
 the zone images required to deploy Manta.  This can take a while the first
 time you run it, so you may want to run it in a screen seesion.  It's
-idempotent.</p></li>
+idempotent.</p>
+
+<p>A common failure mode for those without quite fast internet links is a
+failure to import the "manta-marlin" image. The manta-marlin image is the
+multi-GB image that is used for zones in which Manta compute jobs run.
+See the "Workaround for manta-marlin image import failure" section below.</p></li>
 <li><p>Inside the manta deployment zone, deploy Manta.</p>
 
 <p>a. In COAL, just run <code>manta-deploy-coal</code>.  This step is idempotent.</p>
@@ -1391,6 +1408,51 @@ node (aac3c402-3047-11e3-b451-002590c57864) and one storage node
 <p>In a multi-datacenter configuration, this would be used to configure the
 "staging-1" datacenter.  There would be two more configuration files, one
 for "staging-2" and one for "staging-3".</p>
+
+<h2 id="workaround-for-manta-marlin-image-import-failure">Workaround for manta-marlin image import failure</h2>
+
+<p>A common failure mode with <code>manta-init ...</code> for those without a fast internet
+link is a failure to import the large "manta-marlin" image. This is a multi-GB
+image used for the zones in which Manta compute jobs run. The problem is that
+the large image can make it easy to hit the one hour timeout for the
+<a href="https://github.com/joyent/sdc-imgapi/blob/master/docs/index.md#adminimportremoteimage-post-imagesuuidactionimport-remote">IMGAPI AdminImportRemoteImage</a>
+endpoint used to import Manta images. Neither this endpoint nor the
+<a href="https://updates.joyent.com">https://updates.joyent.com</a> server hosting the images supports resumable
+downloads.</p>
+
+<p>Here is a manual workaround (run the following from the headnode global zone):</p>
+
+<p>```
+cd /var/tmp</p>
+
+<h1 id="determine-the-uuid-of-the-latest-manta-marlin-image-on-updatesjoyentcom">Determine the UUID of the latest "manta-marlin" image on updates.joyent.com.</h1>
+
+<p>muuid=$(updates-imgadm list name=manta-marlin --latest -H -o uuid)</p>
+
+<h1 id="download-directly-from-a-separate-manual-download-area-in-manta">Download directly from a separate manual download area in Manta.</h1>
+
+<p>curl -kO https://us-east.manta.joyent.com/Joyent_Dev/public/Manta/manta-marlin-image/$muuid.imgmanifest</p>
+
+<h1 id="if-that-failed-then-the-separate-download-area-doesnt-have-a-recent">If that failed, then the separate download area doesn't have a recent</h1>
+
+<h1 id="image-please-log-an-issue">image. Please log an issue.</h1>
+
+<p>[[ $? -ne 0 ]] &amp;&amp; echo log an issue at https://github.com/joyent/manta/issues/</p>
+
+<h1 id="if-the-following-is-interrupted-then-re-run-the-same-command-to-resume">If the following is interrupted, then re-run the same command to resume:</h1>
+
+<p>curl -kO -C - https://us-east.manta.joyent.com/Joyent_Dev/public/Manta/manta-marlin-image/$muuid.file.gz</p>
+
+<h1 id="verify-the-download-checksum">Verify the download checksum</h1>
+
+<p>[[ $(json -f $muuid.imgmanifest | json files.0.sha1) \
+    == $(openssl dgst -sha1 $muuid.file.gz | awk '{print $2}') ]] \
+    || echo "error downloading, please delete and retry"</p>
+
+<h1 id="then-install-this-image-into-the-dcs-imgapi">Then install this image into the DC's IMGAPI:</h1>
+
+<p>sdc-imgadm import -m $muuid.imgmanifest -f $muuid.file.gz
+```</p>
 
 <h2 id="manta-adm-configuration">manta-adm configuration</h2>
 
@@ -2023,6 +2085,61 @@ marlin-agent, and others).</p>
 limited analysis of jobs run as well as for debugging specific jobs run in the
 past.</p>
 
+<h2 id="usage-reports-and-storage-capacity">Usage reports and storage capacity</h2>
+
+<p>Usage reports for compute, storage, and requests are generated regularly by the
+metering service. Marlin jobs are kicked off via cron in the ops zone to
+process Marlin logs for compute usage, metadata tier dumps for storage usage,
+and muskie logs for request and bandwidth. Additionally, a summary of the three
+reports is generated from the primary usage reports. These reports are saved to
+Manta under the following paths:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Usage report</th>
+  <th>Path</th>
+  <th>Frequency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>compute</td>
+  <td><code>/poseidon/stor/usage/compute/YYYY/MM/DD/HH/hHH.json</code></td>
+  <td>hourly</td>
+</tr>
+<tr>
+  <td>request</td>
+  <td><code>/poseidon/stor/usage/request/YYYY/MM/DD/HH/hHH.json</code></td>
+  <td>hourly</td>
+</tr>
+<tr>
+  <td>storage</td>
+  <td><code>/poseidon/stor/usage/storage/YYYY/MM/DD/00/h00.json</code></td>
+  <td>daily</td>
+</tr>
+<tr>
+  <td>summary</td>
+  <td><code>/poseidon/stor/usage/summary/YYYY/MM/DD/dDD.json</code></td>
+  <td>daily</td>
+</tr>
+</tbody>
+</table>
+
+<p>Usage output from storage metering is useful for determining logical usage for
+each user in Manta. For a good idea of system-wide logical storage usage, sum
+up the usage for each user, e.g., with
+<code>mget /poseidon/stor/usage/YYYY/MM/DD/HH/hHH.json |\
+ json -ga storage.public.bytes storage.stor.bytes storage.jobs.bytes storage.reports.bytes |\
+ awk '{sum+=$1+$2+$3+$4}END{print sum}'</code></p>
+
+<p>Note, however, that the logical usage can be a poor indicator of <strong>physical</strong>
+usage. Since a Manta object ultimately lives on a ZFS filesystem with
+compression, physical usage may be less than the logical usage that metering
+reports indicate. Storage reports also count cross-account links once for each
+account, even though there is only a single set of copies of the objects.
+Metering also rounds up small objects to a minimum object size.</p>
+
 <h1 id="debugging-general-tasks">Debugging: general tasks</h1>
 
 <h2 id="locating-systems">Locating systems</h2>
@@ -2382,9 +2499,91 @@ for that request.</p>
 generally the top priority, and you can use the local log files on muskie
 servers to debug that.</p>
 
-<h2 id="running-garbage-collection-audit-cruft-collection">Running Garbage Collection, Audit, Cruft Collection</h2>
+<h2 id="debugging-system-crons">Debugging System Crons</h2>
+
+<h3 id="manatee-dumps">Manatee Dumps</h3>
+
+<p>Several system crons depend on SQL dumps generated from each manatee shard. If
+the dumps are missing, some system maintenance jobs will fail.</p>
+
+<p>Manatee dumps of the moray database are uploaded to
+<code>/poseidon/stor/manatee_backups</code> by the async peer of each shard. A Marlin job
+created via cron takes the dump and processes each table into a streaming JSON
+format that is consumed by the system crons. These are JSON objects are
+uploaded to the same directory:</p>
+
+<pre><code># mls /poseidon/stor/manatee_backups/2.moray.us-east.joyent.us/2015/06/02/00
+buckets_config-2015-06-02-00-00-33.gz
+manta-2015-06-02-00-00-33.gz
+manta_delete_log-2015-06-02-00-00-33.gz
+manta_directory_counts-2015-06-02-00-00-33.gz
+medusa_sessions-2015-06-02-00-00-33.gz
+moray-2015-06-02-00-00-33.gz
+</code></pre>
+
+<p>If the "moray-*.gz" object is missing, then the manatee peer failed to
+successfully upload a dump. If the other tables are missing when expected, then
+the "pg_transform" Marlin job that processes the raw dump failed.</p>
+
+<h3 id="backfilling-a-postgres-dump">Backfilling a Postgres Dump</h3>
+
+<p>Manatee takes and keeps several ZFS snapshots for the purposes of disaster
+recovery. The backfill process involves spinning up a Postgres instance on the
+ZFS snapshot and running the <code>pg_dump</code> script.</p>
+
+<ol>
+<li>Identify the async peer of the shard(s) with the missing data.
+<code>manatee-stat</code> on any peer shows which peer is the async.</li>
+<li><p>Log in to the peer and list the ZFS snapshots to identify the snapshot you
+want to use to regenerate the dump. This command is useful to generate
+human-readable timestamps:</p>
+
+<p>for i in $(zfs list -H -t snapshot | tail -100 | cut -f1); do node -e "console.log(\"$i\", new Date(+\"$i\".split('@')[1]).toISOString())"; done</p></li>
+<li><p>Run the <code>pg_custom_dump.sh</code> script located in the manatee directory using the
+identified snapshot.</p>
+
+<p>/opt/smartdc/manatee/pg_dump/pg_custom_dump.sh zones/a5fa2966-0dd5-40ac-9a63-14d91343c196/data/manatee@1421885974910</p></li>
+</ol>
+
+<h3 id="generating-json-table-dumps">Generating JSON Table Dumps</h3>
+
+<p>Run the pg_transform mola script from the ops zone with the dump as the input
+for backfill.</p>
+
+<pre><code>/opt/smartdc/mola/bin/kick_off_pg_transform.js -b /poseidon/stor/manatee_backups/2.moray.us-east.joyent.us/2015/06/02/00/moray-2015-06-02-00-00-37.gz 2&gt;&amp;1 | bunyan
+</code></pre>
+
+<p>If table dumps are missing, storage metering, GC, audit and cruft jobs will not
+succeed. GC, audit and cruft are not time sensitive and do not need to be
+re-run if they fail as long as the jobs succeed eventually. Storage metering
+(and the daily summary job afterward) will need to be re-run.</p>
+
+<h3 id="running-metering-jobs">Running Metering Jobs</h3>
+
+<p>Rerun a metering job using the "meter" command with a specified date in the ops
+zone. Metering scripts poll for job completion in order to create the "latest"
+link once the job is done. If the "latest" link is not necessary, you can
+interrupt the metering script after job input has been closed.</p>
+
+<pre><code>/opt/smartdc/mackerel/bin/meter -j "storage" -d "2015-06-02" 2&gt;&amp;1 | bunyan
+/opt/smartdc/mackerel/bin/meter -j "request" -d "2015-06-02T05:00:00" 2&gt;&amp;1 | bunyan
+/opt/smartdc/mackerel/bin/meter -j "compute" -d "2015-06-02T07:00:00" 2&gt;&amp;1 | bunyan
+/opt/smartdc/mackerel/bin/meter -j "accessLogs" -d "2015-06-02T11:00:00" 2&gt;&amp;1 | bunyan
+/opt/smartdc/mackerel/bin/meter -j "summarizeDaily" -d "2015-06-02" 2&gt;&amp;1 | bunyan
+</code></pre>
+
+<p>Note that the "summarizeDaily" job depends on the output of the "storage",
+"request" and "compute" jobs from the previous day. If any of the previous
+day's jobs were incomplete, the "summarizeDaily" job will have to be re-run
+after the backfilling of the previous day's jobs is complete.</p>
+
+<h3 id="running-garbage-collection-audit-cruft-collection">Running Garbage Collection, Audit, Cruft Collection</h3>
 
 <p>Please see the docs included in the manta-mola repository.</p>
+
+<h2 id="authcache-mahi-issues">Authcache (mahi) issues</h2>
+
+<p>Please see the docs included in the mahi repository.</p>
 
 <h1 id="debugging-marlin-distributed-state">Debugging Marlin: distributed state</h1>
 
