@@ -1828,18 +1828,35 @@ generally the top priority, and you can use the local log files on muskie
 servers to debug that.
 
 
-## Debugging System Crons
+## Debugging Manta housekeeping operations
 
-### Manatee Dumps
+Manta performs a number of housekeeping operations that are based on the
+contents of the metadata tier, including garbage collection, auditing, metering,
+and object rebalancing.  These are documented with the
+[Mola](https://github.com/joyent/manta-mola) project, particularly under
+["system
+crons"](https://github.com/joyent/manta-mola/blob/master/docs/system-crons.md).
+In summary: a pipeline gets kicked off daily that saves database dumps of the
+metadata tier into Manta itself and then uses normal Manta jobs to first unpack
+these dumps and then process them for these various purposes.  If any of these
+steps fails, manual intervention may be required to complete these operations.
 
-Several system crons depend on SQL dumps generated from each manatee shard. If
-the dumps are missing, some system maintenance jobs will fail.
+If the pipeline has failed, it's important to figure out why.  In practice, the
+most common reason is that the database dumps were not uploaded on time.  The
+[manta-hk](https://github.com/joyent/manta-hk) tool is provided to help figure
+this out.  Its [manual
+page](https://github.com/joyent/manta-hk/blob/master/docs/man/manta-hk.md)
+describes its usage.
 
-Manatee dumps of the moray database are uploaded to
-`/poseidon/stor/manatee_backups` by the async peer of each shard. A Marlin job
-created via cron takes the dump and processes each table into a streaming JSON
-format that is consumed by the system crons. These are JSON objects are
-uploaded to the same directory:
+**When this pipeline has failed, use the manta-hk tool to determine whether
+database dumps were successfully uploaded, and early enough for the rest of the
+pipeline to complete.**
+
+Under the hood, manta-hk checks for database dumps that are normally uploaded to
+`/poseidon/stor/manatee_backups` by the async peer of each shard.  It also
+checks for the objects that normally get unpacked into the same directory, which
+may look like this (though the set of objects differs based on what the shard is
+being used for):
 
     # mls /poseidon/stor/manatee_backups/2.moray.us-east.joyent.us/2015/06/02/00
     buckets_config-2015-06-02-00-00-33.gz
@@ -1849,48 +1866,69 @@ uploaded to the same directory:
     medusa_sessions-2015-06-02-00-00-33.gz
     moray-2015-06-02-00-00-33.gz
 
-If the "moray-\*.gz" object is missing, then the manatee peer failed to
-successfully upload a dump. If the other tables are missing when expected, then
-the "pg_transform" Marlin job that processes the raw dump failed.
+When something has failed, you'll typically find one of a few situations:
 
-### Backfilling a Postgres Dump
+* The database dumps themselves are missing.  ("manta-hk" should point this out
+  explicitly, but the symptom is that there's no "moray-\*.gz" object in this
+  directory, or the directory doesn't exist at all.)
+* The database dumps are present, but the unpacked files are missing.  (Again,
+  "manta-hk" points this out explicitly.)  If the dump is present, then this
+  usually happens because the dump did not complete on-time for the unpacking
+  job.  It's also possible that the unpacking job failed for some other reason.
+
+The following sections describe how to resolve both of these situations.  Either
+way, when you've resolved that problem, you'll need to rerun the rest of the
+pipeline.  That's also described below.
+
+
+### When a database dump is missing
 
 Manatee takes and keeps several ZFS snapshots for the purposes of disaster
-recovery. The backfill process involves spinning up a Postgres instance on the
-ZFS snapshot and running the `pg_dump` script.
+recovery.  These snapshots can be used to save a new database dump to replace
+one that may have failed.
 
-1. Identify the async peer of the shard(s) with the missing data.
-   `manatee-stat` on any peer shows which peer is the async.
-1. Log in to the peer and list the ZFS snapshots to identify the snapshot you
-   want to use to regenerate the dump. This command is useful to generate
-   human-readable timestamps:
+1. On any peer in the shard, use `manatee-adm peers` to see which peer is the
+   async and log into that peer.
+1. List the ZFS snapshots to identify the snapshot you want to use to regenerate
+   the dump. This command is useful to generate human-readable timestamps:
 
-      for i in $(zfs list -H -t snapshot | tail -100 | cut -f1); do node -e "console.log(\"$i\", new Date(+\"$i\".split('@')[1]).toISOString())"; done
+        for i in $(zfs list -H -t snapshot | tail -100 | cut -f1); do node -e "console.log(\"$i\", new Date(+\"$i\".split('@')[1]).toISOString())"; done
 
 1. Run the `pg_custom_dump.sh` script located in the manatee directory using the
    identified snapshot.
 
-       /opt/smartdc/manatee/pg_dump/pg_custom_dump.sh zones/a5fa2966-0dd5-40ac-9a63-14d91343c196/data/manatee@1421885974910
+        /opt/smartdc/manatee/pg_dump/pg_custom_dump.sh zones/a5fa2966-0dd5-40ac-9a63-14d91343c196/data/manatee@1421885974910
+
+When this completes, you'll need to proceed to the next section as well.
 
 
-### Generating JSON Table Dumps
+### When the database dump was not unpacked
 
-Run the pg_transform mola script from the ops zone with the dump as the input
-for backfill.
+If the database dump is present, but none of the other objects are present, then
+the dump was not successfully unpacked.  You can kick off a job to do this by
+running a command like this one from the "ops" zone:
 
-    /opt/smartdc/mola/bin/kick_off_pg_transform.js -b /poseidon/stor/manatee_backups/2.moray.us-east.joyent.us/2015/06/02/00/moray-2015-06-02-00-00-37.gz 2>&1 | bunyan
+    # /opt/smartdc/mola/bin/kick_off_pg_transform.js -b /poseidon/stor/manatee_backups/2.moray.us-east.joyent.us/2015/06/02/00/moray-2015-06-02-00-00-37.gz 2>&1 | bunyan
 
-If table dumps are missing, storage metering, GC, audit and cruft jobs will not
-succeed. GC, audit and cruft are not time sensitive and do not need to be
-re-run if they fail as long as the jobs succeed eventually. Storage metering
-(and the daily summary job afterward) will need to be re-run.
+The argument for the "-b" option is the name of the database dump object in
+Manta.  You'll need to run this command for each dump that you want to unpack
+(i.e., for each shard).
 
-### Running Metering Jobs
 
-Rerun a metering job using the "meter" command with a specified date in the ops
-zone. Metering scripts poll for job completion in order to create the "latest"
-link once the job is done. If the "latest" link is not necessary, you can
-interrupt the metering script after job input has been closed.
+### Running the rest of the pipeline
+
+If you had to manually trigger a database dump or a dump unpacking job, then
+it's likely that the daily metering, garbage collection, audit, and cruft jobs
+will have failed.  Garbage collection, auditing, and cruft jobs are not
+time-sensitive, and generally do not need to be re-run by hand because you can
+wait for the next day's run to complete.  If you want to re-run them by hand,
+see the documentation in the Mola subproject.
+
+The metering jobs, however, should generally be re-run by hand.  Rerun a
+metering job using the "meter" command inside the "ops" zone, specifying a
+specific date.  Metering scripts poll for job completion in order to create the
+"latest" link once the job is done. If the "latest" link is not necessary, you
+can interrupt the metering script after job input has been closed.
 
     /opt/smartdc/mackerel/bin/meter -j "storage" -d "2015-06-02" 2>&1 | bunyan
     /opt/smartdc/mackerel/bin/meter -j "request" -d "2015-06-02T05:00:00" 2>&1 | bunyan
@@ -1901,12 +1939,7 @@ interrupt the metering script after job input has been closed.
 Note that the "summarizeDaily" job depends on the output of the "storage",
 "request" and "compute" jobs from the previous day. If any of the previous
 day's jobs were incomplete, the "summarizeDaily" job will have to be re-run
-after the backfilling of the previous day's jobs is complete.
-
-### Running Garbage Collection, Audit, Cruft Collection
-
-Please see the docs included in the manta-mola repository.
-
+after the previous day's metering data has been generated using the above steps.
 
 ## Authcache (mahi) issues
 
