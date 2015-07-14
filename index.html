@@ -62,7 +62,6 @@
     <li><div><a href="#madtom-dashboard-service-health">Madtom dashboard (service health)</a></div></li>
     <li><div><a href="#marlin-dashboard-compute-activity">Marlin dashboard (compute activity)</a></div></li>
     <li><div><a href="#marlin-tools">Marlin tools</a></div></li>
-    <li><div><a href="#manta-tools">Manta tools</a></div></li>
     <li><div><a href="#logs">Logs</a></div></li>
     <li><div><a href="#job-archives">Job archives</a></div></li>
     <li><div><a href="#usage-reports-and-storage-capacity">Usage reports and storage capacity</a></div></li>
@@ -73,10 +72,9 @@
     <li><div><a href="#accessing-systems">Accessing systems</a></div></li>
     <li><div><a href="#translating-from-mantacomputeid-or-mantastorageid-to-hostname">Translating from mantaComputeId or mantaStorageId to hostname</a></div></li>
     <li><div><a href="#locating-object-data">Locating Object Data</a></div></li>
-    <li><div><a href="#_key">                      _key</a></div></li>
     <li><div><a href="#debugging-was-there-an-outage">Debugging: was there an outage?</a></div></li>
     <li><div><a href="#debugging-api-failures">Debugging API failures</a></div></li>
-    <li><div><a href="#debugging-system-crons">Debugging System Crons</a></div></li>
+    <li><div><a href="#debugging-manta-housekeeping-operations">Debugging Manta housekeeping operations</a></div></li>
     <li><div><a href="#authcache-mahi-issues">Authcache (mahi) issues</a></div></li>
   </ul></li>
   <li><div><a href="#debugging-marlin-distributed-state">Debugging Marlin: distributed state</a></div>
@@ -1915,52 +1913,6 @@ sections below.</p>
 <p>"mrextractjob" is pretty special-purpose.  For details, see "Fetching
 information about historical jobs" below.</p>
 
-<h2 id="manta-tools">Manta tools</h2>
-
-<p>Unlike Marlin, which keeps track of a lot of state for each job, most Manta
-services are stateless, so there aren't a lot of tools to fetch details about
-their state.  The main one is "mlocate", which takes a Manta object name (like
-"/dap/stor/cmd.tgz"), figures out which shard it's stored on, and prints out the
-internal metadata for it.  You run this inside any "muskie" zone:</p>
-
-<pre><code>[root@204ac483 (webapi) ~]$ /opt/smartdc/muskie/bin/mlocate /dap/stor/cmd.tgz | json
-{
-  "dirname": "/bc8cd146-fecb-11e1-bd8a-bb6f54b49808/stor",
-  "key": "/bc8cd146-fecb-11e1-bd8a-bb6f54b49808/stor/cmd.tgz",
-  "headers": {},
-  "mtime": 1396994173363,
-  "name": "cmd.tgz",
-  "creator": "bc8cd146-fecb-11e1-bd8a-bb6f54b49808",
-  "owner": "bc8cd146-fecb-11e1-bd8a-bb6f54b49808",
-  "type": "object",
-  "contentLength": 17062152,
-  "contentMD5": "vVRjo74mJquDRsoW2HJM/g==",
-  "contentType": "application/octet-stream",
-  "etag": "cb1036e4-3b57-c118-cd46-961f6ebe12d0",
-  "objectId": "cb1036e4-3b57-c118-cd46-961f6ebe12d0",
-  "sharks": [
-    {
-      "datacenter": "staging-2",
-      "manta_storage_id": "2.stor.staging.joyent.us"
-    },
-    {
-      "datacenter": "staging-1",
-      "manta_storage_id": "1.stor.staging.joyent.us"
-    }
-  ],
-  "_moray": "tcp://electric-moray.staging.joyent.us:2020",
-  "_node": {
-    "pnode": "tcp://3.moray.staging.joyent.us:2020",
-    "vnode": 7336153,
-    "data": 1
-  }
-}
-</code></pre>
-
-<p>All of these implementation details are subject to change, but for reference,
-you can see the internal name of the object, its type, content length, size,
-etag, and which sharks store copies of it.</p>
-
 <h2 id="logs">Logs</h2>
 
 <h3 id="historical-logs">Historical logs</h3>
@@ -2215,169 +2167,109 @@ There are only two places where data is persisted:</p>
 
 <h3 id="locating-object-metadata">Locating Object Metadata</h3>
 
-<p>Usually you will want to locate an object using the Manta path.  For example,
-we will be using the following object:</p>
+<p>The "mlocate" tool takes a Manta object name (like "/dap/stor/cmd.tgz"), figures
+out which shard it's stored on, and prints out the internal metadata for it.
+You run this inside any "muskie" (webapi) zone:</p>
 
-<p><code>
-[root@e19ae56a (ops) ~]$ echo 'foo' | mput /poseidon/stor/foo
-/poseidon/stor/foo                                         4B
-[root@e19ae56a (ops) ~]$
-</code></p>
-
-<p>It never hurts to get the object id from the front door to verify that you
-are (eventually) looking at the right thing.  The object id is the same as
-the etag:</p>
-
-<p><code>
-[root@e19ae56a (ops) ~]$ minfo /poseidon/stor/foo | grep etag
-etag: cd3251bb-eea8-e8b2-b089-8954429dc1b5
-</code></p>
-
-<p>You first need to translate the account login to the account uuid:</p>
-
-<p><code>
-[root@headnode (coal) ~]# sdc-ldap search login=poseidon uuid
-dn: uuid=074d493f-c3e5-cf02-bb85-c30c1bf85de5, ou=users, o=smartdc
-uuid: 074d493f-c3e5-cf02-bb85-c30c1bf85de5
-</code></p>
-
-<p>Then you can construct the metadata path for the object by replacing the account
-login with the account uuid:</p>
-
-<p><code>
-/poseidon/stor/foo =&gt; /074d493f-c3e5-cf02-bb85-c30c1bf85de5/stor/foo
-</code></p>
-
-<p>Then from the ops box you can fetch the object metadata from Moray.  Object
-metadata is located in the <code>manta</code> table.  Here is an example:</p>
-
-<p><code>
-[root@e19ae56a (ops) ~]$ getobject manta /074d493f-c3e5-cf02-bb85-c30c1bf85de5/stor/foo
+<pre><code>[root@204ac483 (webapi) ~]$ /opt/smartdc/muskie/bin/mlocate /dap/stor/cmd.tgz | json
 {
-  "bucket": "manta",
-  "key": "/074d493f-c3e5-cf02-bb85-c30c1bf85de5/stor/foo",
-  "value": {
-    "dirname": "/074d493f-c3e5-cf02-bb85-c30c1bf85de5/stor",
-    "key": "/074d493f-c3e5-cf02-bb85-c30c1bf85de5/stor/foo",
-    "headers": {},
-    "mtime": 1419027443247,
-    "name": "foo",
-    "creator": "074d493f-c3e5-cf02-bb85-c30c1bf85de5",
-    "owner": "074d493f-c3e5-cf02-bb85-c30c1bf85de5",
-    "roles": [],
-    "type": "object",
-    "contentLength": 4,
-    "contentMD5": "07BzhNET7exJ6qYjitX/AA==",
-    "contentType": "application/octet-stream",
-    "etag": "cd3251bb-eea8-e8b2-b089-8954429dc1b5",
-    "objectId": "cd3251bb-eea8-e8b2-b089-8954429dc1b5",
-    "sharks": [
-      {
-        "datacenter": "coal",
-        "manta_storage_id": "1.stor.coal.joyent.us"
-      },
-      {
-        "datacenter": "coal",
-        "manta_storage_id": "2.stor.coal.joyent.us"
-      }
-    ],
-    "vnode": 20382
-  },
-  "_id": 457,
-  "_etag": "C5DF8282",
-  "_mtime": 1419027443253,
-  "_txn_snap": null,
-  "_count": null
-}
-</code></p>
-
-<p>If you are in an environment with multiple shards you may need to specify the
-electric moray hostname.  You can find your DNS domain in the ops zone by
-looking at the registrar config (shown below), then replacing <code>ops</code> with
-<code>electric-moray</code>:</p>
-
-<p><code>
-[root@e19ae56a (ops) ~]$ json -f /opt/smartdc/registrar/etc/config.json registration.domain
-ops.coal.joyent.us
-[root@e19ae56a (ops) ~]$ getobject -h electric-moray.coal.joyent.us manta /074d493f-c3e5-cf02-bb85-c30c1bf85de5/stor/foo | head -3
-{
-  "bucket": "manta",
-  "key": "/074d493f-c3e5-cf02-bb85-c30c1bf85de5/stor/foo",
-</code></p>
-
-<p>Once you've located the object metadata, you can pull out the parts that you'll
-need to figure out where you data is located:</p>
-
-<p><code>
-[root@e19ae56a (ops) ~]$ getobject manta /074d493f-c3e5-cf02-bb85-c30c1bf85de5/stor/foo | json -H value.creator value.objectId value.sharks
-074d493f-c3e5-cf02-bb85-c30c1bf85de5
-cd3251bb-eea8-e8b2-b089-8954429dc1b5
-[
-  {
-    "datacenter": "coal",
-    "manta_storage_id": "1.stor.coal.joyent.us"
-  },
-  {
-    "datacenter": "coal",
-    "manta_storage_id": "2.stor.coal.joyent.us"
+  "dirname": "/bc8cd146-fecb-11e1-bd8a-bb6f54b49808/stor",
+  "key": "/bc8cd146-fecb-11e1-bd8a-bb6f54b49808/stor/cmd.tgz",
+  "headers": {},
+  "mtime": 1396994173363,
+  "name": "cmd.tgz",
+  "creator": "bc8cd146-fecb-11e1-bd8a-bb6f54b49808",
+  "owner": "bc8cd146-fecb-11e1-bd8a-bb6f54b49808",
+  "type": "object",
+  "contentLength": 17062152,
+  "contentMD5": "vVRjo74mJquDRsoW2HJM/g==",
+  "contentType": "application/octet-stream",
+  "etag": "cb1036e4-3b57-c118-cd46-961f6ebe12d0",
+  "objectId": "cb1036e4-3b57-c118-cd46-961f6ebe12d0",
+  "sharks": [
+    {
+      "datacenter": "staging-2",
+      "manta_storage_id": "2.stor.staging.joyent.us"
+    },
+    {
+      "datacenter": "staging-1",
+      "manta_storage_id": "1.stor.staging.joyent.us"
+    }
+  ],
+  "_moray": "tcp://electric-moray.staging.joyent.us:2020",
+  "_node": {
+    "pnode": "tcp://3.moray.staging.joyent.us:2020",
+    "vnode": 7336153,
+    "data": 1
   }
-]
-</code></p>
+}
+</code></pre>
 
-<p>You can also log into postgres manually and run a SQL command on the <code>manta</code>
-table:</p>
+<p>All of these implementation details are subject to change, but for reference,
+these are the pieces you need to locate the object:</p>
 
-<p>```
-moray=# select _key from manta where objectId = 'cd3251bb-eea8-e8b2-b089-8954429dc1b5';</p>
+<ul>
+<li>"sharks": indicate which backend storage servers contain copies of this object</li>
+<li>"creator": uuid of the user who created the object</li>
+<li>"objectId": uuid for this object in the system.  Note that an objectid is
+allocated when an object is first created.  Two objects with the same content
+do not generally get the same objectid, unless the second object was created
+with "mln".</li>
+</ul>
 
-<h2 id="_key">                      _key</h2>
+<p>You won't need the following fields to locate the object, but they may be useful
+to know about:</p>
 
-<p>/074d493f-c3e5-cf02-bb85-c30c1bf85de5/stor/foo
-(1 row)
-```</p>
+<ul>
+<li>"key": the internal name of this object (same as the public name, but the
+login is replaced with the user's uuid)</li>
+<li>"owner": uuid of the user being billed for this link.  This can differ from
+the creator if the owner used "mln" to create their own link to an object
+created by someone else.</li>
+<li>"_node"."pnode": indicates which metadata shard stores information about this
+object.</li>
+<li>"type": indicates whether something refers to an object or directory</li>
+<li>"contentLength", "contentMD5", "contentType": see corresponding HTTP headers</li>
+</ul>
 
 <h3 id="locating-object-contents">Locating Object Contents</h3>
 
 <p>Now that you know what sharks the object is on you can pull the object contents
 directly from the ops box by creating a URL with the format:</p>
 
-<p><code>
-http://[manta_storage_id]/[creator]/[objectId]
-</code></p>
+<pre><code>http://[manta_storage_id]/[creator]/[objectId]
+</code></pre>
 
-<p>For example, using our previous example:</p>
+<p>You can use "curl" to fetch this from the "ops" zone, for example.</p>
 
-<p><code>
-[root@e19ae56a (ops) ~]$ curl -s http://1.stor.coal.joyent.us/074d493f-c3e5-cf02-bb85-c30c1bf85de5/cd3251bb-eea8-e8b2-b089-8954429dc1b5
-foo
-</code></p>
+<p>More commonly, you'll want to look at the actual file on disk.  For that, first
+map the "manta_storage_id" to a specific storage zone, using a command like
+this to print out the full mapping:</p>
 
-<p>Otherwise, you can also translate the <code>manta_storage_id</code> to a zone and find
-the object.  First, translate the storage id and log into the storage zone:</p>
+<pre><code># manta-adm show -a -o storage_id,datacenter,zonename storage
+STORAGE ID                 DATACENTER ZONENAME                            
+1.stor.staging.joyent.us   staging-1  f7954cad-7e23-434f-be98-f077ca7bc4c0
+2.stor.staging.joyent.us   staging-2  12fa9eea-ba7a-4d55-abd9-d32c64ae1965
+3.stor.staging.joyent.us   staging-3  6dbfb615-b1ac-4f9a-8006-2cb45b87e4cb
+</code></pre>
 
-<p><code>
-[root@headnode (coal) ~]# manta-adm show -o zonename,storage_id storage | grep 1.stor.coal.joyent.us
-bcfa928c-7af3-4c99-9483-cf39e4712adf 1.stor.coal.joyent.us
-[root@headnode (coal) ~]# manta-login bcfa928c-7af3-4c99-9483-cf39e4712adf
-[root@bcfa928c (storage) ~]$
-</code></p>
+<p>Then use "manta-login" to log into the corresponding storage zone:</p>
 
-<p>All objects are located under a path constructed from the <code>creator</code> and the
-<code>objectId</code>:</p>
+<pre><code># manta-login 12fa9eea
+[Connected to zone '12fa9eea-ba7a-4d55-abd9-d32c64ae1965' pts/2]
+[root@12fa9eea (storage) ~]$
+</code></pre>
 
-<p><code>
-/manta/[creator]/[objectId]
-</code></p>
+<p>The object's data will be stored at /manta/$creator_uuid/$objectid:</p>
 
-<p>In our case:</p>
+<pre><code>[root@12fa9eea (storage) ~]$ ls -l
+/manta/bc8cd146-fecb-11e1-bd8a-bb6f54b49808/cb1036e4-3b57-c118-cd46-961f6ebe12d0
+-rw-r--r-- 1 nobody nobody 17062152 Apr  8  2014
+/manta/bc8cd146-fecb-11e1-bd8a-bb6f54b49808/cb1036e4-3b57-c118-cd46-961f6ebe12d0
+</code></pre>
 
-<p><code>
-[root@bcfa928c (storage) ~]$ cat /manta/074d493f-c3e5-cf02-bb85-c30c1bf85de5/cd3251bb-eea8-e8b2-b089-8954429dc1b5
-foo
-</code></p>
-
-<p>There will be one copy of the object on each of the storage <code>sharks</code> in that
-location.</p>
+<p>There will be a copy of the object at that path in each of the <code>sharks</code> listed
+in the metadata record.</p>
 
 <h2 id="debugging-was-there-an-outage">Debugging: was there an outage?</h2>
 
@@ -2482,18 +2374,35 @@ for that request.</p>
 generally the top priority, and you can use the local log files on muskie
 servers to debug that.</p>
 
-<h2 id="debugging-system-crons">Debugging System Crons</h2>
+<h2 id="debugging-manta-housekeeping-operations">Debugging Manta housekeeping operations</h2>
 
-<h3 id="manatee-dumps">Manatee Dumps</h3>
+<p>Manta performs a number of housekeeping operations that are based on the
+contents of the metadata tier, including garbage collection, auditing, metering,
+and object rebalancing.  These are documented with the
+<a href="https://github.com/joyent/manta-mola">Mola</a> project, particularly under
+<a href="https://github.com/joyent/manta-mola/blob/master/docs/system-crons.md">"system
+crons"</a>.
+In summary: a pipeline gets kicked off daily that saves database dumps of the
+metadata tier into Manta itself and then uses normal Manta jobs to first unpack
+these dumps and then process them for these various purposes.  If any of these
+steps fails, manual intervention may be required to complete these operations.</p>
 
-<p>Several system crons depend on SQL dumps generated from each manatee shard. If
-the dumps are missing, some system maintenance jobs will fail.</p>
+<p>If the pipeline has failed, it's important to figure out why.  In practice, the
+most common reason is that the database dumps were not uploaded on time.  The
+<a href="https://github.com/joyent/manta-hk">manta-hk</a> tool is provided to help figure
+this out.  Its <a href="https://github.com/joyent/manta-hk/blob/master/docs/man/manta-hk.md">manual
+page</a>
+describes its usage.</p>
 
-<p>Manatee dumps of the moray database are uploaded to
-<code>/poseidon/stor/manatee_backups</code> by the async peer of each shard. A Marlin job
-created via cron takes the dump and processes each table into a streaming JSON
-format that is consumed by the system crons. These are JSON objects are
-uploaded to the same directory:</p>
+<p><strong>When this pipeline has failed, use the manta-hk tool to determine whether
+database dumps were successfully uploaded, and early enough for the rest of the
+pipeline to complete.</strong></p>
+
+<p>Under the hood, manta-hk checks for database dumps that are normally uploaded to
+<code>/poseidon/stor/manatee_backups</code> by the async peer of each shard.  It also
+checks for the objects that normally get unpacked into the same directory, which
+may look like this (though the set of objects differs based on what the shard is
+being used for):</p>
 
 <pre><code># mls /poseidon/stor/manatee_backups/2.moray.us-east.joyent.us/2015/06/02/00
 buckets_config-2015-06-02-00-00-33.gz
@@ -2504,49 +2413,72 @@ medusa_sessions-2015-06-02-00-00-33.gz
 moray-2015-06-02-00-00-33.gz
 </code></pre>
 
-<p>If the "moray-*.gz" object is missing, then the manatee peer failed to
-successfully upload a dump. If the other tables are missing when expected, then
-the "pg_transform" Marlin job that processes the raw dump failed.</p>
+<p>When something has failed, you'll typically find one of a few situations:</p>
 
-<h3 id="backfilling-a-postgres-dump">Backfilling a Postgres Dump</h3>
+<ul>
+<li>The database dumps themselves are missing.  ("manta-hk" should point this out
+explicitly, but the symptom is that there's no "moray-*.gz" object in this
+directory, or the directory doesn't exist at all.)</li>
+<li>The database dumps are present, but the unpacked files are missing.  (Again,
+"manta-hk" points this out explicitly.)  If the dump is present, then this
+usually happens because the dump did not complete on-time for the unpacking
+job.  It's also possible that the unpacking job failed for some other reason.</li>
+</ul>
+
+<p>The following sections describe how to resolve both of these situations.  Either
+way, when you've resolved that problem, you'll need to rerun the rest of the
+pipeline.  That's also described below.</p>
+
+<h3 id="when-a-database-dump-is-missing">When a database dump is missing</h3>
 
 <p>Manatee takes and keeps several ZFS snapshots for the purposes of disaster
-recovery. The backfill process involves spinning up a Postgres instance on the
-ZFS snapshot and running the <code>pg_dump</code> script.</p>
+recovery.  These snapshots can be used to save a new database dump to replace
+one that may have failed.</p>
 
 <ol>
-<li>Identify the async peer of the shard(s) with the missing data.
-<code>manatee-stat</code> on any peer shows which peer is the async.</li>
-<li><p>Log in to the peer and list the ZFS snapshots to identify the snapshot you
-want to use to regenerate the dump. This command is useful to generate
-human-readable timestamps:</p>
+<li>On any peer in the shard, use <code>manatee-adm peers</code> to see which peer is the
+async and log into that peer.</li>
+<li><p>List the ZFS snapshots to identify the snapshot you want to use to regenerate
+the dump. This command is useful to generate human-readable timestamps:</p>
 
-<p>for i in $(zfs list -H -t snapshot | tail -100 | cut -f1); do node -e "console.log(\"$i\", new Date(+\"$i\".split('@')[1]).toISOString())"; done</p></li>
+<pre><code>for i in $(zfs list -H -t snapshot | tail -100 | cut -f1); do node -e "console.log(\"$i\", new Date(+\"$i\".split('@')[1]).toISOString())"; done
+</code></pre></li>
 <li><p>Run the <code>pg_custom_dump.sh</code> script located in the manatee directory using the
 identified snapshot.</p>
 
-<p>/opt/smartdc/manatee/pg_dump/pg_custom_dump.sh zones/a5fa2966-0dd5-40ac-9a63-14d91343c196/data/manatee@1421885974910</p></li>
+<pre><code>/opt/smartdc/manatee/pg_dump/pg_custom_dump.sh zones/a5fa2966-0dd5-40ac-9a63-14d91343c196/data/manatee@1421885974910
+</code></pre></li>
 </ol>
 
-<h3 id="generating-json-table-dumps">Generating JSON Table Dumps</h3>
+<p>When this completes, you'll need to proceed to the next section as well.</p>
 
-<p>Run the pg_transform mola script from the ops zone with the dump as the input
-for backfill.</p>
+<h3 id="when-the-database-dump-was-not-unpacked">When the database dump was not unpacked</h3>
 
-<pre><code>/opt/smartdc/mola/bin/kick_off_pg_transform.js -b /poseidon/stor/manatee_backups/2.moray.us-east.joyent.us/2015/06/02/00/moray-2015-06-02-00-00-37.gz 2&gt;&amp;1 | bunyan
+<p>If the database dump is present, but none of the other objects are present, then
+the dump was not successfully unpacked.  You can kick off a job to do this by
+running a command like this one from the "ops" zone:</p>
+
+<pre><code># /opt/smartdc/mola/bin/kick_off_pg_transform.js -b /poseidon/stor/manatee_backups/2.moray.us-east.joyent.us/2015/06/02/00/moray-2015-06-02-00-00-37.gz 2&gt;&amp;1 | bunyan
 </code></pre>
 
-<p>If table dumps are missing, storage metering, GC, audit and cruft jobs will not
-succeed. GC, audit and cruft are not time sensitive and do not need to be
-re-run if they fail as long as the jobs succeed eventually. Storage metering
-(and the daily summary job afterward) will need to be re-run.</p>
+<p>The argument for the "-b" option is the name of the database dump object in
+Manta.  You'll need to run this command for each dump that you want to unpack
+(i.e., for each shard).</p>
 
-<h3 id="running-metering-jobs">Running Metering Jobs</h3>
+<h3 id="running-the-rest-of-the-pipeline">Running the rest of the pipeline</h3>
 
-<p>Rerun a metering job using the "meter" command with a specified date in the ops
-zone. Metering scripts poll for job completion in order to create the "latest"
-link once the job is done. If the "latest" link is not necessary, you can
-interrupt the metering script after job input has been closed.</p>
+<p>If you had to manually trigger a database dump or a dump unpacking job, then
+it's likely that the daily metering, garbage collection, audit, and cruft jobs
+will have failed.  Garbage collection, auditing, and cruft jobs are not
+time-sensitive, and generally do not need to be re-run by hand because you can
+wait for the next day's run to complete.  If you want to re-run them by hand,
+see the documentation in the Mola subproject.</p>
+
+<p>The metering jobs, however, should generally be re-run by hand.  Rerun a
+metering job using the "meter" command inside the "ops" zone, specifying a
+specific date.  Metering scripts poll for job completion in order to create the
+"latest" link once the job is done. If the "latest" link is not necessary, you
+can interrupt the metering script after job input has been closed.</p>
 
 <pre><code>/opt/smartdc/mackerel/bin/meter -j "storage" -d "2015-06-02" 2&gt;&amp;1 | bunyan
 /opt/smartdc/mackerel/bin/meter -j "request" -d "2015-06-02T05:00:00" 2&gt;&amp;1 | bunyan
@@ -2558,11 +2490,7 @@ interrupt the metering script after job input has been closed.</p>
 <p>Note that the "summarizeDaily" job depends on the output of the "storage",
 "request" and "compute" jobs from the previous day. If any of the previous
 day's jobs were incomplete, the "summarizeDaily" job will have to be re-run
-after the backfilling of the previous day's jobs is complete.</p>
-
-<h3 id="running-garbage-collection-audit-cruft-collection">Running Garbage Collection, Audit, Cruft Collection</h3>
-
-<p>Please see the docs included in the manta-mola repository.</p>
+after the previous day's metering data has been generated using the above steps.</p>
 
 <h2 id="authcache-mahi-issues">Authcache (mahi) issues</h2>
 
