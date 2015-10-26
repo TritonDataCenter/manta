@@ -1124,7 +1124,7 @@ method to avoid discarding their data. This update moves the service offline for
 15-30 seconds. If the image onto which an image is reprovisioned doesn't work,
 the instance can be reprovisioned back to its original image.
 
-This procedure use "manta-adm" to do the upgrade, which uses the reprovisioning
+This procedure uses "manta-adm" to do the upgrade, which uses the reprovisioning
 method for all zones other than the "marlin" zones.
 
 ### Prerequisites
@@ -1220,6 +1220,147 @@ Marlin will avoid retrying in the same AZ if possible. (Of course, if you're not
 careful, it's possible to update the agents in a way that causes multiple
 retries for the same tasks, but as long as you don't bounce each agent more than
 once, this alone should not induce errors.)
+
+
+## Compute zone ("marlin" zone) updates
+
+Compute zones are a little different than most of the other Manta components
+because they don't directly run a software service.  Instead, these are the
+zones where users' compute jobs run.  For users' convenience, these zones
+typically contain a large amount of software preinstalled from pkgsrc.  The main
+reason to update these zones is to upgrade that package set to a newer base
+image, giving users access to newer versions of all the preinstalled software.
+
+Manta supports multiple different versions of the compute zone image being
+available to end users simultaneously.  One image is configured as the default.
+End users can request other available images on a per-job-phase basis.  While
+[user documentation recommends that users always specify which image they want
+to
+use](https://apidocs.joyent.com/manta/jobs-reference.html#compute-instance-images-image-property),
+most users do not use this option, so most jobs end up using the default image.
+
+Because the software in compute zones is directly exposed to end users, 
+updates to these zones typically need to be coordinated with end users.
+Different operators may have different needs:
+
+* Public cloud operators may want to roll out a new image and make it available
+  to end users for a while _without_ making that new image the default image.
+  This allows bleeding-edge customers to experiment with the new image and
+  provide feedback.  After promoting the new image to the default, operators may
+  also want the old image to remain available for a while to allow slower
+  customers to migrate on their own time (within some window).
+* In deployments where operators and users are more tightly-coupled, operators
+  may elect to avoid these grace periods and just update the default to the new
+  image immediately.
+
+In order to support these use-cases, the compute zone update process is a
+multi-stage approach.  The approach allows both operators and end users to
+validate each step in order to avoid having to rollback.  But in the event that
+a serious issue goes undetected, the upgrade can also be rolled back quickly.
+The update process works broadly as follows:
+
+* The operator uses the "manta-adm" tool to deploy a large number of compute
+  zones using the new image to each storage node.  Because there can be hundreds
+  of compute zones in even modest Manta deployments, it can take many minutes
+  (even hours or days, depending on the size of the deployment) to deploy all
+  the new zones.  Older compute zones are not affected by the deployment of
+  newer zones, and the newer zones are not used at this point because the
+  default image has not been changed.
+* If the operator wants to make the new zones available to end users at this
+  point without making the new image the default, then they will likely need to
+  update the configuration of the webapi zones.  (The webapi maintains its own
+  configuration of supported images to allow operators to limit which zones are
+  available at any given time.)  This step is not necessary if users don't
+  intend to request the new image explicitly, but this does allow both operators
+  and users to validate the new image before committing to it for new jobs.
+* When ready to make the new image the default for all new jobs, the operator
+  modifies the Marlin agent configuration.  At this point, all new jobs that
+  don't request a specific image will start using the new image.  Users can
+  continue using the older image by explicitly requesting it.
+* When the operator is ready to stop supporting the older image, they can use
+  the "manta-adm" tool to remove all instances of zones using the older image.
+
+At any point before the old zones are deprovisioned, the upgrade can be rolled
+back by simply changing the default image back.
+
+
+### Compute zone update procedure
+
+The above procedure outline really only involves a few kinds of steps:
+
+* using "manta-adm" to provision or deprovision compute zones,
+* updating the Marlin agent configuration to change the default zone image, and
+* updating the webapi configuration to change the available zone images.
+
+Let's consider a specific example, where we're updating a system from compute
+zone image `1757ab74-b3ed-11e2-b40f-c7adac046f18` to compute zone image
+`bb9264e2-f134-11e3-9ec7-478da02d1a13`:
+
+1. Import the new compute zone image into the datacenter.  If upgrading to the
+   current image used for new Manta deployments, "manta-init" can be used to
+   download and import the new image.  Otherwise, import it explicitly with
+   "sdc-imgadm import", as in `sdc-imgadm import
+   bb9264e2-f134-11e3-9ec7-478da02d1a13 -S https://updates.joyent.com`.
+2. Use `manta-adm show -s -j > config.json` to generate a configuration file
+   describing the zones currently deployed in the datacenter.  This file should
+   have a number of "marlin" blocks that look like this:
+
+        "marlin": { 
+            "1757ab74-b3ed-11e2-b40f-c7adac046f18": 128 
+        }, 
+
+   This example reflects that there are 128 compute zones using the older image
+   on that storage node.  There will be one of these blocks for each storage
+   node.
+3. Update the configuration file: for each of these "marlin" blocks, add a
+   second entry for the new image.  We suggest making the number of new zones
+   match the number of old zones. (There will be twice as many zones on each
+   server, but only half of them will generally be used.)  These blocks will
+   thus look like this:
+
+        "marlin": { 
+            "1757ab74-b3ed-11e2-b40f-c7adac046f18": 128, 
+            "bb9264e2-f134-11e3-9ec7-478da02d1a13": 128
+        },
+
+   You could also use a 50/50 split (e.g., 64 old zones and 64 new zones), or
+   nearly any other combination, as long as there are a sufficient number of
+   both old and new zones to handle the normal workload.
+4. Run `manta-adm update config.json` to apply these changes.  In our example,
+   this will deploy 128 compute zones to each storage node using the new image.
+   This may take a while.
+5. If the operator is electing to make the new image available via the API
+   before promoting that image to the default, then modify the "images" property
+   of the file
+   "/opt/smartdc/muskie/node\_modules/marlin/jobsupervisor/etc/config.coal.json"
+   inside each webapi zone.  Note that this change will need to be reapplied if
+   the webapi zone is updated or if new webapi zones are deployed.  At this
+   point, end users can use the new image, but only by specifying the `--image`
+   property to `mjob create`.
+6. When the operator is ready to promote the new image to the default image for
+   new jobs, modify the "zoneDefaultImage" property in the file
+   "/opt/smartdc/marlin/etc/agentconfig.json" and restart the marlin agent.
+   This needs to be done on all storage nodes.  Otherwise, user jobs may run in
+   a combination of older and newer images, which can lead to surprising and
+   incorrect results.  If at any point you want to roll back this upgrade,
+   simply set the "zoneDefaultImage" back to the previous value and restart the
+   agents again.
+7. When the operator is confident they don't need the old image any more,
+   modify the "manta-adm" configuration file to remove the old image entirely,
+   then use "manta-adm update" to apply that.  In our example, the "marlin"
+   blocks will now look like this:
+
+        "marlin": {
+            "bb9264e2-f134-11e3-9ec7-478da02d1a13": 128
+        }, 
+
+This procedure could be streamlined with feature requests
+[MANTA-2778](https://smartos.org/bugview/MANTA-2778) and
+[MANTA-2779](https://smartos.org/bugview/MANTA-2779).
+
+Note: the "manta-adm" tool takes care of internal constraints, including the
+fact that compute zones cannot be reprovisioned.  (Instead, new zones are
+provisioned and older ones are deprovisioned.)
 
 
 ## Manta deployment zone upgrades
