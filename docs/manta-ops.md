@@ -984,25 +984,31 @@ downloads.
 Here is a manual workaround (run the following from the headnode global zone):
 
     cd /var/tmp
-    
+
     # Determine the UUID of the latest "manta-marlin" image on updates.joyent.com.
     muuid=$(updates-imgadm list name=manta-marlin --latest -H -o uuid)
-    
+
     # Download directly from a separate manual download area in Manta.
     curl -kO https://us-east.manta.joyent.com/Joyent_Dev/public/Manta/manta-marlin-image/$muuid.imgmanifest
-    
+
+    # First ensure that the origin (i.e. parent) image is installed
+    origin=$(json -f $muuid.imgmanifest origin)
+    [[ -z "$origin" ]] \
+        || sdc-imgadm get dee73ee2-69ab-11e3-b593-a3f1f80ef403 >/dev/null \
+        || sdc-imgadm import $origin -S https://updates.joyent.com
+
     # If that failed, then the separate download area doesn't have a recent
     # image. Please log an issue.
     [[ $? -ne 0 ]] && echo log an issue at https://github.com/joyent/manta/issues/
-    
+
     # If the following is interrupted, then re-run the same command to resume:
     curl -kO -C - https://us-east.manta.joyent.com/Joyent_Dev/public/Manta/manta-marlin-image/$muuid.file.gz
-    
+
     # Verify the download checksum
     [[ $(json -f $muuid.imgmanifest | json files.0.sha1) \
         == $(openssl dgst -sha1 $muuid.file.gz | awk '{print $2}') ]] \
         || echo "error downloading, please delete and retry"
-    
+
     # Then install this image into the DC's IMGAPI:
     sdc-imgadm import -m $muuid.imgmanifest -f $muuid.file.gz
 
@@ -1239,7 +1245,7 @@ to
 use](https://apidocs.joyent.com/manta/jobs-reference.html#compute-instance-images-image-property),
 most users do not use this option, so most jobs end up using the default image.
 
-Because the software in compute zones is directly exposed to end users, 
+Because the software in compute zones is directly exposed to end users,
 updates to these zones typically need to be coordinated with end users.
 Different operators may have different needs:
 
@@ -1305,9 +1311,9 @@ zone image `1757ab74-b3ed-11e2-b40f-c7adac046f18` to compute zone image
    describing the zones currently deployed in the datacenter.  This file should
    have a number of "marlin" blocks that look like this:
 
-        "marlin": { 
-            "1757ab74-b3ed-11e2-b40f-c7adac046f18": 128 
-        }, 
+        "marlin": {
+            "1757ab74-b3ed-11e2-b40f-c7adac046f18": 128
+        },
 
    This example reflects that there are 128 compute zones using the older image
    on that storage node.  There will be one of these blocks for each storage
@@ -1318,8 +1324,8 @@ zone image `1757ab74-b3ed-11e2-b40f-c7adac046f18` to compute zone image
    server, but only half of them will generally be used.)  These blocks will
    thus look like this:
 
-        "marlin": { 
-            "1757ab74-b3ed-11e2-b40f-c7adac046f18": 128, 
+        "marlin": {
+            "1757ab74-b3ed-11e2-b40f-c7adac046f18": 128,
             "bb9264e2-f134-11e3-9ec7-478da02d1a13": 128
         },
 
@@ -1352,7 +1358,7 @@ zone image `1757ab74-b3ed-11e2-b40f-c7adac046f18` to compute zone image
 
         "marlin": {
             "bb9264e2-f134-11e3-9ec7-478da02d1a13": 128
-        }, 
+        },
 
 This procedure could be streamlined with feature requests
 [MANTA-2778](https://smartos.org/bugview/MANTA-2778) and
@@ -1847,7 +1853,7 @@ map the "manta\_storage\_id" to a specific storage zone, using a command like
 this to print out the full mapping:
 
     # manta-adm show -a -o storage_id,datacenter,zonename storage
-    STORAGE ID                 DATACENTER ZONENAME                            
+    STORAGE ID                 DATACENTER ZONENAME
     1.stor.staging.joyent.us   staging-1  f7954cad-7e23-434f-be98-f077ca7bc4c0
     2.stor.staging.joyent.us   staging-2  12fa9eea-ba7a-4d55-abd9-d32c64ae1965
     3.stor.staging.joyent.us   staging-3  6dbfb615-b1ac-4f9a-8006-2cb45b87e4cb
