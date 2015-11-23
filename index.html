@@ -1420,6 +1420,12 @@ muuid=$(updates-imgadm list name=manta-marlin --latest -H -o uuid)
 # Download directly from a separate manual download area in Manta.
 curl -kO https://us-east.manta.joyent.com/Joyent_Dev/public/Manta/manta-marlin-image/$muuid.imgmanifest
 
+# First ensure that the origin (i.e. parent) image is installed
+origin=$(json -f $muuid.imgmanifest origin)
+[[ -z "$origin" ]] \
+    || sdc-imgadm get dee73ee2-69ab-11e3-b593-a3f1f80ef403 &gt;/dev/null \
+    || sdc-imgadm import $origin -S https://updates.joyent.com
+
 # If that failed, then the separate download area doesn't have a recent
 # image. Please log an issue.
 [[ $? -ne 0 ]] &amp;&amp; echo log an issue at https://github.com/joyent/manta/issues/
@@ -1675,7 +1681,7 @@ to
 use</a>,
 most users do not use this option, so most jobs end up using the default image.</p>
 
-<p>Because the software in compute zones is directly exposed to end users, 
+<p>Because the software in compute zones is directly exposed to end users,
 updates to these zones typically need to be coordinated with end users.
 Different operators may have different needs:</p>
 
@@ -1747,8 +1753,8 @@ bb9264e2-f134-11e3-9ec7-478da02d1a13 -S https://updates.joyent.com</code>.</li>
 describing the zones currently deployed in the datacenter.  This file should
 have a number of "marlin" blocks that look like this:</p>
 
-<pre><code>"marlin": { 
-    "1757ab74-b3ed-11e2-b40f-c7adac046f18": 128 
+<pre><code>"marlin": {
+    "1757ab74-b3ed-11e2-b40f-c7adac046f18": 128
 },
 </code></pre>
 
@@ -1761,8 +1767,8 @@ match the number of old zones. (There will be twice as many zones on each
 server, but only half of them will generally be used.)  These blocks will
 thus look like this:</p>
 
-<pre><code>"marlin": { 
-    "1757ab74-b3ed-11e2-b40f-c7adac046f18": 128, 
+<pre><code>"marlin": {
+    "1757ab74-b3ed-11e2-b40f-c7adac046f18": 128,
     "bb9264e2-f134-11e3-9ec7-478da02d1a13": 128
 },
 </code></pre>
@@ -2398,7 +2404,7 @@ map the "manta_storage_id" to a specific storage zone, using a command like
 this to print out the full mapping:</p>
 
 <pre><code># manta-adm show -a -o storage_id,datacenter,zonename storage
-STORAGE ID                 DATACENTER ZONENAME                            
+STORAGE ID                 DATACENTER ZONENAME
 1.stor.staging.joyent.us   staging-1  f7954cad-7e23-434f-be98-f077ca7bc4c0
 2.stor.staging.joyent.us   staging-2  12fa9eea-ba7a-4d55-abd9-d32c64ae1965
 3.stor.staging.joyent.us   staging-3  6dbfb615-b1ac-4f9a-8006-2cb45b87e4cb
