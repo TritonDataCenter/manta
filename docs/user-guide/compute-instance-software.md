@@ -2234,7 +2234,7 @@ This list shows every package installed in the compute environment:
     xwd-1.0.5            Dump X11 display or window to XWD X Window Dump image file
     xz-5.0.4             XZ utilities
     yasm-1.2.0           Complete rewrite of the NASM assembler with BSD license
-    yaws-1.91nb1         High perfomance HTTP 1.1 webserver written in Erlang
+    yaws-1.91nb1         High performance HTTP 1.1 webserver written in Erlang
     zile-2.4.5           Emacs-like text editor
     zip-3.0nb2           Create/update ZIP files compatible with pkzip
     zlib-1.2.7           General purpose data compression library

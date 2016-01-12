@@ -57,7 +57,7 @@ There are several headers for objects that control HTTP semantics
 When you write an object, you must use one of two headers:
 
 * Use `Content-Length` if you can specify the object size in bytes.
-* Use `transfer-encoding: chunked` to upload objects using [HTTP chunked enconding](http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.6).
+* Use `transfer-encoding: chunked` to upload objects using [HTTP chunked encoding](http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.6).
 
 Chunked encoding lets you stream an object for storage without knowing the size of the object ahead of time.
 By default, the maximum amount of data you can send this way is 5GB.
