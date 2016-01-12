@@ -1,5 +1,5 @@
 ---
-title: Object Storage Reference 
+title: Object Storage Reference
 markdown2extras: wiki-tables, code-friendly
 ---
 
@@ -52,7 +52,7 @@ There are several headers for objects that control HTTP semantics
 
 
 
-## Content Length 
+## Content Length
 
 When you write an object, you must use one of two headers:
 
@@ -64,13 +64,13 @@ By default, the maximum amount of data you can send this way is 5GB.
 You can use the optional `max-content-length` header to specify how much space you estimate the object requires.
 This estimate is only an upper bound.
 The system will record how much data you *actually* transferred and record that.
-Subsequent GET requests will return the actual size of the object.  
+Subsequent GET requests will return the actual size of the object.
 
 
 ## 100-continue Request Header
 
-You can, but are not required to, use the 
-[`Expect: 100-continue`](http://www.w3.org/Protocols/rfc2616/rfc2616-sec8.html#sec8.2.3) 
+You can, but are not required to, use the
+[`Expect: 100-continue`](http://www.w3.org/Protocols/rfc2616/rfc2616-sec8.html#sec8.2.3)
 header in your write requests.
 Using this header saves network bandwidth.
 If the write request would fail, the system returns an error without transferring any data.
@@ -356,7 +356,7 @@ web assets, you should use it as a content delivery network (CDN) origin.
 All REST APIs are modeled as streams. They are designed to let you iterate
 through result sets without consuming too much memory.  For example, listing
 a directory returns newline separated JSON objects as opposed to an array or
-large XML document. 
+large XML document.
 
 ## Durability
 
