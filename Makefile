@@ -5,13 +5,17 @@
 #
 
 #
-# Copyright (c) 2014, Joyent, Inc.
+# Copyright (c) 2016, Joyent, Inc.
 #
 
 #
 # Files
 #
-DOC_FILES	 = $(shell find docs -name "*.md" | sed 's/docs\///;')
+
+# Only care to build the operator guide for publishing directly out of
+# this repo (to <http://joyent.github.io/manta/>). The other docs are
+# pulled into apidocs.joyent.com.git for publishing there.
+DOC_FILES	 = operator-guide/index.md
 
 include ./tools/mk/Makefile.defs
 

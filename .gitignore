@@ -1,4 +1,4 @@
 /build
-/docs/*.html
-/docs/*.json
+/docs/operator-guide/*.html
+/docs/operator-guide/*.json
 .DS_Store

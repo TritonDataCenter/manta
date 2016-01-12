@@ -42,7 +42,7 @@ the user documentation for details.
 
 * To learn about installing and operating your own Manta deployment, see the
 [Manta Operator's
-Guide](https://github.com/joyent/manta/blob/master/docs/manta-ops.md).
+Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md).
 
 * To understand Manta's architecture, see 
 [Bringing Arbitrary Compute to Authoritative
@@ -100,7 +100,7 @@ to bootstrap a Manta installation.
 
 Once you have SDC set up, follow the instructions in the 
 [Manta Operator's
-Guide](https://github.com/joyent/manta/blob/master/docs/manta-ops.md)
+Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md)
 to deploy Manta.  The easiest way to play around with your own Manta
 installation is to first set up an SDC (cloud-on-a-laptop) installation in
 VMware and then follow those instructions to deploy Manta on it.
@@ -188,7 +188,7 @@ Finally, scripts used to set up these component zones live in the
 For more details on the architecture, including how these pieces actually fit
 together, see "Architecture Basics" in the 
 [Manta Operator's
-Guide](https://github.com/joyent/manta/blob/master/docs/manta-ops.md).
+Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md).
 
 
 ## Deploying your own Manta Builds
@@ -205,7 +205,7 @@ of builds so that if something goes wrong, you know where to start looking.  To
 do this:
 
 1. Complete the Manta deployment procedure from the [Manta Operator's
-Guide](https://github.com/joyent/manta/blob/master/docs/manta-ops.md).
+Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md).
 1. Build a zone image for whatever zone you want to replace.  See the
    instructions for building [SmartDataCenter](https://github.com/joyent/sdc)
    zone images using Mountain Gorilla.  Manta zones work the same way.  The
@@ -225,7 +225,7 @@ Guide](https://github.com/joyent/manta/blob/master/docs/manta-ops.md).
            sdc-imgadm import -m /var/tmp/my_manifest.json -f /var/tmp/my_image
 
 1. Now you can use the normal Manta zone update procedure (from the [Manta
-   Operator's Guide](https://github.com/joyent/manta/blob/master/docs/manta-ops.md).
+   Operator's Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md).
    This involves saving the current configuration to a JSON
    file using "manta-adm show -sj > config.json", updating the configuration
    file, and then applying the changes with "manta-adm update < config.json".
@@ -241,7 +241,7 @@ manta-init but before deploying anything.  Note that each subsequent
 only used for the initial deployment anyway.  The other option is to apply the
 fully-manual install procedure from the 
 [Manta Operator's
-Guide](https://github.com/joyent/manta/blob/master/docs/manta-ops.md)
+Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md)
 (i.e., instead of
 using manta-deploy-coal or manta-deploy-lab) and use a custom "manta-adm"
 configuration file in the first place.  If this is an important use case, file
@@ -251,7 +251,7 @@ The above procedure works to update Manta *zones*, which are most of the
 components above.  The other two kinds of components are the *platform* and
 *agents*.  Both of these procedures are documented in the 
 [Manta Operator's
-Guide](https://github.com/joyent/manta/blob/master/docs/manta-ops.md), and they work to deploy custom builds as well as the official Joyent
+Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md), and they work to deploy custom builds as well as the official Joyent
 builds.
 
 
