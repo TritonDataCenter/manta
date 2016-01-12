@@ -1,0 +1,14 @@
+# Word frequency count
+
+This job takes any number of plaintext objects and prints a list of the top 30
+most frequently occuring words, along with their frequency, sorted in descending
+order of frequency.  The job uses two phases: the first phase (a map phase),
+processes the input objects in parallel, and the second phase (a reduce phase)
+combines the results to produce a single output.  You can change the number of
+top words printed by changing the value of COUNT on the first line.
+
+This solution is based on Doug McIlroy's solution to a very similar problem
+[posed by Jon Bentley](http://dl.acm.org/citation.cfm?id=315654) in the June,
+1986 issue of Communications of the ACM.  The problem is also very similar to
+the URL frequency count problem posed in section 2.3 of Google's
+[MapReduce](http://research.google.com/archive/mapreduce.html) paper.

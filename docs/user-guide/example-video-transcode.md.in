@@ -1,0 +1,16 @@
+# Video transcoding
+
+This job takes any number of video objects as input and uses the "ffmpeg" tool
+to transcode each one into the "webm" format.  It stores the converted video
+under your user account's public directory, using a name similar to the input
+video.  This example runs on a video from the public
+[kartlytics](http://www.joyent.com/blog/introducing-kartlytics-mario-kart-64-analytics)
+dataset.
+
+Note that this example uses ffmpeg's `-nostdin` option to avoid attempting to
+read user input from stdin.  If this flag is left out, ffmpeg attempts to
+interpret the video file itself (which Manta provides on stdin) as an
+interactive interface through which it accepts commands like "q" to exit.  The
+result is that video files are often truncated.  Use the "-nostdin" ffmpeg
+option to avoid this behavior.  For more information, see
+[ffmpeg ticket 42](http://trac.ffmpeg.org/ticket/42).

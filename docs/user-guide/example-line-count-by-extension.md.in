@@ -1,0 +1,10 @@
+# Line count by file extension
+
+This job takes an arbitrary number of text files as input and produces a report
+summarizing the most common file types (based on file extension, like ".txt",
+or ".js") and how many files and lines were found for each file type.  This
+example runs over the files in the Node.js v0.10.17 source tree.
+
+This example demonstrates using the `$MANTA_INPUT_OBJECT` environment variable
+to refer to the name of the object, and uses bash features to extract just the
+file extension.

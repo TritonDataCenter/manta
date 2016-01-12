@@ -1,3 +1,3 @@
-build
-docs/*.html
-docs/*.json
+/build
+/docs/*.html
+/docs/*.json
