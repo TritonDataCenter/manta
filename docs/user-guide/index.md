@@ -667,7 +667,7 @@ Back to the node.js example, if we pipe the `hello-manta-node.js` in as a key an
       added 1 input to e7711dda-caac-412f-9355-61c8006819ae
       hello,manta!!
 
-We can also do this is a reduce phase (using the `-r` flag). Reduce phases always run, even without keys.
+We can also do this as a reduce phase (using the `-r` flag). Reduce phases always run, even without keys.
 
     $ mjob create -o </dev/null -s /mantademo/public/hello-manta-node.js \
                   -r "node /assets/mantademo/public/hello-manta-node.js"

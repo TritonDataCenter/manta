@@ -1,0 +1,35 @@
+#!/bin/bash
+
+set -o errexit
+set -o pipefail
+cd $(dirname $0)
+
+
+cat <<'EOF'
+# Image conversion
+
+This job takes any number of image objects as input (e.g., PNG images) and
+converts them to "gif" format using the ImageMagick "convert" tool, storing the
+converted image in the same directory as the input object.  This example runs on
+a set of icons in the public domain from the [Open Icon
+Library](http://openiconlibrary.sourceforge.net/).
+
+## Run it yourself
+
+Once you've set up the [Manta CLI
+tools](http://apidocs.joyent.com/manta/#getting-started), you can run this job
+yourself on the publicly accessible dataset using the following command:
+
+EOF
+
+
+# Inline the job.sh
+awk '{ printf("    "); } NR == 1 { printf("$ "); } { print $0 };' job.sh
+
+
+cat <<'EOF'
+
+Because the output for this job is quite large, this example did not use
+"mjob create -o" (which prints all job outputs). For the actual output, see
+"Output summary" below.
+EOF

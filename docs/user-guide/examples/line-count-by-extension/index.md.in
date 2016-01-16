@@ -1,0 +1,40 @@
+#!/bin/bash
+
+set -o errexit
+set -o pipefail
+cd $(dirname $0)
+
+
+cat <<'EOF'
+# Line count by file extension
+
+This job takes an arbitrary number of text files as input and produces a report
+summarizing the most common file types (based on file extension, like ".txt",
+or ".js") and how many files and lines were found for each file type.  This
+example runs over the files in the Node.js v0.10.17 source tree.
+
+This example demonstrates using the `$MANTA_INPUT_OBJECT` environment variable
+to refer to the name of the object, and uses bash features to extract just the
+file extension.
+
+## Run it yourself
+
+Once you've set up the [Manta CLI
+tools](http://apidocs.joyent.com/manta/#getting-started), you can run this job
+yourself on the publicly accessible dataset using the following command:
+
+EOF
+
+
+# Inline the job.sh
+awk '{ printf("    "); } NR == 1 { printf("$ "); } { print $0 };' job.sh
+
+
+cat <<'EOF'
+
+which outputs:
+
+EOF
+
+awk '{ printf("    %s\n", $0); }' job.err
+awk '{ printf("    %s\n", $0); }' job.out

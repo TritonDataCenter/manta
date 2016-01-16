@@ -25,6 +25,10 @@ include ./tools/mk/Makefile.defs
 .PHONY: all
 all: docs
 
+.PHONY: docs-regenerate-examples
+docs-regenerate-examples:
+	docs/user-guide/examples/regenerate-all-examples.sh
+
 
 # Update the operator guide at <http://joyent.github.io/manta/>.
 .PHONY: publish-operator-guide

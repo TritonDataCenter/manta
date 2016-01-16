@@ -1,7 +1,0 @@
-# Image conversion
-
-This job takes any number of image objects as input (e.g., PNG images) and
-converts them to "gif" format using the ImageMagick "convert" tool, storing the
-converted image in the same directory as the input object.  This example runs on
-a set of icons in the public domain from the [Open Icon
-Library](http://openiconlibrary.sourceforge.net/).

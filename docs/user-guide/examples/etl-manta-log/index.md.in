@@ -1,0 +1,98 @@
+#!/bin/bash
+
+set -o errexit
+set -o pipefail
+cd $(dirname $0)
+
+
+cat <<'EOF'
+# ETL example using Manta access logs
+
+This example demonstrates a simple ETL (extract, transform, load) workflow that
+reads an arbitrary number of Manta HTTP access logs (which you can find under
+your own user at `~~/reports/access-logs`) and emits a SQL dump file
+suitable for importing into Postgres and running queries on.
+
+This workflow is useful when the source dataset (the access logs) is too large
+to support interactive queries using traditional tools, but it's possible to
+create a smaller database that summarizes the fields that users want to query.
+These interactive queries can be run on the database, and they execute faster
+than similar queries on the raw data.  The database itself is effectively
+transient: as the underlying dataset grows, or the real-time query requirements
+change to require additional information to be stored in the database, you can
+tweak the database generation job, throw out the old database, and generate a
+new one.
+
+In this way, Manta can remain the repository of record for the raw data, support
+complex jobs over the raw data, and also support fast interactive queries on an
+optimized database that summarizes the raw data.
+
+## Using the database
+
+**Once you've run the job (see "Run it yourself" below)**, you can import the
+output SQL file into any postgres instance.  You can even load it into an
+interactive "mlogin" job:
+
+    $ mlogin $(mjob outputs $JOBID)
+     * created interactive job -- 66e017ee-8efb-4ecb-8c65-6c08ddfed5b8
+     * waiting for session... / established
+
+This next step configures security to allow all connections over a local
+connection with no password.  (This is normally a bad idea, but in this case,
+we're running the database in an isolated environment, so there's no threat):
+
+    dap@manta # echo "local all all trust" > /var/pgsql/data/pg_hba.conf
+
+We have to do the rest as a non-root user:
+
+    dap@manta # su postgres
+
+Now we start Postgres:
+
+    dap@manta # pg_ctl start -D /var/pgsql/data
+    server starting
+    dap@manta # LOG:  database system was shut down at 2013-05-03 09:52:20 UTC
+    LOG:  database system is ready to accept connections
+    LOG:  autovacuum launcher started
+
+load our database:
+
+    dap@manta # psql < $MANTA_INPUT_FILE > /dev/null
+
+and run an interactive query:
+
+    dap@manta # psql
+    psql (9.1.9)
+    Type "help" for help.
+
+    postgres=# SELECT method,count(*) FROM AllRequests GROUP BY method ORDER BY count DESC;
+     method | count
+    --------+-------
+     PUT    |   371
+     GET    |   213
+     DELETE |   132
+     POST   |     9
+     HEAD   |     9
+    (5 rows)
+
+    postgres=#
+
+## Run it yourself
+
+Once you've set up the [Manta CLI
+tools](http://apidocs.joyent.com/manta/#getting-started), you can run this job
+yourself on the publicly accessible dataset using the following command:
+
+EOF
+
+
+# Inline the job.sh
+awk '{ printf("    "); } NR == 1 { printf("$ "); } { print $0 };' job.sh
+
+
+cat <<'EOF'
+
+Because the output for this job is quite large, this example did not use
+"mjob create -o" (which prints all job outputs). For the actual output, see
+"Output summary" below.
+EOF

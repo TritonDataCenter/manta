@@ -1,9 +1,0 @@
-# Total word count
-
-This job takes any number of plain text objects (e.g., mailbox files or source
-code) and computes the total number of characters, words, and lines in all of
-the objects, much like the "wc" Unix command.
-
-The job has two phases: the first phase (a map phase) processes the inputs in
-parallel, and the second phase (a reduce phase) adds the results together to
-produce a single output.

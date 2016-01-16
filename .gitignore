@@ -2,4 +2,8 @@
 /build
 /docs/operator-guide/*.html
 /docs/operator-guide/*.json
+/docs/user-guide/examples/*/job.id
+/docs/user-guide/examples/*/job.err
+/docs/user-guide/examples/*/job.out
+/docs/user-guide/examples/*/index.md
 .DS_Store

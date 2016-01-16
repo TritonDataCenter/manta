@@ -1,0 +1,57 @@
+#!/bin/bash
+
+set -o errexit
+set -o pipefail
+cd $(dirname $0)
+
+
+cat <<'EOF'
+# Word index
+
+This job takes an arbitrary number of plaintext objects as input and produces a
+plaintext index file that lists the files and line numbers where each word
+appears in the whole corpus.  This example runs on a corpus of Shakespeare's
+written works.
+
+This example uses a couple of
+[assets](http://apidocs.joyent.com/manta/jobs-reference.html#assets-assets-property)
+(external scripts that are used in running the job).  The first is indexone.sh,
+which indexes a single object:
+
+EOF
+
+
+awk '{ printf("    %s\n", $0); }' indexone.sh
+
+
+cat <<'EOF'
+
+The second is indexmerge.awk, which is used to merge the per-object indexes:
+
+EOF
+
+
+awk '{ printf("    %s\n", $0); }' indexmerge.awk
+
+
+cat <<'EOF'
+
+## Run it yourself
+
+Once you've set up the [Manta CLI
+tools](http://apidocs.joyent.com/manta/#getting-started), you can run this job
+yourself on the publicly accessible dataset using the following command:
+
+EOF
+
+
+# Inline the job.sh
+awk '{ printf("    "); } NR == 1 { printf("$ "); } { print $0 };' job.sh
+
+
+cat <<'EOF'
+
+Because the output for this job is quite large, this example did not use
+"mjob create -o" (which prints all job outputs). For the actual output, see
+"Output summary" below.
+EOF
