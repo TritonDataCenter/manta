@@ -13,4 +13,6 @@ set -o errexit
 set -o pipefail
 
 
-find . -type d -maxdepth 1 -mindepth 1 | xargs -n1 bash generate-example.sh
+TOP=$(cd $(dirname $0)/; pwd)
+cd $TOP
+find . -type d -maxdepth 1 -mindepth 1 | xargs -n1 bash ./generate-example.sh

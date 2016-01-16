@@ -13,7 +13,10 @@ To regenerate all the examples:
     # in the manta.git top dir
     make docs-regenerate-examples
 
-and then git commit any changes.
+and then git commit any changes. Note that to run the examples you need to have
+`MANTA_KEY_ID` set to a fingerprint of a key on the `manta` account in the
+Joyent Public Cloud. The example generation script is hardcoded to use
+that user so that `mjob share` links are to that account.
 
 
 # Debugging
