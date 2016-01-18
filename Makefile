@@ -32,7 +32,7 @@ docs-regenerate-examples:
 
 # Update the operator guide at <http://joyent.github.io/manta/>.
 .PHONY: publish-operator-guide
-publish-operator-guide:
+publish-operator-guide: docs
 	@[[ -n "$(MSG)" ]] \
 		|| (echo "publish-operator-guide: error: no commit MSG"; \
 		echo "usage: make publish-operator-guide MSG='... commit message ...'"; \
