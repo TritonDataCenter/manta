@@ -994,7 +994,7 @@ Here is a manual workaround (run the following from the headnode global zone):
     # First ensure that the origin (i.e. parent) image is installed
     origin=$(json -f $muuid.imgmanifest origin)
     [[ -z "$origin" ]] \
-        || sdc-imgadm get dee73ee2-69ab-11e3-b593-a3f1f80ef403 >/dev/null \
+        || sdc-imgadm get $origin >/dev/null \
         || sdc-imgadm import $origin -S https://updates.joyent.com
 
     # If that failed, then the separate download area doesn't have a recent
