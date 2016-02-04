@@ -1423,7 +1423,7 @@ curl -kO https://us-east.manta.joyent.com/Joyent_Dev/public/Manta/manta-marlin-i
 # First ensure that the origin (i.e. parent) image is installed
 origin=$(json -f $muuid.imgmanifest origin)
 [[ -z "$origin" ]] \
-    || sdc-imgadm get dee73ee2-69ab-11e3-b593-a3f1f80ef403 &gt;/dev/null \
+    || sdc-imgadm get $origin &gt;/dev/null \
     || sdc-imgadm import $origin -S https://updates.joyent.com
 
 # If that failed, then the separate download area doesn't have a recent
