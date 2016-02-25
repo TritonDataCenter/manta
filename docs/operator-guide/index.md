@@ -1468,12 +1468,23 @@ as for any other SDC compute node.  For reference, this is documented here.
         -----BEGIN CERTIFICATE-----
         [Base64 Encoded Certificate]
         -----END CERTIFICATE-----
+        -----BEGIN DH PARAMETERS-----
+        [Base64 Encoded dhparams]
+        -----END DH PARAMETERS-----
 
    You may need to include the certificate chain in the PEM file.  The chain
    should be a series of CERTIFICATE sections, each section having been signed
    by the next CERTIFICATE.  In other words, the PEM file should be ordered by
    the PRIVATE KEY, the leaf certificate, zero or more intermediate
-   certificates, and, finally, the root certificate.
+   certificates, the root certificate, and then DH parameters as the very last
+   section.
+
+   To generate the DH parameters section, use the command:
+
+        $ openssl dhparam <bits> >> ssl_cert.pem
+
+   Replace `<bits>` with at least the same number of bits as are in your RSA
+   private key (if you are unsure, 2048 is probably safe).
 
 2. Take a backup of your current certificate, just in case anything goes wrong.
 
