@@ -87,13 +87,32 @@ To learn more about mantaRSDK see
 
 # Java SDK
 
-The Java SDK is under development.
-At present you can use it to work with objects.
-Support for compute jobs is not yet implemented.
+The Java SDK has feature parity with the Node.js SDK. However, if new features
+are released it will be late to implement them. It supports all object operations,
+HTTP signing and compute jobs.
 
-You can find the Java SDK at [https://github.com/joyent/java-manta](https://github.com/joyent/java-manta).
+The Java SDK is available as a [Maven](https://maven.apache.org/) module. To use 
+it add the following to your project's pom.xml:
+
+	<dependency>
+        <groupId>com.joyent.manta</groupId>
+        <artifactId>java-manta</artifactId>
+        <!-- replace this value with the specific version number -->
+        <version>LATEST</version>
+    </dependency>
+
+You can find the source for Java SDK at [https://github.com/joyent/java-manta](https://github.com/joyent/java-manta).
 
 
+# PHP SDK
 
+The PHP SDK supports all object operations and compute jobs. It is a community
+driven SDK, so updates to it are dependent upon community involvement. The SDK
+is available as a [Packagist package](https://packagist.org/packages/joyent/php-manta)
+and can be installed using [Composer](https://getcomposer.org/):
 
+    composer require joyent/php-manta
 
+It has been tested in PHP 5.6, PHP 7.0 and HHVM. 
+
+You can find the source for PHP SDK at [https://github.com/joyent/php-manta](https://github.com/joyent/php-manta).
