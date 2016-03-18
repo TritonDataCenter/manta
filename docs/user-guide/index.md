@@ -559,8 +559,9 @@ Then use the `-s` switch to specify and use them in a job:
 
     $ mfind -t o ~~/stor/books |
         mjob create -o -s ~~/stor/map.sh \
-                       -s ~~/stor/red.sh \
-        /assets/$MANTA_USER/stor/map.sh ^^ '/assets/$MANTA_USER/stor/red.sh | sort -k2,2 -n'
+        -m '/assets/$MANTA_USER/stor/map.sh' \
+        -s ~~/stor/red.sh \
+        -r '/assets/$MANTA_USER/stor/red.sh | sort -k2,2 -n'
 
 You'll see a trailing output like
 
@@ -575,8 +576,9 @@ If you'd like to see how long this takes
 
     $ time mfind -t o ~~/stor/books |
         mjob create -o -s ~~/stor/map.sh \
-                       -s ~~/stor/red.sh \
-        /assets/$MANTA_USER/stor/map.sh ^^ '/assets/$MANTA_USER/stor/red.sh | sort -k2,2 -n'
+                -m '/assets/$MANTA_USER/stor/map.sh' \
+                -s ~~/stor/red.sh \
+                -r '/assets/$MANTA_USER/stor/red.sh | sort -k2,2 -n'
 
 The time output at the end will look like
 
