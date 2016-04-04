@@ -350,9 +350,9 @@ a variety of dfferent service managers, depending upon the distribution.
 
     Since systemd has its own logging, you must use the 'journalctl' command to
     look at the logs.
-
+```
         journalctl _SYSTEMD_UNIT=mantanfs.service
-
+```
   * Upstart
 
     See this [cookbook](http://upstart.ubuntu.com/cookbook/) for more details
@@ -397,5 +397,283 @@ a terminal window and the command line to create directories with the correct
 name.
 
 
+# Manta-NFS on Linux - distribution-specific instructions
 
+* Update and install some required packages
 
+Ubuntu:
+```
+# apt-get -y update
+# apt-get -y install npm nfs-common
+# ln -s /usr/bin/nodejs /usr/bin/node
+```
+CentOS:
+```
+# yum -y update
+# curl --silent --location https://rpm.nodesource.com/setup | bash -
+# yum install -y gcc-c++ make nodejs nfs-utils
+```
+## Install the Manta CLI tools and manta-nfs
+```
+# npm install manta-nfs -g
+# npm install manta -g
+```
+## Set up SSH keys and environment and test Manta connectivity
+
+These next steps assume a default path for SSH keys. You can use other paths, but you'll need to modify them appropriately.
+
+* Copy your public and private SSH keys to `/root/.ssh/id_rsa.pub` and `/root/.ssh/id_rsa` respectively.
+* Append your Manta variable exports to `/root/.bashrc`, for example:
+
+```
+export MANTA_URL=https://us-east.manta.joyent.com
+export MANTA_USER=john.smith
+export MANTA_KEY_ID=b9:71:88:f4:c1:62:cf:b4:7c:cc:3b:00:d7:ff:21:46
+```
+Now, log out and back in again, or source `.bashrc`.
+
+* Test Manta connectivity with the `mls` command:
+
+```
+# mls /$MANTA_USER
+jobs/
+public/
+reports/
+stor/
+```
+* Build the manta-nfs configuration file so it can start without the environment:
+
+```
+# cat <<EOF >/etc/manta-nfs.json
+{
+    "manta": {
+        "keyFile": "/root/.ssh/id_rsa",
+        "keyId": "$MANTA_KEY_ID",
+        "url": "$MANTA_URL",
+        "user": "$MANTA_USER"
+    }
+}
+EOF
+```
+# Configuring services
+
+These steps are quite different depending on distribution.
+
+## CentOS 6
+
+* Reboot to ensure all services are running normally.
+* Start manta-nfs in the background:
+
+```
+# node /usr/lib/node_modules/manta-nfs/server.js &
+```
+* Mount your Manta share.
+
+On LX, use:
+```
+# mount -o nfslock,nfsvers=3 127.0.0.1:/$MANTA_USER /mnt
+```
+On KVM, use:
+
+```
+# mount 127.0.0.1:/$MANTA_USER /mnt
+```
+* Verify manta-nfs is functioning correctly with:
+
+```
+# ls /mnt
+```
+* Copy the mantanfs init script and open in your favorite text editor:
+
+```
+# cp /usr/lib/node_modules/manta-nfs/svc/rc/mantanfs /etc/init.d
+# vi /etc/init.d/mantanfs
+```
+
+* Modify the `SERVER` definition from `/usr/local/bin/server.js` to `/usr/lib/node_modules/manta-nfs/server.js`
+* Modify the `CONFIG` definition from `/usr/local/etc/manta-nfs.json` to `/etc/manta-nfs.json`
+* Under the `Default-Stop` line, add:
+
+```
+# chkconfig: 345 24 76' /etc/init.d/mantanfs
+```
+* In the `start()` function, add a line between the `echo` and the `return` lines:
+
+```
+sleep 5
+```
+* Make sure the script is executable:
+
+```
+# chmod 755 /etc/init.d/mantanfs
+```
+
+* Ensure the service will start at boot-time:
+
+```
+# chkconfig --add mantanfs
+```
+* Unmount the share:
+
+```
+# umount /mnt
+```
+* Add a record to `/etc/fstab` so the share mounts at boot time:
+
+On LX, use:
+```
+# echo "127.0.0.1:/$MANTA_USER /mnt nfs nolock,nfsvers=3 0 0" >>/etc/fstab
+```
+On KVM, use:
+```
+# echo "127.0.0.1:/$MANTA_USER /mnt nfs defaults 0 0" >>/etc/fstab
+```
+
+* Reboot and test your share is mounted at boot-time.
+
+## CentOS 7
+
+* Start `rpcbind` with:
+
+```
+# systemctl start rpcbind.service
+```
+* Start manta-nfs in the background:
+
+```
+# node /usr/lib/node_modules/manta-nfs/server.js &
+```
+* Mount your Manta share and test:
+
+```
+# mount -o vers=3 127.0.0.1:/$MANTA_USER /mnt
+# ls /mnt
+```
+* Unmount the share and stop manta-nfs:
+
+```
+# umount /mnt
+# pkill node
+```
+* Copy the manta-nfs systemd script and open in your favorite text editor:
+
+```
+# cp  /usr/lib/node_modules/manta-nfs/svc/systemd/mantanfs.service /etc/systemd/system
+# vi /etc/systemd/system/mantanfs.service
+```
+
+* Modify both occurrences of server.js from `/usr/local/bin/server.js` to `/usr/lib/node_modules/manta-nfs/server.js`
+* Modify both occurrences of manta-nfs.json from `/usr/local/etc/manta-nfs.json` to `/etc/manta-nfs.json`
+* In the `[Unit]` section, add the line `Before=remote-fs-pre.target`
+* In the `[Service]` section, add the lines:
+
+```
+ExecStartPre=/usr/sbin/rpcinfo
+ExecStartPost=/bin/sleep 5
+```
+* Add another section on the end of the file:
+
+```
+[Install]
+WantedBy=remote-fs-pre.target
+```
+
+* Reload systemd:
+
+```
+# systemctl daemon-reload
+```
+* Start manta-nfs:
+
+```
+# systemctl start mantanfs.service
+```
+* Again, mount and test your share:
+
+```
+# mount -o vers=3 127.0.0.1:/$MANTA_USER /mnt
+# ls /mnt
+# umount /mnt
+```
+* Configure manta-nfs to start at boot-time:
+
+```
+# systemctl enable mantanfs.service
+```
+* Add a record to `/etc/fstab` so the share mounts at boot time:
+
+```
+# echo "127.0.0.1:/$MANTA_USER /mnt nfs vers=3 0 0" >>/etc/fstab
+```
+* Reboot and test your share is mounted at boot-time.
+
+## Ubuntu 15.04
+* Start manta-nfs in the background:
+
+```
+# node /usr/lib/node_modules/manta-nfs/server.js &
+```
+* Create a mount point, mount your Manta share and test:
+
+```
+mkdir /manta
+mount -o vers=3 127.0.0.1:/$MANTA_USER /manta
+ls /manta
+```
+
+* Umount the share and stop manta-nfs:
+
+```
+umount /manta
+pkill node
+```
+* Copy the manta-nfs systemd script and open in your favorite text editor:
+
+```
+cp  /usr/local/lib/node_modules/manta-nfs/svc/systemd/mantanfs.service /etc/systemd/system
+vi /etc/systemd/system/mantanfs.service
+```
+
+* Modify both occurrences of server.js from `/usr/local/bin/server.js` to `/usr/local/lib/node_modules/manta-nfs/server.js`
+* Modify both occurrences of manta-nfs.json from `/usr/local/etc/manta-nfs.json` to `/etc/manta-nfs.json`
+* In the `[Unit]` section, add the line `Before=remote-fs-pre.target`
+* In the `[Service]` section, add the lines:
+
+```
+ExecStartPre=/usr/sbin/rpcinfo
+ExecStartPost=/bin/sleep 5
+```
+* Add another section on the end of the file:
+
+```
+[Install]
+WantedBy=remote-fs-pre.target
+```
+* Reload systemd:
+
+```
+# systemctl daemon-reload
+```
+* Start manta-nfs:
+
+```
+# systemctl start mantanfs.service
+```
+* Again, mount and test your share:
+
+```
+# mount -o vers=3 127.0.0.1:/$MANTA_USER /mnt
+# ls /mnt
+# umount /mnt
+```
+* Configure manta-nfs to start at boot-time:
+
+```
+# systemctl enable mantanfs.service
+```
+* Add a record to `/etc/fstab` so the share mounts at boot time:
+
+```
+# echo "127.0.0.1:/$MANTA_USER /mnt nfs vers=3 0 0" >>/etc/fstab
+```
+* Reboot and test your share is mounted at boot-time.
