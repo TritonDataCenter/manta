@@ -511,7 +511,7 @@ These steps are quite different depending on distribution.
 * Under the `Default-Stop` line, add:
 
     ```
-    # chkconfig: 345 24 76' /etc/init.d/mantanfs
+    # chkconfig: 345 24 76
     ```
 
 * In the `start()` function, add a line between the `echo` and the `return` lines:
