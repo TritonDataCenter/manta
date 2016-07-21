@@ -5,7 +5,7 @@
 -->
 
 <!--
-    Copyright (c) 2015, Joyent, Inc.
+    Copyright (c) 2016, Joyent, Inc.
 -->
 
 # Manta: object storage with integrated compute
@@ -257,33 +257,12 @@ builds.
 
 ## Contributing to Manta
 
-Manta repositories use the same [Joyent Engineering
-Guidelines](https://github.com/joyent/eng/blob/master/docs/index.md) as
-the SDC project.  Notably:
+To report bugs or request features, you can submit issues to the Manta project
+on Github.  If you're asking for help with Joyent's production Manta service,
+you should contact Joyent support instead.
 
-* The #master branch should be first-customer-ship (FCS) quality at all times.
-  Don't push anything until it's tested.
-* All repositories should be "make check" clean at all times.
-* All repositories should have tests that run cleanly at all times.
-
-"make check" checks both JavaScript style and lint.  Style is checked with
-[jsstyle](https://github.com/davepacheco/jsstyle).  The specific style rules are
-somewhat repo-specific.  See the jsstyle configuration file in each repo for
-exceptions to the default jsstyle rules.
-
-Lint is checked with
-[javascriptlint](https://github.com/davepacheco/javascriptlint).  ([Don't
-conflate lint with
-style!](http://dtrace.org/blogs/dap/2011/08/23/javascriptlint/)  There are gray
-areas, but generally speaking, style rules are arbitrary, while lint warnings
-identify potentially broken code.)  Repos sometimes have repo-specific lint
-rules, but this is less common.
-
-To report bugs or request features, submit issues to the Manta project on
-Github.  If you're asking for help with Joyent's production Manta service,
-you should contact Joyent support instead.  If you're contributing code, start
-with a pull request.  If you're contributing something substantial, you should
-contact developers on the mailing list or IRC first.
+See the [Contribution Guidelines](CONTRIBUTING.md) for information about
+contributing changes to the project.
 
 
 ## Design principles
