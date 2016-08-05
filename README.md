@@ -33,7 +33,7 @@ repositories that make up a complete Manta deployment.
 The fastest way to get started with Manta depends on what exactly one
 wishes to do.
 
-* To experiment with Manta, the fastest way is to start playing with [Joyent's 
+* To experiment with Manta, the fastest way is to start playing with [Joyent's
 Manta service](https://www.joyent.com/products/manta); see the [Getting
 Started](https://apidocs.joyent.com/manta/index.html#getting-started) guide in
 the user documentation for details.
@@ -44,7 +44,7 @@ the user documentation for details.
 [Manta Operator's
 Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md).
 
-* To understand Manta's architecture, see 
+* To understand Manta's architecture, see
 [Bringing Arbitrary Compute to Authoritative
 Data](http://queue.acm.org/detail.cfm?id=2645649), the
 [ACM Queue](http://queue.acm.org/)
@@ -77,13 +77,14 @@ Twitter for updates.
 ## Dependencies
 
 Manta is deployed on top of Joyent's
-[SmartDataCenter](https://github.com/joyent/sdc) platform (SDC), which is also
-open-source.  SDC provides services for operating physical servers (compute
-nodes), deploying services in containers, monitoring services, transmitting and
-visualizing real-time performance data, and a bunch more.  Manta primarily uses
-SDC for initial deployment, service upgrade, and service monitoring.
+[Triton DataCenter](https://github.com/joyent/triton) platform (just "Triton"
+for short), which is also open-source. Triton provides services for operating
+physical servers (compute nodes), deploying services in containers, monitoring
+services, transmitting and visualizing real-time performance data, and a bunch
+more. Manta primarily uses Triton for initial deployment, service upgrade, and
+service monitoring.
 
-SDC itself depends on [SmartOS](http://smartos.org).  Manta also directly
+Triton itself depends on [SmartOS](http://smartos.org).  Manta also directly
 depends on several SmartOS features, notably: ZFS pooled storage, ZFS rollback,
 and
 [hyprlofs](https://github.com/joyent/illumos-joyent/blob/master/usr/src/uts/common/fs/hyprlofs/hyprlofs_vfsops.c).
@@ -91,19 +92,19 @@ and
 
 ## Building and Deploying Manta
 
-Manta is built and packaged with SDC.  Building the raw pieces uses the same
-mechanisms as building the services that are part of SDC.  When you build an SDC
-headnode image (which is the end result of the whole SDC build process), one of
-the built-in services you get is a [Manta
+Manta is built and packaged with Triton DataCenter. Building the raw pieces uses
+the same mechanisms as building the services that are part of Triton. When you
+build a Triton headnode image (which is the end result of the whole Triton build
+process), one of the built-in services you get is a [Manta
 deployment](http://github.com/joyent/sdc-manta) service, which is used
 to bootstrap a Manta installation.
 
-Once you have SDC set up, follow the instructions in the 
+Once you have Triton set up, follow the instructions in the
 [Manta Operator's
 Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md)
 to deploy Manta.  The easiest way to play around with your own Manta
-installation is to first set up an SDC (cloud-on-a-laptop) installation in
-VMware and then follow those instructions to deploy Manta on it.
+installation is to first set up a Triton cloud-on-a-laptop (COAL) installation
+in VMware and then follow those instructions to deploy Manta on it.
 
 If you want to deploy your own builds of Manta components, see "Deploying your
 own Manta Builds" below.
@@ -146,7 +147,7 @@ contained in the Marlin repo, and it consists of:
 
 * jobsupervisor: Node-based service that stores job execution state in moray and
   coordinates execution across the physical servers
-* marlin agent: Node-based service (an SDC agent) that runs on each physical
+* marlin agent: Node-based service (a Triton agent) that runs on each physical
   server and is responsible for executing user jobs on that server
 * lackey: a Node-based service that runs inside each compute zone under the
   direction of the marlin agent.  The lackey is responsible for actually
@@ -186,7 +187,7 @@ Finally, scripts used to set up these component zones live in the
 [https://github.com/joyent/manta-scripts](manta-scripts) repo.
 
 For more details on the architecture, including how these pieces actually fit
-together, see "Architecture Basics" in the 
+together, see "Architecture Basics" in the
 [Manta Operator's
 Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md).
 
@@ -194,7 +195,7 @@ Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md)
 ## Deploying your own Manta Builds
 
 As described above, as part of the normal Manta deployment process, you start
-with the "manta-deployment" zone that's built into SDC.  Inside that zone, you
+with the "manta-deployment" zone that's built into Triton.  Inside that zone, you
 run "manta-init" to fetch the latest Joyent build of each Manta component.  Then
 you run Manta deployment tools to actually deploy zones based on these builds.
 
@@ -212,10 +213,10 @@ Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md)
    output of this process will be a zone **image**, identified by uuid.  The
    image is comprised of two files: an image manifest (a JSON file) and the
    image file itself (a binary blob).
-1. Import the image into the SDC instance that you're using to deploy Manta.
+1. Import the image into the Triton DataCenter that you're using to deploy Manta.
    (If you've got a multi-datacenter Manta deployment, you'll need to import the
    image into each datacenter separately using this same procedure.)
-    1. Copy the image and manifest files to the SDC headnode where the Manta
+    1. Copy the image and manifest files to the Triton headnode where the Manta
        deployment zone is deployed.  For simplicity, assume that the
        manifest file is "/var/tmp/my_manifest.json" and the image file is
        "/var/tmp/my_image".  You may want to use the image uuid in the filenames
@@ -239,7 +240,7 @@ configuration for whatever service you want (using sdc-sapi -- see
 manta-init but before deploying anything.  Note that each subsequent
 "manta-init" will clobber this change, though the SAPI configuration is normally
 only used for the initial deployment anyway.  The other option is to apply the
-fully-manual install procedure from the 
+fully-manual install procedure from the
 [Manta Operator's
 Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md)
 (i.e., instead of
@@ -249,7 +250,7 @@ an issue and we can improve this procedure.
 
 The above procedure works to update Manta *zones*, which are most of the
 components above.  The other two kinds of components are the *platform* and
-*agents*.  Both of these procedures are documented in the 
+*agents*.  Both of these procedures are documented in the
 [Manta Operator's
 Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md), and they work to deploy custom builds as well as the official Joyent
 builds.
