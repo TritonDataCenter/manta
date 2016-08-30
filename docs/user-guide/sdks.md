@@ -30,27 +30,25 @@ You can find the Node.js SDK at [https://github.com/joyent/node-manta](https://g
 
 # Python SDK and Joyent Manta Shell
 
-The Python SDK is under active development and works with Python 2.6 and 2.7.
+The Python SDK is a community-maintained package for Manta, providing
+a "manta" package and `mantash`, a shell that lets you work with Joyent Manta in
+a bash-like environment.
 
-A unique feature of the Python SDK is `mantash`, a shell that lets you work
-with Joyent Manta in a bash-like environment.
-
-
-	# Mantash single commands can be run like:
-	#       mantash ls
-	# Or you can enter the mantash interactive shell and run commands from
-	# there. Let's do that:
-	$ mantash
-	[jill@us-east /jill/stor]$ ls
-	[jill@us-east /jill/stor]$                      # our stor is empty
-	[jill@us-east /jill/stor]$ put numbers.txt ./   # upload local file
-	[jill@us-east /jill/stor]$ ls
-	numbers.txt
-	[jill@us-east /jill/stor]$ cat numbers.txt
-	one
-	two
-	three
-	four
+    # Mantash single commands can be run like:
+    #       mantash ls
+    # Or you can enter the mantash interactive shell and run commands from
+    # there. Let's do that:
+    $ mantash
+    [jill@us-east /jill/stor]$ ls
+    [jill@us-east /jill/stor]$                      # our stor is empty
+    [jill@us-east /jill/stor]$ put numbers.txt ./   # upload local file
+    [jill@us-east /jill/stor]$ ls
+    numbers.txt
+    [jill@us-east /jill/stor]$ cat numbers.txt
+    one
+    two
+    three
+    four
 
 You can find the Python SDK at [https://github.com/joyent/python-manta](https://github.com/joyent/python-manta).
 
@@ -91,7 +89,7 @@ The Java SDK has feature parity with the Node.js SDK. However, if new features
 are released it will be late to implement them. It supports all object operations,
 HTTP signing and compute jobs.
 
-The Java SDK is available as a [Maven](https://maven.apache.org/) module. To use 
+The Java SDK is available as a [Maven](https://maven.apache.org/) module. To use
 it add the following to your project's pom.xml:
 
 	<dependency>
@@ -113,6 +111,6 @@ and can be installed using [Composer](https://getcomposer.org/):
 
     composer require joyent/php-manta
 
-It has been tested in PHP 5.6, PHP 7.0 and HHVM. 
+It has been tested in PHP 5.6, PHP 7.0 and HHVM.
 
 You can find the source for PHP SDK at [https://github.com/joyent/php-manta](https://github.com/joyent/php-manta).
