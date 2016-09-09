@@ -1190,25 +1190,27 @@ Run this in each datacenter:
 
 Run this procedure for each datacenter whose Marlin agents you want to upgrade.
 
-1. Find the build you want to use.  If you have access to the builds under
-   /Joyent_Dev, you can run this from any machine with internet access and the
-   Manta CLI tools:
+1. Find the build you want to use using `updates-imgadm` in the global-zone
+   of the headnode.
 
-        headnode$ mfind -n 'marlin-master-.*\.tar.\gz' \
-            $(mget /Joyent_Dev/public/builds/marlin/master-latest)/marlin
+        headnode$ updates-imgadm list name=marlin
 
-2. Fetch the desired marlin-master-.\*.tar.gz tarball to /var/tmp on the
-   headnode.  We'll call that file's name TARBALL.
+2. Fetch the desired tarball to /var/tmp on the headnode.  The file will be
+   named `<UUID>-file.gz`.
+
+        headnode$ uuid=<UUID>
+        headnode$ cd /var/tmp
+        headnode$ updates-imgadm get-file -O "$uuid"
 
 3. Copy the tarball to each of the storage nodes:
 
         headnode$ sdc-oneachnode -n $(manta-adm cn -n storage) \
-            -d /var/tmp -g /var/tmp/TARBALL
+            -d /var/tmp -g "/var/tmp/${uuid}-file.gz"
 
 4. Apply the update to all shrimps with:
 
         headnode$ sdc-oneachnode -n $(manta-adm cn -n storage) \
-            '/opt/smartdc/agents/bin/apm install /var/tmp/TARBALL && svcs marlin-agent'
+            "/opt/smartdc/agents/bin/apm install /var/tmp/${uuid}-file.gz"
 
 5. Verify that agents are online with:
 
