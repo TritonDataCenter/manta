@@ -1626,24 +1626,27 @@ necessary.  See "Amon Alarm Updates" below for details.</p></li>
 <p>Run this procedure for each datacenter whose Marlin agents you want to upgrade.</p>
 
 <ol>
-<li><p>Find the build you want to use.  If you have access to the builds under
-/Joyent_Dev, you can run this from any machine with internet access and the
-Manta CLI tools:</p>
+<li><p>Find the build you want to use using <code>updates-imgadm</code> in the global-zone
+of the headnode.</p>
 
-<pre><code>headnode$ mfind -n 'marlin-master-.*\.tar.\gz' \
-    $(mget /Joyent_Dev/public/builds/marlin/master-latest)/marlin
+<pre><code>headnode$ updates-imgadm list name=marlin
 </code></pre></li>
-<li><p>Fetch the desired marlin-master-.*.tar.gz tarball to /var/tmp on the
-headnode.  We'll call that file's name TARBALL.</p></li>
+<li><p>Fetch the desired tarball to /var/tmp on the headnode.  The file will be
+named <code>&lt;UUID&gt;-file.gz</code>.</p>
+
+<pre><code>headnode$ uuid=&lt;UUID&gt;
+headnode$ cd /var/tmp
+headnode$ updates-imgadm get-file -O "$uuid"
+</code></pre></li>
 <li><p>Copy the tarball to each of the storage nodes:</p>
 
 <pre><code>headnode$ sdc-oneachnode -n $(manta-adm cn -n storage) \
-    -d /var/tmp -g /var/tmp/TARBALL
+    -d /var/tmp -g "/var/tmp/${uuid}-file.gz"
 </code></pre></li>
 <li><p>Apply the update to all shrimps with:</p>
 
 <pre><code>headnode$ sdc-oneachnode -n $(manta-adm cn -n storage) \
-    '/opt/smartdc/agents/bin/apm install /var/tmp/TARBALL &amp;&amp; svcs marlin-agent'
+    "/opt/smartdc/agents/bin/apm install /var/tmp/${uuid}-file.gz"
 </code></pre></li>
 <li><p>Verify that agents are online with:</p>
 
@@ -1921,13 +1924,25 @@ format:</p>
 -----BEGIN CERTIFICATE-----
 [Base64 Encoded Certificate]
 -----END CERTIFICATE-----
+-----BEGIN DH PARAMETERS-----
+[Base64 Encoded dhparams]
+-----END DH PARAMETERS-----
 </code></pre>
 
 <p>You may need to include the certificate chain in the PEM file.  The chain
 should be a series of CERTIFICATE sections, each section having been signed
 by the next CERTIFICATE.  In other words, the PEM file should be ordered by
 the PRIVATE KEY, the leaf certificate, zero or more intermediate
-certificates, and, finally, the root certificate.</p></li>
+certificates, the root certificate, and then DH parameters as the very last
+section.</p>
+
+<p>To generate the DH parameters section, use the command:</p>
+
+<pre class="shell"><code>openssl dhparam &lt;bits&gt; &gt;&gt; ssl_cert.pem
+</code></pre>
+
+<p>Replace <code>&lt;bits&gt;</code> with at least the same number of bits as are in your RSA
+private key (if you are unsure, 2048 is probably safe).</p></li>
 <li><p>Take a backup of your current certificate, just in case anything goes wrong.</p>
 
 <pre><code>headnode$ sdc-sapi /services?name=loadbalancer | \
