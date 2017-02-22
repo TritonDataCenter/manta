@@ -1,5 +1,5 @@
 ---
-title: Manta Operator's Guide
+title: Operator's Guide
 markdown2extras: tables, code-friendly
 apisections: .
 ---
@@ -10,13 +10,14 @@ apisections: .
 -->
 
 <!--
-    Copyright (c) 2015, Joyent, Inc.
+    Copyright (c) 2017, Joyent, Inc.
 -->
 
-# Manta Operator's Guide
+# Operator's Guide for Manta, Triton's object storage and converged analytics solution
 
-Manta is an internet-facing object store with in-situ Unix-based compute as a
-first class operation.  The user interface to Manta is essentially:
+Manta, Triton's object storage and converged analytics solution, is an
+internet-facing object store with in-situ Unix-based compute as a first class
+operation. The user interface to Manta is essentially:
 
 * A filesystem-like namespace, with *directories* and *objects*, accessible over
   HTTP
@@ -34,9 +35,9 @@ portal; the Node, Python, Ruby, or Java SDKs; curl(1); or any web browser.
 For more information, see the official [public user
 documentation](http://apidocs.joyent.com/manta/).  **Before reading this
 document, you should be very familiar with using Manta, including both the CLI
-tools and the compute (jobs) features.  You should also be comfortable with all
-the [reference material](http://apidocs.joyent.com/manta/) on how the system
-works from a user's perspective.**
+tools and the compute jobs features. You should also be comfortable with all the
+[reference material](http://apidocs.joyent.com/manta/) on how the system works
+from a user's perspective.**
 
 
 # Architecture basics

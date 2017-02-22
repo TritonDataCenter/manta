@@ -39,11 +39,11 @@ getting a Manta object and listing a Manta directory is allowed:
     CAN getdirectory
 
 
-**Users** are login credentials that are associated with your Joyent Cloud
+**Users** are login credentials that are associated with your Triton Public Cloud
 account. While each user name must be unique within an account,
 user names do not need to be globally unique.
 
-If there is a Joyent Cloud account named `bigco`
+If there is a Triton Public Cloud account named `bigco`
 and another one named `littleco`,
 both can have a user named `contractor`.
 
@@ -77,4 +77,3 @@ To learn more see the main [RBAC documentation](https://docs.joyent.com/jpc/rbac
 
 If you want a quick walkthrough of how access control works with Manta,
 see [Getting Started With Access Control](https://docs.joyent.com/jpc/rbac/quickstart).
-

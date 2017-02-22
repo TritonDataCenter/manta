@@ -11,9 +11,9 @@ This page is to only use the node.js CLI examples. The curl one is for the web a
 Standard Opening Paragraph
 -->
 
-# Introducing the Joyent Manta Service
+# Manta: Triton's object storage and converged analytics solution
 
-Joyent Manta is a highly scalable, distributed object storage service with integrated compute. Developers can store and process any amount of data at any time where a simple web API call replaces the need for spinning up instances. Joyent Manta Compute is a complete and high performance compute environment including R, Python, node.js, Perl, Ruby, Java, C/C++, ffmpeg, grep, awk and others. Metering is by the second with zero provisioning, data movement or scheduling latency costs.
+Manta, Triton's object storage and converged analytics solution, is a highly scalable, distributed object storage service with integrated compute that enables the creation of analytics jobs (more generally, compute jobs) which process and transform data at rest. Developers can store and process any amount of data at any time where a simple web API call replaces the need for spinning up instances. Manta compute is a complete and high performance compute environment including R, Python, node.js, Perl, Ruby, Java, C/C++, ffmpeg, grep, awk and others. Metering is by the second with zero provisioning, data movement or scheduling latency costs.
 
 This page describes the service and how to get started.  You can also skip
 straight to some [compute examples](job-patterns.html).
@@ -69,10 +69,10 @@ Manta.
 
 # Sign Up
 
-To use Joyent Manta Storage Service, you need a Joyent Cloud account.  If
+To use Triton's object storage, you need a Triton Public Cloud account.  If
 you don't already have an account, you can create one at
 [https://my.joyent.com/signup](https://my.joyent.com/signup). You will
-not be charged for Joyent Manta Storage Service until you use it.
+not be charged for object storage until you use it.
 
 Once you have signed up, you will need to add an SSH public key to your account. Joyent recommends using RSA keys, as the node-manta CLI programs will work with RSA keys both locally, and with the `ssh agent`. DSA keys will only work if the
 private key is on the same system as the CLI, and not password-protected.
@@ -81,9 +81,9 @@ private key is on the same system as the CLI, and not password-protected.
 Standard Closing Paragraph
 -->
 
-# An Integral Part of the Joyent Cloud
+# An Integral Part of the Triton Public Cloud
 
-The Joyent Manta Service is just one of a family of services. Joyent Compute Services range from instances in our standard Persistent Compute Service (metered by the hour, month, or year) to our ephemeral Joyent Manta Compute Service (by the second).  All are designed to seamlessly work with our Object Storage and Data Services.
+The Triton object storage service is just one of a family of services. Triton Public Cloud services range from instances in our standard Persistent Compute Service (metered by the hour, month, or year) to our ephemeral Manta compute service (by the second).  All are designed to seamlessly work with our Object Storage and Data Services.
 
 <!--
 From this point on, this is the same exact material as inside the portal
@@ -124,7 +124,7 @@ programs, it is significantly easier for you to set them globally in your
 environment.  There are four environment variables that all command line tools look for:
 
 * `MANTA_URL` - The API endpoint
-* `MANTA_USER` - Your Joyent Cloud account login name
+* `MANTA_USER` - Your Triton Public Cloud account login name
 * `MANTA_SUBUSER` - A user who has limited access to your account.
 See [Role Based Access Control and Manta](rbac.html)
 * `MANTA_KEY_ID` - The fingerprint of your SSH key.
@@ -132,7 +132,7 @@ See [Role Based Access Control and Manta](rbac.html)
 Copy all of the text below, and paste it into your `~/.bash_profile` or `~/.bashrc`.
 
 	export MANTA_URL=https://us-east.manta.joyent.com
-	export MANTA_USER=$JOYENT_CLOUD_USER_NAME
+	export MANTA_USER=$TRITON_CLOUD_USER_NAME
 	unset MANTA_SUBUSER # Unless you have subusers
 	export MANTA_KEY_ID=$(ssh-keygen -l -f $HOME/.ssh/id_rsa.pub | awk '{print $2}')
 
@@ -141,7 +141,7 @@ to add the text in the clipboard to your file. like this:
 
     $ pbpaste >> ~/.bash_profile
 
-Edit the `~/.bash_profile` or `~/.bashrc` file, replacing `$JOYENT_CLOUD_USER_NAME` with your Joyent Cloud username.
+Edit the `~/.bash_profile` or `~/.bashrc` file, replacing `$TRITON_CLOUD_USER_NAME` with your Triton Public Cloud username.
 
 Run
 
@@ -175,7 +175,7 @@ of this document.
 
 # CLI
 
-This Getting Started guide uses command line tools that are Joyent Manta Storage Service analogs of common Unix tools (e.g. mls == ls). You can find man pages for these tools in the [CLI Utilities Reference](commands-reference.html)
+This Getting Started guide uses command line tools that are Manta analogs of common Unix tools (e.g. mls == ls). You can find man pages for these tools in the [CLI Utilities Reference](commands-reference.html)
 
 # Create Data
 
@@ -260,7 +260,7 @@ creating, listing, and deleting directories:
 
 ## SnapLinks
 
-SnapLinks are a concept unique to the Joyent Manta Storage Service. SnapLinks
+SnapLinks are a concept unique to the Manta service. SnapLinks
 are similar to a Unix hard-link, and because the system is "copy on write," data
 changes are not reflected in the SnapLink. This property makes SnapLinks a very
 powerful entity that allows you to create any number of alternate names and
@@ -594,7 +594,7 @@ asset.
 
 ## Advanced Usage
 
-This introduction gave you a basic overview of Joyent Manta Storage Service: how
+This introduction gave you a basic overview of Manta storage service: how
 to work with objects and how to use the system's compute environment to operate on
 those objects. The system provides many more sophisticated features, including:
 
@@ -703,6 +703,3 @@ Now let's take it up one more level. You can see what's inside a simple node.js 
 
 For more details compute jobs see the
 [Compute Jobs Reference documentation](http://apidocs.joyent.com/manta/jobs-reference.html), along with the [default installed software](compute-instance-software.html) and some of our [built-in compute utilities](compute-instance-utilities.html).
-
-
-

@@ -5,13 +5,13 @@ markdown2extras: wiki-tables, code-friendly
 
 # Compute Jobs Reference
 
-This is the reference documentation for jobs.  Unless otherwise specified,
-the semantics described here are stable, which means that you can expect that
-future updates will not change the documented behavior.  You should avoid
-relying on behavior not specified here.
+This is the reference documentation for Manta compute jobs. Unless otherwise
+specified, the semantics described here are stable, which means that you can
+expect that future updates will not change the documented behavior. You should
+avoid relying on behavior not specified here.
 
-You should be familiar with Joyent Manta Storage Service before reading this document. To learn the
-basics, see [Getting Started](index.html).
+You should be familiar with the Manta storage service before reading this
+document. To learn the basics, see [Getting Started](index.html).
 
 
 # Jobs Overview

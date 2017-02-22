@@ -5,14 +5,15 @@
 -->
 
 <!--
-    Copyright (c) 2016, Joyent, Inc.
+    Copyright (c) 2017, Joyent, Inc.
 -->
 
-# Manta: object storage with integrated compute
+# Manta: Triton's object storage and converged analytics solution
 
-Manta is an open-source, HTTP-based object store that uses OS containers to
-allow running arbitrary compute on data at rest (i.e., without copying data
-out of the object store).  The intended use-cases are wide-ranging:
+Manta, Triton's object storage and converged analytics solution, is an
+open-source, HTTP-based object store that uses OS containers to enable running
+arbitrary compute on data at rest (i.e., without copying data out of the object
+store).  The intended use-cases are wide-ranging:
 
 * web assets (e.g., images, HTML and CSS files, and so on), with the ability to
   convert or resize images without copying any data out of Manta
