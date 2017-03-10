@@ -824,10 +824,6 @@ anything from COAL to a multi-compute-node deployment.  The general process is:
 8. If desired, set up connectivity to the "ops", "marlin-dashboard", and
    "madtom" zones.  See "Overview of Operating Manta" below for details.
 
-See the [Service Health
-Checklist](https://mo.joyent.com/docs/manta-deployment/master/service-checklist.html)
-for details on how to check if services are healthy.
-
 
 ## Networking configuration
 
