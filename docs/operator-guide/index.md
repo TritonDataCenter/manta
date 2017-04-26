@@ -1721,6 +1721,170 @@ reports indicate. Storage reports also count cross-account links once for each
 account, even though there is only a single set of copies of the objects.
 Metering also rounds up small objects to a minimum object size.
 
+# Common Operational Procedures
+
+## Adding a New Storage Node
+
+This procedure provides steps needed to add a new Manta storage node (also
+sometimes called a "shrimp" or "mantis shrimp" in reference to the hardware
+spec used by Joyent for these nodes) to an existing Manta deployment.
+
+### Prerequisites
+
+Prior to following the steps in this document, the server needs to be added to
+Triton using the standard compute node installation process as outlined
+[here](https://github.com/joyent/sdc-cnapi/blob/master/docs/index.md#setting-up-a-new-server)
+including any link aggregation and traits. Note that at this time Manta does
+not make use of [fabrics networks](https://docs.joyent.com/private-cloud/networks/sdn).
+
+### Apply Networking
+
+1. Ensure that you are running the latest supported version of the
+   Manta deployment zone. Please see the
+   [Manta Deployment Zone Upgrades](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md#Manta-deployment-zone-upgrades)
+   section of the Manta Operators Guide for more information.
+
+1. Build out the network file; this is a JSON blob that contains information on
+   the networks as well as the storage node that is being added.
+   The example file below shows the addition of a new storage node
+   (532abfa0-11df-11e4-94d3-002590e4f150) to a single AZ deployment called
+   *swdemo01*. Please see the
+   [Networking Configuration](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md#networking-configuration)
+   section of the Manta Operators Guide for more information.
+
+       {
+         "this_az": "swdemo01",
+         "manta_nodes": [
+           "532abfa0-11df-11e4-94d3-002590e4f150"
+         ],
+         "marlin_nodes": [
+           "532abfa0-11df-11e4-94d3-002590e4f150"
+         ],
+         "azs": [
+           "swdemo01"
+         ],
+         "admin": {
+           "nic_tag": "admin",
+           "network": "admin",
+           "swdemo01": {
+             "subnet": "192.168.216.0/23",
+             "gateway": "192.168.216.1"
+           }
+         },
+         "manta": {
+           "nic_tag": "manta",
+           "network": "manta",
+           "swdemo01": {
+             "vlan_id": 4000,
+             "subnet": "172.42.2.0/24",
+             "provision_start_ip": "172.42.2.2",
+             "provision_end_ip": "172.42.2.249",
+             "gateway": "172.42.2.1"
+           }
+         },
+         "marlin": {
+           "nic_tag": "mantanat",
+           "network": "mantanat",
+           "swdemo01": {
+             "vlan_id": 1111,
+             "subnet": "64.30.137.128/28",
+             "provision_start_ip": "64.30.137.132",
+             "provision_end_ip": "64.30.137.142",
+             "gateway": "64.30.137.129"
+           }
+         },
+         "mac_mappings": {
+           "532abfa0-11df-11e4-94d3-002590e4f150": {
+             "manta": "90:e2:ba:68:81:c0",
+             "mantanat": "90:e2:ba:68:81:c0"
+           }
+         }
+       }
+
+
+1. Follow step 4, which is to run `manta-net.sh`, from the
+   [Deploying Manta](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md#deploying-manta)
+   steps above.
+
+### Deploy Services
+
+1. Add blocks for new storage node to the configuration file.  This step will be
+   run from the Manta deployment zone, which you can log into via `sdc-login -l
+   manta` from the GZ on the headnode.
+
+       manta$ manta-adm show -sj > /var/tmp/newstorage.json
+
+1. Edit the `newstorage.json` file to add a new block for each of the new
+   servers; for example, here is a stanza from a demo environment:
+
+
+       {
+         "532abfa0-11df-11e4-94d3-002590e4f150": {
+           "storage": {
+             "3554bca8-42d4-11e4-90be-0b874336d056": 4
+           },
+           "marlin": {
+             "05726737-917f-43d2-97a7-8b55d85cddf9": 10
+           }
+         }
+       }
+
+
+   Please see the section entitled
+   [Choosing how to lay out zones](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md#choosing-how-to-lay-out-zones)
+   for detail on the type and number of zones to deploy to the new
+   server.
+
+1. Deploy the new zones; once the configuration file is complete, you can run
+   it with the following command, which will call the necessary utilities to
+   ensure that the zones are created and configured properly.
+
+       manta$ manta-adm update /var/tmp/newstorage.json
+
+   If you encounter any errors, you will need to resolve them prior to moving
+   on.
+
+1. Deploy the marlin agent; this step will ensure the marlin agent is enabled
+   on the new storage node. To do this, follow the steps in the
+   [Marlin agent upgrades](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md#Marlin-agent-upgrades)
+   section of this guide.
+
+### Updates and Verification
+
+1. Update madtom and the marlin dashboard by following the steps listed in
+   [Updating the Marlin Dashboard and Madtom zones after zone deployments](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md#updating-the-marlin-dashboard-and-madtom-zones-after-zone-deployments)
+
+2. Update the mantamon alarms by following the steps listed in
+   [Amon alarm updates](https://github.com/joyent/manta/blob/master/docs/operator-guide.md#amon-alarm-updates)
+
+3. Verification; at this point you want to confirm the following:
+
+   * Check marlin dashboard to confirm you see the new storage node and the
+     appropriate number of marlins.
+   * Check madtom to verify all services are green.
+   * Monitor for next 24 hours to confirm new shrimp is receiving jobs and data
+   * One way to help push this process along is to kick off a run of
+     [manta-mlive](https://github.com/joyent/manta-mlive), which should result in
+     objects being written / removed from the new servers. You should see data being
+     written inside the new mako zones under `/manta`.
+
+## Updating the Marlin Dashboard and Madtom zones after zone deployments
+
+* Update the marlin dashboard
+
+      headnode$  manta-login marlin-dashboard
+      marlin-dashboard$ /opt/smartdc/marlin-dashboard/bin/generate-config.js | bunyan
+      marlin-dashboard$ svcadm restart marlin-dashboard
+
+  If you encounter any errors at this point, you will need to remediate them.
+
+* Update madtom
+
+      headnode$ manta-login madtom
+      madtom$ /opt/smartdc/madtom/bin/generate_hosts_config.js | bunyan
+      madtom$ svcadm restart madtom
+
+  If you encounter any errors at this point, you will need to remediate them.
 
 # Debugging: general tasks
 
@@ -1906,9 +2070,9 @@ account that can access the logs):
 
     # mfind -t o /poseidon/stor/logs/muskie/2014/11/21/22 | \
         mjob create -o
-	   -m "grep '\"audit\"' | json -ga res.statusCode | sort | uniq -c" \
-	   -r "awk '{ s[\$2] += \$1; } END {
-	      for(code in s) { printf(\"%8d %s\n\", s[code], code); } }'"
+       -m "grep '\"audit\"' | json -ga res.statusCode | sort | uniq -c" \
+       -r "awk '{ s[\$2] += \$1; } END {
+          for(code in s) { printf(\"%8d %s\n\", s[code], code); } }'"
 
 That example searches all the logs from 2014-11-21 hour 22 (22:00 to 23:00 UTC)
 for requests ("audit" records), pulls out the HTTP status code from each one,
