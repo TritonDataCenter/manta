@@ -71,7 +71,7 @@ latency.  See "Failures and internal retries" for details.
 
 ## System Scale
 
-In order to scale to very large data sets, there are no hardcoded limits on:
+In order to scale to very large data sets, there are no _hardcoded_ limits on:
 
 * the size of any input or output object processed by the system
 * the number of tasks in a job, or in any phase of a job
@@ -80,9 +80,17 @@ In order to scale to very large data sets, there are no hardcoded limits on:
 * the number of output objects for any task
 * the number of errors emitted by any job
 
-In order to support scaling to arbitrarily large data sets, the system never
-operates on the full set of tasks, inputs, outputs, or errors at once, nor does
-it provide APIs to do so until after the job has finished running.
+In practice, object sizes are limited by the maximum size file that can be
+stored on storage servers as well as the largest practical HTTP request size.
+
+The other quantities mentioned above are intended to be limited primarily to the
+physical resources available to Manta rather than architectural limits.  Task
+stdout and stderr are limited to the amount of local disk space requested for
+each task.  (See "Advanced output" for details and ways to emit much larger
+outputs.)  The system never operates on the full set of tasks, inputs, outputs,
+or errors at once, nor does it provide APIs to do so until after the job has
+finished running.  In practice, input and task counts over one hundred thousand
+in a single job currently can result in poor performance for other jobs.
 
 Some dimensions of the system are explicitly limited (e.g., the total number of
 reducers, and the maximum number of phases in a job), but the established limits
@@ -274,6 +282,10 @@ available, the task gets it.  Otherwise, the task may be queued until the disk
 becomes available or it may fail with a TaskInitError if the service determines
 that it's unlikely to have disk available any time soon.
 
+**Note:** each task's stdout and stderr are staged to the local disk for the
+duration of the task.  For programs that emit a lot of data to stdout or stderr,
+the "disk" property may need to be adjusted accordingly.
+
 These defaults are not stable.  If you intend to depend on these values, you
 should explicitly specify "1024" for memory and "8" for disk.
 
@@ -369,15 +381,20 @@ variables, including `MANTA_URL`.
 
 # Advanced output
 
-The task's stdout is redirected to a local file on disk.  By default, if the
-task succeeds, this file is uploaded and becomes the task's sole output, which
-is forwarded to the next phase in the job (if any) or else become outputs of the
-job itself (if not).  Intermediate objects are not directly exposed to you, and
-may never even be stored but final outputs are always objects.
+The task's stdout and stderr are redirected to a local file on disk.  By
+default, if the task succeeds, this file is uploaded and becomes the task's sole
+output, which is forwarded to the next phase in the job (if any) or else become
+outputs of the job itself (if not).  Intermediate objects are not directly
+exposed to you, and may never even be stored, but final outputs are always
+objects.  Because the stdout and stderr are staged to disk, these are limited in
+size by the amount of local disk space available, which is controlled by the
+"disk" property of the task's phase.  See the documentation on the "disk"
+property for details.
 
-Several tools are available in compute instances for more sophisticated
-types of output.  In addition, users can make use of advanced input using the
-HTTP API directly; see "Using the HTTP API for advanced output" below.
+Several tools are available in compute instances for more sophisticated types of
+output.  In addition, users can make use of advanced input using the HTTP API
+directly, which allows for emitting outputs not limited by the amount of local
+disk space available.  See "Using the HTTP API for advanced output" below.
 
 
 ## mpipe: advanced output
@@ -387,10 +404,10 @@ Synopsis:
     mpipe [-p] [-r rIdx] [-H header:value ...] [manta path]
 
 Each invocation of mpipe reads data from stdin, potentially buffers it to local
-disk, and saves it as task output.  If a Joyent Manta Storage Service path is given, the output is
-saved to that path.  Otherwise, the object is stored with a unique name in the
-job's directory.  If -p is given, required parent directories are automatically
-created (like "mkdir -p").
+disk, and saves it as task output.  If a Joyent Manta Storage Service path is
+given, the output is saved to that path.  Otherwise, the object is stored with a
+unique name in the job's directory.  If -p is given, required parent directories
+are automatically created (like "mkdir -p").
 
 If you use mpipe in a task, the task's stdout will not be captured and saved as
 it is by default.
@@ -505,10 +522,16 @@ For example, this will capture the output of cmd to an object
 ## Using the HTTP API for advanced output
 
 The functionality provided by "mpipe" and "mcat" can be accessed directly using
-any HTTP client.  Clients can emit output objects using normal PUT
-operations using the parameters specified by the MANTA_URL, MANTA_USER, and
-MANTA_NO_AUTH environment variables.  (See "Task environment and
-authentication" for information about using these variables inside a job.)
+any HTTP client.  Clients can emit output objects using normal PUT operations
+using the parameters specified by the `MANTA_URL`, `MANTA_USER`, and
+`MANTA_NO_AUTH` environment variables.  (See "Task environment and
+authentication" for information about using these variables inside a job.) Since
+the other tools buffer object contents to local disk, this approach is necessary
+to emit objects whose size is not bounded by the local disk space available.
+These requests are subject to the same timeouts as normal requests to the public
+Manta endpoints, and they may be terminated abruptly if the data stream is idle
+for more than a minute.
+
 Job-specific behavior is controlled by several headers:
 
 * `X-Manta-Stream`: Set this to 'stdout' to emit an output object.  This is
