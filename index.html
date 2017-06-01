@@ -55,7 +55,7 @@
     <li><div><a href="#sdc-zone-and-agent-upgrades">SDC zone and agent upgrades</a></div></li>
     <li><div><a href="#platform-upgrades">Platform upgrades</a></div></li>
     <li><div><a href="#ssl-certificate-updates">SSL Certificate Updates</a></div></li>
-    <li><div><a href="#changing-mantamon-contact-methods">Changing Mantamon contact methods</a></div></li>
+    <li><div><a href="#changing-alarm-contact-methods">Changing alarm contact methods</a></div></li>
   </ul></li>
   <li><div><a href="#overview-of-operating-manta">Overview of Operating Manta</a></div>
   <ul>
@@ -1161,8 +1161,8 @@ CN</a>.</p></li>
 <pre><code>manta$ manta-init -s SIZE -e YOUR_EMAIL
 </code></pre>
 
-<p>SIZE must be one of "coal", "lab", or "production".  YOUR_EMAIL is used for
-configuring alarms.</p>
+<p><code>SIZE</code> must be one of "coal", "lab", or "production".  <code>YOUR_EMAIL</code> is used
+to create an Amon contact for alarm notifications.</p>
 
 <p>This step runs various initialization steps, including downloading all of
 the zone images required to deploy Manta.  This can take a while the first
@@ -1192,11 +1192,18 @@ See the "Workaround for manta-marlin image import failure" section below.</p></l
    hash ring must be set up before deploying any zones.</p></li>
 <li><p>If desired, set up connectivity to the "ops", "marlin-dashboard", and
 "madtom" zones.  See "Overview of Operating Manta" below for details.</p></li>
-</ol>
+<li><p>If you wish to enable basic monitoring, run:</p>
 
-<p>See the <a href="https://mo.joyent.com/docs/manta-deployment/master/service-checklist.html">Service Health
-Checklist</a>
-for details on how to check if services are healthy.</p>
+<pre><code>manta-adm alarm config update
+</code></pre>
+
+<p>to deploy Amon probes and probe groups shipped with Manta.  This will cause
+alarms to be opened when parts of Manta are not functioning.  Email
+notifications are enabled by default using the address provided to
+<code>manta-init</code> above.  (Email notifications only work after you have configured
+the Amon service for sending email.)  If you want to be notified about alarm
+events via XMPP, see "Changing alarm contact methods" below.</p></li>
+</ol>
 
 <h2 id="networking-configuration">Networking configuration</h2>
 
@@ -1615,11 +1622,8 @@ service with the following command:</p>
 
 <pre class="shell"><code>manta-adm update config.json
 </code></pre></li>
-<li><p>Update the mantamon alarm configuration as needed.  If you provisioned a new
-zone, you'll likely want to "mantamon add" alarms for that zone.  If you
-deprovisioned a zone, you'll want to "mantamon close" the alarms for that
-now-non-existent zone.  If you reprovisioned a zone, no changes should be
-necessary.  See "Amon Alarm Updates" below for details.</p></li>
+<li><p>Update the alarm configuration as needed.  See "Amon Alarm Updates" below for
+details.</p></li>
 </ol>
 
 <h2 id="marlin-agent-upgrades">Marlin agent upgrades</h2>
@@ -1825,25 +1829,22 @@ provisioned and older ones are deprovisioned.)</p>
 
 <h2 id="amon-alarm-updates">Amon Alarm Updates</h2>
 
-<p>Alarm probes are managed via amon, and specifically in manta via mantamon.  When
-engineering delivers new probes as part of mantamon, the update procedure is to
-update the manta zone to latest (see above), and then:</p>
+<p>Manta's Amon probes are managed using the <code>manta-adm alarm</code> subcommand.  The set
+of configured probes and probe groups needs to be updated whenever the set of
+probes delivered with <code>manta-adm</code> itself changes (e.g., if new probes were
+added, or bugs were fixed in existing probes) or when new components are
+deployed or old components are removed.  In all cases, <strong>it's strongly
+recommended to address and close any open alarms</strong>.  If the update process
+removes a probe group, any alarms associated with that probe group will remain,
+but without much information about the underlying problem.</p>
+
+<p>To update the set of probes and probe groups deployed, use:</p>
 
 <pre><code>headnode$ sdc-login manta
-manta$ mantamon alarms
+manta$ manta-adm alarm config update
 </code></pre>
 
-<p>At this point you must stop and address any open alarms; note that updating
-mantamon probes involves a full drop and re-add. To close all alarms blindly:</p>
-
-<pre><code>manta$ mantamon alarms -H | awk '{print $1}' | xargs -I {} mantamon close {}
-</code></pre>
-
-<p>Now drop all existing probes, and re-add them.</p>
-
-<pre><code>manta$ mantamon drop
-manta$ mantamon add
-</code></pre>
+<p>This command is idempotent.</p>
 
 <h2 id="sdc-zone-and-agent-upgrades">SDC zone and agent upgrades</h2>
 
@@ -1986,17 +1987,20 @@ loadbalancer$ echo QUIT | openssl s_client -host 127.0.0.1 \
 </code></pre></li>
 </ol>
 
-<h2 id="changing-mantamon-contact-methods">Changing Mantamon contact methods</h2>
+<h2 id="changing-alarm-contact-methods">Changing alarm contact methods</h2>
 
-<p>Mantamon manages AMON alarms and can be reconfigured to use different contacts
-for specific alarms levels <code>alert</code> and <code>info</code>.  For example, you may want alerts
-to go to an alerts email address and info to go to an informational email
-address.  AMON can be configured to send alarms to multiple destinations.  See
-the AMON docs for how to configure contacts.  Alerts are configured via the
-<code>MANTAMON_ALERT</code> metadata field on the SAPI Manta <em>service</em>.  Info-level
-contacts are managed via the <code>MANTAMON_INFO</code> metadata field.  Here is an example
-update for alarms going to an email address and to an XMPP endpoint and info
-going just to XMPP:</p>
+<p>The contacts that are notified for new alarm events are configured using SAPI
+metadata on the "manta" service within the "sdc" application (_not_ the "manta"
+application).  This metadata identifies one or more contacts already configured
+within Amon.  See the Amon docs for how to configure these contacts.</p>
+
+<p>For historical reasons, high-severity notifications are delivered to the
+list of contacts called "MANTAMON_ALERT".  Other notifications are delivered to
+the list of contacts called "MANTAMON_INFO".</p>
+
+<p>Here is an example update to send "alert" level notifications to both an email
+address and an XMPP endpoint and have "info" level notifications sent just to
+XMPP:</p>
 
 <pre><code>headnode$ echo '{
   "metadata": {
@@ -2013,35 +2017,41 @@ going just to XMPP:</p>
 
 <p>Note that the last object of the list must have the <code>"last": true</code> key/value.</p>
 
+<p>You will need to update the alarm configuration for this change to take effect.
+See "Amon Alarm Updates".</p>
+
 <h1 id="overview-of-operating-manta">Overview of Operating Manta</h1>
 
 <h2 id="alarms">Alarms</h2>
 
-<p>Alarms are the primary mechanism for operators to discover that something's
-wrong with a Manta deployment.  Manta integrates with <strong>amon</strong>, the SDC alarming
-and monitoring system.  Manta deployment automatically configures alarms for
-each Manta components when they dump core, log serious errors, or experience
-other known kinds of issues.</p>
+<p>Manta integrates with <strong>Amon</strong>, the SDC alarming and monitoring system, to
+notify operators when something is wrong with a Manta deployment.  It's
+recommended to review Amon basics in the <a href="https://github.com/joyent/sdc-amon/blob/master/docs/index.md">Amon
+documentation</a>.</p>
 
-<p>In order to view and manage all alarms, login to the <code>manta</code> zone on the
-headnode (per datacenter) and run <code>mantamon</code>.  The command is already installed
-and setup; additionally there is a man page for the tool, which you can access
-by just running <code>man mantamon</code> inside the manta zone.  That said, you typically
-will want:</p>
+<p>The <code>manta-adm</code> tool ships with configuration files that specify Amon probes and
+probe groups, referred to elsewhere as the "Amon configuration" for Manta.  This
+configuration specifies which checks to run, on what period, how failures should
+be processed to open alarms (which generate notifications), and how these alarms
+should be organized.  Manta includes built-in checks for events like components
+dumping core, logging serious errors, and other kinds of known issues.</p>
 
-<pre><code>manta$ mantamon alarms
-manta$ mantamon close ...
+<p>Typically, the only step that operators need to take to manage the Amon
+configuration is to run:</p>
+
+<pre><code>manta-adm alarm config update
 </code></pre>
 
-<p>Probes are managed by mantamon, and are centrally checked in via the
-mantamon.git repository.</p>
+<p>after initial setup and after other deployment operations.  See "Amon Alarm
+Updates" for more information.</p>
 
-<p>Unfortunately, at present the alarms are not generally clear about the severity
-of the problem, the impact, or the suggested operator action.  In the Joyent
-Manta deployment, the standard procedure in response to an alarm is to assess
-the system's actual state (by using the command-line tools).  If the system is
-actually data-down (or users report that it is for them), an engineer is paged
-to assess the problem and correct the issue.</p>
+<p>With alarms configured, you can use the <code>manta-adm alarm show</code> subcommand and
+related subcommands to view information about open alarms.  When a problem is
+resolved, you can use <code>manta-adm alarm close</code> to close it.  You can also disable
+notifications for alarms using <code>manta-adm alarm notify</code> (e.g., when you do not
+need more notifications about a known issue).</p>
+
+<p>See the <code>manta-adm</code> manual page for more information.</p>
 
 <h2 id="madtom-dashboard-service-health">Madtom dashboard (service health)</h2>
 
