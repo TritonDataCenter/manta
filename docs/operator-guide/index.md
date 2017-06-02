@@ -836,6 +836,79 @@ anything from COAL to a multi-compute-node deployment.  The general process is:
    events via XMPP, see "Changing alarm contact methods" below.
 
 
+## Post-Deployment Steps
+
+Once the above steps have been completed, there are a few steps you
+should consider doing to ensure a working deployment.
+
+### Prerequisites
+
+If you haven't already done so, you will need to [install the Manta CLI tools](https://github.com/joyent/node-manta#installation).
+
+### Set up a Manta Account
+
+To test Manta with the Manta CLI tools, you will need an account
+configured in Triton. You can either use one of the default configured
+accounts or setup your own. The most common method is to test using the
+`poseidon` account which is created by the Manta install.
+
+In either case, you will need access to the Operations Portal. [See the
+instructions here](https://docs.joyent.com/private-cloud/install/headnode-installation#adding-external-access-to-adminui-and-imgapi) on how to find the IP address of the Operations Portal from
+your headnode.
+
+Log into the Operations Portal:
+
+ * COAL users should use login `admin` and the password [you initially setup](https://github.com/joyent/triton/blob/master/docs/developer-guide/coal-setup.md#configure-the-headnode).
+ * Lab users will also use `admin`, but need to ask whoever
+   provisioned your lab account for the password.
+
+Once in, follow [these instructions](https://docs.joyent.com/private-cloud/users#portalsshkeys) to add ssh keys to the account of your choice.
+
+### Test Manta from the CLI Tools
+
+Once you have setup an account on Manta or added your ssh keys added to an
+existing account, you can test your Manta install with the Manta CLI
+tools you installed above in "Prerequisites".
+
+There are complete instructions on how to get started with the CLI
+tools [on the apidocs page](https://apidocs.joyent.com/manta/#getting-started).
+
+Some things in that guide will not be as clear for users of custom deployments.
+
+1. The biggest difference will be the setting of the `MANTA_URL`
+   variable. You will need to find the IP address of your API
+   endpoint. To do this from your headnode:
+
+        headnode$ manta-adm show -H -o primary_ip loadbalancer
+
+    Multiple addresses will be returned. Choose any one and set `MANTA_URL`
+    to `https://$that_ip`.
+2. `MANTA_USER` will be the account you setup in "Set up a Manta Account" section.
+3. `MANTA_KEY_ID` will be the ssh key id you added in "Set up a Manta
+   Account" section.
+4. If the key you used is in an environment that has not installed a
+   certificate signed by a recognized authority you might see `Error:
+   self signed certificate` errors. To fix this, add
+   `MANTA_TLS_INSECURE=true` to your environment or shell config.
+
+A final `~/.bashrc` or `~/.bash_profile` might look something like:
+
+    export MANTA_USER=poseidon
+    export MANTA_URL=https://<your-loadbalancer-ip>
+    export MANTA_TLS_INSECURE=true
+    export MANTA_KEY_ID=`ssh-keygen -l -f ~/.ssh/id_rsa.pub | awk '{print $2}' | tr -d '\n'`
+
+Lastly test the CLI tools from your development machine:
+
+    $ echo "Hello, Manta" > /tmp/hello.txt
+    $ mput -f /tmp/hello.txt ~~/stor/hello-foo
+    .../stor/hello-foo          [=======================================================>] 100%      13B
+    $ mls ~~/stor/
+    hello-foo
+    $ mget ~~/stor/hello-foo
+    Hello, Manta
+
+
 ## Networking configuration
 
 The networking configuration file is a per-datacenter JSON file with several
