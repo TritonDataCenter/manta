@@ -42,8 +42,7 @@ the user documentation for details.
 * To see a detailed, real example of using Manta, check out [Kartlytics: Applying Big Data Analytics to Mario Kart](http://www.joyent.com/blog/introducing-kartlytics-mario-kart-64-analytics).
 
 * To learn about installing and operating your own Manta deployment, see the
-[Manta Operator's
-Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md).
+[Manta Operator's Guide](https://joyent.github.io/manta/).
 
 * To understand Manta's architecture, see
 [Bringing Arbitrary Compute to Authoritative
