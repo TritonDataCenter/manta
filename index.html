@@ -41,6 +41,7 @@
   </ul></li>
   <li><div><a href="#deploying-manta">Deploying Manta</a></div>
   <ul>
+    <li><div><a href="#post-deployment-steps">Post-Deployment Steps</a></div></li>
     <li><div><a href="#networking-configuration">Networking configuration</a></div></li>
     <li><div><a href="#workaround-for-manta-marlin-image-import-failure">Workaround for manta-marlin image import failure</a></div></li>
     <li><div><a href="#manta-adm-configuration">manta-adm configuration</a></div></li>
@@ -1205,6 +1206,85 @@ the Amon service for sending email.)  If you want to be notified about alarm
 events via XMPP, see "Changing alarm contact methods" below.</p></li>
 </ol>
 
+<h2 id="post-deployment-steps">Post-Deployment Steps</h2>
+
+<p>Once the above steps have been completed, there are a few steps you
+should consider doing to ensure a working deployment.</p>
+
+<h3 id="prerequisites">Prerequisites</h3>
+
+<p>If you haven't already done so, you will need to <a href="https://github.com/joyent/node-manta#installation">install the Manta CLI tools</a>.</p>
+
+<h3 id="set-up-a-manta-account">Set up a Manta Account</h3>
+
+<p>To test Manta with the Manta CLI tools, you will need an account
+configured in Triton. You can either use one of the default configured
+accounts or setup your own. The most common method is to test using the
+<code>poseidon</code> account which is created by the Manta install.</p>
+
+<p>In either case, you will need access to the Operations Portal. <a href="https://docs.joyent.com/private-cloud/install/headnode-installation#adding-external-access-to-adminui-and-imgapi">See the
+instructions here</a> on how to find the IP address of the Operations Portal from
+your headnode.</p>
+
+<p>Log into the Operations Portal:</p>
+
+<ul>
+<li>COAL users should use login <code>admin</code> and the password <a href="https://github.com/joyent/triton/blob/master/docs/developer-guide/coal-setup.md#configure-the-headnode">you initially setup</a>.</li>
+<li>Lab users will also use <code>admin</code>, but need to ask whoever
+provisioned your lab account for the password.</li>
+</ul>
+
+<p>Once in, follow <a href="https://docs.joyent.com/private-cloud/users#portalsshkeys">these instructions</a> to add ssh keys to the account of your choice.</p>
+
+<h3 id="test-manta-from-the-cli-tools">Test Manta from the CLI Tools</h3>
+
+<p>Once you have setup an account on Manta or added your ssh keys added to an
+existing account, you can test your Manta install with the Manta CLI
+tools you installed above in "Prerequisites".</p>
+
+<p>There are complete instructions on how to get started with the CLI
+tools <a href="https://apidocs.joyent.com/manta/#getting-started">on the apidocs page</a>.</p>
+
+<p>Some things in that guide will not be as clear for users of custom deployments.</p>
+
+<ol>
+<li><p>The biggest difference will be the setting of the <code>MANTA_URL</code>
+variable. You will need to find the IP address of your API
+endpoint. To do this from your headnode:</p>
+
+<pre><code>headnode$ manta-adm show -H -o primary_ip loadbalancer
+</code></pre>
+
+<p>Multiple addresses will be returned. Choose any one and set <code>MANTA_URL</code>
+to <code>https://$that_ip</code>.</p></li>
+<li><code>MANTA_USER</code> will be the account you setup in "Set up a Manta Account" section.</li>
+<li><code>MANTA_KEY_ID</code> will be the ssh key id you added in "Set up a Manta
+Account" section.</li>
+<li>If the key you used is in an environment that has not installed a
+certificate signed by a recognized authority you might see <code>Error:
+self signed certificate</code> errors. To fix this, add
+<code>MANTA_TLS_INSECURE=true</code> to your environment or shell config.</li>
+</ol>
+
+<p>A final <code>~/.bashrc</code> or <code>~/.bash_profile</code> might look something like:</p>
+
+<pre><code>export MANTA_USER=poseidon
+export MANTA_URL=https://&lt;your-loadbalancer-ip&gt;
+export MANTA_TLS_INSECURE=true
+export MANTA_KEY_ID=`ssh-keygen -l -f ~/.ssh/id_rsa.pub | awk '{print $2}' | tr -d '\n'`
+</code></pre>
+
+<p>Lastly test the CLI tools from your development machine:</p>
+
+<pre class="shell"><code>echo "Hello, Manta" &gt; /tmp/hello.txt
+$ mput -f /tmp/hello.txt ~~/stor/hello-foo
+.../stor/hello-foo          [=======================================================&gt;] 100%      13B
+$ mls ~~/stor/
+hello-foo
+$ mget ~~/stor/hello-foo
+Hello, Manta
+</code></pre>
+
 <h2 id="networking-configuration">Networking configuration</h2>
 
 <p>The networking configuration file is a per-datacenter JSON file with several
@@ -1255,9 +1335,19 @@ properties:</p>
   <td>describes the "marlin" network in this datacenter (see below)</td>
 </tr>
 <tr>
+  <td><code>nic_mappings</code></td>
+  <td>object</td>
+  <td>maps each server in <code>manta_nodes</code> to an object mapping each network name ("manta" and "marlin") to the network interface on the server that should be tagged</td>
+</tr>
+<tr>
   <td><code>mac_mappings</code></td>
   <td>object</td>
-  <td>maps each server uuid from <code>manta_nodes</code> to an object mapping each network name ("admin", "manta", and "marlin") to the MAC address on that server over which that network should be created.</td>
+  <td>(deprecated) maps each server uuid from <code>manta_nodes</code> to an object mapping each network name ("admin", "manta", and "marlin") to the MAC address on that server over which that network should be created.</td>
+</tr>
+<tr>
+  <td><code>distribute_svcs</code></td>
+  <td>boolean</td>
+  <td>control switch over boot-time networking detection performed by <code>manta-net.sh</code> (see below)</td>
 </tr>
 </tbody>
 </table>
@@ -1301,6 +1391,27 @@ IP for each zone.</li>
 <p>Besides those two, each of these blocks has a property for the current
 availability zone that describes the "subnet", "gateway", "vlan_id", and
 "start" and "end" provisionable addresses.</p>
+
+<p><code>nic_mappings</code> is a nested object structure defining the network interface to be
+tagged for each server defined in <code>manta_nodes</code>, and for each of Manta's
+required networks. See below for an example of this section of the
+configuration.</p>
+
+<p>Note: If aggregations are used, they must already exist in NAPI, and updating
+NIC tags on aggregations will require a reboot of the server in question.</p>
+
+<p>The optional boolean <code>distribute_svcs</code> gives control to the operator over the
+boot-time networking detection that happens each time <code>manta-net.sh</code> is executed
+(which determines if the global zone SMF services should be distributed). For
+example, an operator has enabled boot-time networking in a datacenter _after_
+installing Manta, and subsequently would like to add some more storage nodes.
+For consistency, the operator can set <code>distribute_svcs</code> to <code>true</code> in order to
+force distribution of these global zone services.</p>
+
+<p>Note: For global zone network changes handled by boot-time networking to
+take effect, a reboot of the node must be performed. See
+<a href="https://docs.joyent.com/private-cloud/networks/sdn/architecture#bootstrapping-networking-state-in-the-global-zone">Triton's virtual networking documentation</a>
+for more information on boot-time networking.</p>
 
 <p>For reference, here's an example multi-datacenter configuration with one service
 node (aac3c402-3047-11e3-b451-002590c57864) and one storage node
@@ -1391,17 +1502,26 @@ node (aac3c402-3047-11e3-b451-002590c57864) and one storage node
     }
   },
 
-  "mac_mappings": {
+  "nic_mappings": {
     "aac3c402-3047-11e3-b451-002590c57864": {
-      "manta": "90:e2:ba:4b:ec:d1"
+      "manta": {
+        "mac": "90:e2:ba:4b:ec:d1"
+      }
     },
     "445aab6c-3048-11e3-9816-002590c3f3bc": {
-      "manta": "90:e2:ba:4a:32:71",
-      "mantanat": "90:e2:ba:4a:32:71"
+      "manta": {
+        "mac": "90:e2:ba:4a:32:71"
+      },
+      "mantanat": {
+        "aggr": "aggr0"
+      }
     }
   }
-}
 </code></pre>
+
+<p>The deprecated <code>mac_mappings</code> can also be used in place of <code>nic_mappings</code>. Only
+one of <code>nic_mappings</code> or <code>mac_mappings</code> is supported per network configuration
+file.</p>
 
 <p>In a multi-datacenter configuration, this would be used to configure the
 "staging-1" datacenter.  There would be two more configuration files, one
@@ -1572,7 +1692,7 @@ the instance can be reprovisioned back to its original image.</p>
 <p>This procedure uses "manta-adm" to do the upgrade, which uses the reprovisioning
 method for all zones other than the "marlin" zones.</p>
 
-<h3 id="prerequisites">Prerequisites</h3>
+<h3 id="prerequisites-2">Prerequisites</h3>
 
 <ol>
 <li><p>Figure out which image you want to install. You can list available images by
