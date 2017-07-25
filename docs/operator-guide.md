@@ -914,16 +914,18 @@ Lastly test the CLI tools from your development machine:
 The networking configuration file is a per-datacenter JSON file with several
 properties:
 
-| Property       | Kind                       | Description                                                                                                                                                                                   |
-| -------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `azs`          | array&nbsp;of&nbsp;strings | list of all availabililty zones (datacenters) participating in Manta in this region                                                                                                           |
-| `this_az`      | string                     | string (in `azs`) denoting this availability zone                                                                                                                                             |
-| `manta_nodes`  | array&nbsp;of&nbsp;strings | list of server uuid's for *all* servers participating in Manta in this AZ                                                                                                                     |
-| `marlin_nodes` | array&nbsp;of&nbsp;strings | list of server uuid's (subset of `manta_nodes`) that are storage nodes                                                                                                                        |
-| `admin`        | object                     | describes the "admin" network in this datacenter (see below)                                                                                                                                  |
-| `manta`        | object                     | describes the "manta" network in this datacenter (see below)                                                                                                                                  |
-| `marlin`       | object                     | describes the "marlin" network in this datacenter (see below)                                                                                                                                 |
-| `mac_mappings` | object                     | maps each server uuid from `manta_nodes` to an object mapping each network name ("admin", "manta", and "marlin") to the MAC address on that server over which that network should be created. |
+| Property          | Kind                       | Description                                                                                                                                                                                                |
+| ----------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `azs`             | array&nbsp;of&nbsp;strings | list of all availabililty zones (datacenters) participating in Manta in this region                                                                                                                        |
+| `this_az`         | string                     | string (in `azs`) denoting this availability zone                                                                                                                                                          |
+| `manta_nodes`     | array&nbsp;of&nbsp;strings | list of server uuid's for *all* servers participating in Manta in this AZ                                                                                                                                  |
+| `marlin_nodes`    | array&nbsp;of&nbsp;strings | list of server uuid's (subset of `manta_nodes`) that are storage nodes                                                                                                                                     |
+| `admin`           | object                     | describes the "admin" network in this datacenter (see below)                                                                                                                                               |
+| `manta`           | object                     | describes the "manta" network in this datacenter (see below)                                                                                                                                               |
+| `marlin`          | object                     | describes the "marlin" network in this datacenter (see below)                                                                                                                                              |
+| `nic_mappings`    | object                     | maps each server in `manta_nodes` to an object mapping each network name ("manta" and "marlin") to the network interface on the server that should be tagged                                               |
+| `mac_mappings`    | object                     | (deprecated) maps each server uuid from `manta_nodes` to an object mapping each network name ("admin", "manta", and "marlin") to the MAC address on that server over which that network should be created. |
+| `distribute_svcs` | boolean                    | control switch over boot-time networking detection performed by `manta-net.sh` (see below)                                                                                                                 |
 
 "admin", "manta", and "marlin" all describe these networks that are built into Manta:
 
@@ -945,6 +947,27 @@ Each of these is an object with several properties:
 Besides those two, each of these blocks has a property for the current
 availability zone that describes the "subnet", "gateway", "vlan_id", and
 "start" and "end" provisionable addresses.
+
+`nic_mappings` is a nested object structure defining the network interface to be
+tagged for each server defined in `manta_nodes`, and for each of Manta's
+required networks. See below for an example of this section of the
+configuration.
+
+Note: If aggregations are used, they must already exist in NAPI, and updating
+NIC tags on aggregations will require a reboot of the server in question.
+
+The optional boolean `distribute_svcs` gives control to the operator over the
+boot-time networking detection that happens each time `manta-net.sh` is executed
+(which determines if the global zone SMF services should be distributed). For
+example, an operator has enabled boot-time networking in a datacenter _after_
+installing Manta, and subsequently would like to add some more storage nodes.
+For consistency, the operator can set `distribute_svcs` to `true` in order to
+force distribution of these global zone services.
+
+Note: For global zone network changes handled by boot-time networking to
+take effect, a reboot of the node must be performed. See
+[Triton's virtual networking documentation](https://docs.joyent.com/private-cloud/networks/sdn/architecture#bootstrapping-networking-state-in-the-global-zone)
+for more information on boot-time networking.
 
 For reference, here's an example multi-datacenter configuration with one service
 node (aac3c402-3047-11e3-b451-002590c57864) and one storage node
@@ -1035,16 +1058,25 @@ node (aac3c402-3047-11e3-b451-002590c57864) and one storage node
         }
       },
 
-      "mac_mappings": {
+      "nic_mappings": {
         "aac3c402-3047-11e3-b451-002590c57864": {
-          "manta": "90:e2:ba:4b:ec:d1"
+          "manta": {
+            "mac": "90:e2:ba:4b:ec:d1"
+          }
         },
         "445aab6c-3048-11e3-9816-002590c3f3bc": {
-          "manta": "90:e2:ba:4a:32:71",
-          "mantanat": "90:e2:ba:4a:32:71"
+          "manta": {
+            "mac": "90:e2:ba:4a:32:71"
+          },
+          "mantanat": {
+            "aggr": "aggr0"
+          }
         }
       }
-    }
+
+The deprecated `mac_mappings` can also be used in place of `nic_mappings`. Only
+one of `nic_mappings` or `mac_mappings` is supported per network configuration
+file.
 
 In a multi-datacenter configuration, this would be used to configure the
 "staging-1" datacenter.  There would be two more configuration files, one
