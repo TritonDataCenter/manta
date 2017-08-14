@@ -327,7 +327,7 @@ reducers in the next phase.  Also see documentation for "msplit".
 ## Compute instance images ("image" property)
 
 Compute instances are Joyent instances based on the manta-compute image. This
-image is essentially a [base image](https://wiki.joyent.com/wiki/display/jpc2/SmartMachine+Base)
+image is essentially a [base image](https://docs.joyent.com/public-cloud/instances/infrastructure/images/smartos/base)
 with nearly all of the available packages preinstalled.
 
 By default, tasks run in compute instances with the most recently released image
