@@ -102,6 +102,19 @@ it add the following to your project's pom.xml:
 You can find the source for Java SDK at [https://github.com/joyent/java-manta](https://github.com/joyent/java-manta).
 
 
+# Hadoop FileSystem Driver
+
+Hadoop can natively access Manta over the network. Most major Hadoop FileSystem
+features are supported. This is a community driven project, so updates to it
+are dependent upon community involvement. The driver is available as a
+stand-alone jar file that can be dropped into a Hadoop or Apache Drill
+installation.
+
+You can download the jar directory from the [releases page](https://github.com/joyent/hadoop-manta/releases)
+on the [project's github page](https://github.com/joyent/hadoop-manta)
+or directly from Maven Central.
+
+
 # PHP SDK
 
 The PHP SDK supports all object operations and compute jobs. It is a community
@@ -114,3 +127,20 @@ and can be installed using [Composer](https://getcomposer.org/):
 It has been tested in PHP 5.6, PHP 7.0 and HHVM.
 
 You can find the source for PHP SDK at [https://github.com/joyent/php-manta](https://github.com/joyent/php-manta).
+
+
+# Golang SDK
+
+The Go SDK for Manta is currently in active development. It is a combination SDK
+that provides support for Triton CloudAPI operations in addition to Manta API
+operations.
+
+You can find the source for the Go Manta SDK at [https://github.com/joyent/triton-go](https://github.com/joyent/triton-go).
+
+
+# Erlang SDK
+
+The Erlang SDK for Manta is community-maintained SDK that has support for most
+file operations and jobs.
+
+You can find the source for the Erlang SDK at [https://github.com/joyent/erlang-manta](https://github.com/joyent/erlang-manta).
