@@ -129,6 +129,16 @@ It has been tested in PHP 5.6, PHP 7.0 and HHVM.
 You can find the source for PHP SDK at [https://github.com/joyent/php-manta](https://github.com/joyent/php-manta).
 
 
+# Perl Module
+
+There is a Perl module available via CPAN that supports object operations. It is
+a community driven module, so updates to it are dependent upon community
+involvement.
+The module is available on [CPAN](http://search.cpan.org/~andrewh/Manta-Client/).
+
+You can find the source for the Perl module at [https://github.com/joyent/Manta-Client](https://github.com/joyent/Manta-Client).   
+
+
 # Golang SDK
 
 The Go SDK for Manta is currently in active development. It is a combination SDK
