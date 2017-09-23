@@ -158,7 +158,7 @@ directory are counted under the first directory in this order: `stor` `public`
 ||**Field**||**Notes**||
 ||date||hour that this report is for||
 ||type||billable operation type, not HTTP method||
-||bandwidth||bandwidth in and out includes only successful GETs and PUTs||
+||bandwidth||bandwidth in and out, measured in bytes; includes only successful GETs and PUTs||
 
 
 # Compute Usage

@@ -46,12 +46,22 @@ user names do not need to be globally unique.
 If there is a Triton account named `bigco` and another one named `littleco`,
 both can have a user named `contractor`.
 
+When making REST API requests as a user, simply specify the account in the
+`keyId` of the signature in the form of `account/user`. Specifically,
+
+an account keyId has this format:
+
+    bigco/keys/72:b1:da:b6:3f:3e:67:40:53:ca:c9:ab:0d:c4:2a:f7
+
+whereas a subuser's a keyId looks like this:
+
+    bigco/contractor/keys/a1:b2:c3:d4:e5:f6:a7:b8:c9:d0:e1:f2:a3:b4:c5:d6
+
 Manta tools use the following environment variables
 to make working with accounts and users easier.
 
 * `MANTA_USER` is the account owner.
 * `MANTA_SUBUSER` is a user within the account.
-
 
 **Roles** bring users, policies, and resources together.
 Roles define what users can do with a resource. For example, a role
@@ -70,6 +80,7 @@ Roles can be tagged to directories as well (the only exception is the root
 directory of the account). Directory access allows the user to list the objects
 in it but does not imply permissions for objects in it. This is different from
 the POSIX filesystems. In other words,
+
 - Roles on the directory are not required to access objects in that directory
   or to list the contents of subdirectories.
 - Roles tagged on a directory are not automatically cascaded to the objects or
@@ -77,10 +88,13 @@ the POSIX filesystems. In other words,
 
 When a user wants to access a resource,
 the access system checks whether the user
-belongs to a role associated with the resource.
+is a default member of role(s) associated with the resource.
 If so, the access system checks the policies
 associated with the role
 to determine whether the user can access the resource.
+
+If a specific role is passed in the request header (e.g. `-H "Role: operator"`),
+the access system will evaluate the permissions for that specific role only.
 
 The account owner always has complete access to every resource in the account.
 
