@@ -70,9 +70,10 @@
   </ul></li>
   <li><div><a href="#debugging-general-tasks">Debugging: general tasks</a></div>
   <ul>
-    <li><div><a href="#locating-systems">Locating systems</a></div></li>
+    <li><div><a href="#locating-servers">Locating servers</a></div></li>
+    <li><div><a href="#locating-storage-ids-and-compute-ids">Locating storage IDs and compute IDs</a></div></li>
+    <li><div><a href="#locating-manta-component-zones">Locating Manta component zones</a></div></li>
     <li><div><a href="#accessing-systems">Accessing systems</a></div></li>
-    <li><div><a href="#translating-from-mantacomputeid-or-mantastorageid-to-hostname">Translating from mantaComputeId or mantaStorageId to hostname</a></div></li>
     <li><div><a href="#locating-object-data">Locating Object Data</a></div></li>
     <li><div><a href="#debugging-was-there-an-outage">Debugging: was there an outage?</a></div></li>
     <li><div><a href="#debugging-api-failures">Debugging API failures</a></div></li>
@@ -2380,24 +2381,66 @@ Metering also rounds up small objects to a minimum object size.</p>
 
 <h1 id="debugging-general-tasks">Debugging: general tasks</h1>
 
-<h2 id="locating-systems">Locating systems</h2>
+<h2 id="locating-servers">Locating servers</h2>
 
-<p>Each physical server has several unique identifers: the server UUID, the
-hostname, the manta compute id, and the manta storage id.  It also has a
-hardware configuration type (Shrimp, Richmond, Tenderloin, etc), a global zone
-IP, and a service processor IP.  Most of these are available from the "manta-adm
-cn" command.</p>
+<p>All Triton compute nodes have at least two unique identifiers:</p>
 
-<p>As an example, to fetch the server uuid and global zone IP for RM08218, use:</p>
+<ul>
+<li>the server UUID, provided by the system firmware and used by Triton</li>
+<li>the hostname, provided by operators</li>
+</ul>
 
-<pre><code>headnode$ manta-adm cn -o host,server_uuid,admin_ip RM08218
+<p>The global zone's "admin" network IP address should also be unique.</p>
+
+<p>The <code>manta-adm cn</code> command shows information about the Triton compute nodes in
+the current datacenter on which Manta components are deployed.  For example, to
+fetch the server uuid and global zone IP for RM08218, use:</p>
+
+<pre><code># manta-adm cn -o host,server_uuid,admin_ip RM08218
 HOST     SERVER UUID                          ADMIN IP
 RM08218  00000000-0000-0000-0000-00259094c058 10.10.0.34
 </code></pre>
 
-<p>For more information, see <code>manta-adm help cn</code>.</p>
+<p>See the <code>manta-adm(1)</code> manual page for details.</p>
 
-<p>To find a manta zone, log into one of the headnodes and run <code>manta-adm show</code>.</p>
+<h2 id="locating-storage-ids-and-compute-ids">Locating storage IDs and compute IDs</h2>
+
+<p>Manta Storage CNs have additional identifiers:</p>
+
+<ul>
+<li>a manta compute ID, used by the jobs subsystem.</li>
+<li>one or more manta storage IDs, used for object metadata.  There's one storage
+ID per storage zone deployed on a server, so there can be more than one
+storage ID per CN, although this is usually only the case in development
+environments.</li>
+</ul>
+
+<p>You can generate a table that maps hostnames to compute ID and storage IDs for
+the current datacenter:</p>
+
+<pre><code># manta-adm cn -o host,compute_id,storage_ids storage
+HOST     COMPUTE ID               STORAGE IDS
+RM08213  12.cn.us-east.joyent.us  2.stor.us-east.joyent.us
+RM08211  20.cn.us-east.joyent.us  1.stor.us-east.joyent.us
+RM08216  19.cn.us-east.joyent.us  3.stor.us-east.joyent.us
+RM08219  11.cn.us-east.joyent.us  4.stor.us-east.joyent.us
+</code></pre>
+
+<p>Note that the column name is "storage_ids" (with a trailing "s") since there
+may be more than one.</p>
+
+<p>See the <code>manta-adm(1)</code> manual page for details.</p>
+
+<h2 id="locating-manta-component-zones">Locating Manta component zones</h2>
+
+<p>To find a particular manta zone, log into one of the headnodes and run
+<code>manta-adm show</code> to list all Manta-related zones in the current datacenter.  You
+can list all of the zones in all datacenters with <code>manta-adm show -a</code>.</p>
+
+<p><code>manta-adm show</code> supports a number of other features, including summary output,
+filtering by service name, grouping results by compute node, and printing
+various other properties about a zone.  For more information and examples, see
+the <code>manta-adm(1)</code> manual page.</p>
 
 <h2 id="accessing-systems">Accessing systems</h2>
 
@@ -2431,32 +2474,6 @@ RM08218  00000000-0000-0000-0000-00259094c058 10.10.0.34
 </tr>
 </tbody>
 </table>
-
-<h2 id="translating-from-mantacomputeid-or-mantastorageid-to-hostname">Translating from mantaComputeId or mantaStorageId to hostname</h2>
-
-<p>While each system has its own hostname and server_uuid, Manta also assigns a
-separate "storage id" (mantaStorageId) for storage nodes and a "compute id"
-(mantaComputeId) for all nodes.  These identifiers are distinct from the
-hostname and server_uuid in order to support recovery from a failed system.</p>
-
-<p>To translate from a mantaComputeId or a mantaStorageId to a server name, use
-"manta-adm cn":</p>
-
-<pre><code>[root@headnode (us-east-2) ~]# manta-adm cn -o host,compute_id,storage_ids
-HOST     COMPUTE ID               STORAGE IDS
-RM08213  12.cn.us-east.joyent.us  2.stor.us-east.joyent.us
-RM08211  20.cn.us-east.joyent.us  1.stor.us-east.joyent.us
-RM08216  19.cn.us-east.joyent.us  3.stor.us-east.joyent.us
-RM08219  11.cn.us-east.joyent.us  4.stor.us-east.joyent.us
-RA09040  17.cn.us-east.joyent.us  -
-RA09022  16.cn.us-east.joyent.us  -
-RA09027  18.cn.us-east.joyent.us  -
-RA09041  15.cn.us-east.joyent.us  -
-</code></pre>
-
-<p>Note that the column name is "storage_ids" (with a trailing "s") because it's
-technically possible to have multiple storage nodes per host, though you'd only
-ever do that in development.</p>
 
 <h2 id="locating-object-data">Locating Object Data</h2>
 
