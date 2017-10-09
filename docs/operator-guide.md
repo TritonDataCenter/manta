@@ -1847,23 +1847,61 @@ Metering also rounds up small objects to a minimum object size.
 
 # Debugging: general tasks
 
-## Locating systems
+## Locating servers
 
-Each physical server has several unique identifers: the server UUID, the
-hostname, the manta compute id, and the manta storage id.  It also has a
-hardware configuration type (Shrimp, Richmond, Tenderloin, etc), a global zone
-IP, and a service processor IP.  Most of these are available from the "manta-adm
-cn" command.
+All Triton compute nodes have at least two unique identifiers:
 
-As an example, to fetch the server uuid and global zone IP for RM08218, use:
+- the server UUID, provided by the system firmware and used by Triton
+- the hostname, provided by operators
 
-    headnode$ manta-adm cn -o host,server_uuid,admin_ip RM08218
+The global zone's "admin" network IP address should also be unique.
+
+The `manta-adm cn` command shows information about the Triton compute nodes in
+the current datacenter on which Manta components are deployed.  For example, to
+fetch the server uuid and global zone IP for RM08218, use:
+
+    # manta-adm cn -o host,server_uuid,admin_ip RM08218
     HOST     SERVER UUID                          ADMIN IP
     RM08218  00000000-0000-0000-0000-00259094c058 10.10.0.34
 
-For more information, see `manta-adm help cn`.
+See the `manta-adm(1)` manual page for details.
 
-To find a manta zone, log into one of the headnodes and run `manta-adm show`.
+
+## Locating storage IDs and compute IDs
+
+Manta Storage CNs have additional identifiers:
+
+- a manta compute ID, used by the jobs subsystem.
+- one or more manta storage IDs, used for object metadata.  There's one storage
+  ID per storage zone deployed on a server, so there can be more than one
+  storage ID per CN, although this is usually only the case in development
+  environments.
+
+You can generate a table that maps hostnames to compute ID and storage IDs for
+the current datacenter:
+
+    # manta-adm cn -o host,compute_id,storage_ids storage
+    HOST     COMPUTE ID               STORAGE IDS
+    RM08213  12.cn.us-east.joyent.us  2.stor.us-east.joyent.us
+    RM08211  20.cn.us-east.joyent.us  1.stor.us-east.joyent.us
+    RM08216  19.cn.us-east.joyent.us  3.stor.us-east.joyent.us
+    RM08219  11.cn.us-east.joyent.us  4.stor.us-east.joyent.us
+
+Note that the column name is "storage\_ids" (with a trailing "s") since there
+may be more than one.
+
+See the `manta-adm(1)` manual page for details.
+
+## Locating Manta component zones
+
+To find a particular manta zone, log into one of the headnodes and run
+`manta-adm show` to list all Manta-related zones in the current datacenter.  You
+can list all of the zones in all datacenters with `manta-adm show -a`.
+
+`manta-adm show` supports a number of other features, including summary output,
+filtering by service name, grouping results by compute node, and printing
+various other properties about a zone.  For more information and examples, see
+the `manta-adm(1)` manual page.
 
 ## Accessing systems
 
@@ -1875,31 +1913,6 @@ To find a manta zone, log into one of the headnodes and run `manta-adm show`.
 | a&nbsp;compute&nbsp;node's&nbsp;console | ssh to the headnode for that datacenter, find the compute node's service processor IP, then:<br/>`ipmitool -I lanplus -H SERVICE_PROCESS_IP -U ADMIN -P ADMIN sol activate`<br />To exit the console, press enter, then `~.`, prefixed with as many "~"s as you have ssh sessions. (If ssh'd to the headnode, use enter, then `~~.`) If you don't use the prefix `~`s, you'll kill your ssh connection too. |
 | a&nbsp;headnode's&nbsp;console          | ssh to the headnode of one of the other datacenters, then "sdc-login" to the "manta" zone. From there, use the above "ipmitool" command in the usual way with the headnode's SP IP.                                                                                                                                                                                                                         |
 
-
-## Translating from mantaComputeId or mantaStorageId to hostname
-
-While each system has its own hostname and server_uuid, Manta also assigns a
-separate "storage id" (mantaStorageId) for storage nodes and a "compute id"
-(mantaComputeId) for all nodes.  These identifiers are distinct from the
-hostname and server_uuid in order to support recovery from a failed system.
-
-To translate from a mantaComputeId or a mantaStorageId to a server name, use
-"manta-adm cn":
-
-    [root@headnode (us-east-2) ~]# manta-adm cn -o host,compute_id,storage_ids
-    HOST     COMPUTE ID               STORAGE IDS
-    RM08213  12.cn.us-east.joyent.us  2.stor.us-east.joyent.us
-    RM08211  20.cn.us-east.joyent.us  1.stor.us-east.joyent.us
-    RM08216  19.cn.us-east.joyent.us  3.stor.us-east.joyent.us
-    RM08219  11.cn.us-east.joyent.us  4.stor.us-east.joyent.us
-    RA09040  17.cn.us-east.joyent.us  -
-    RA09022  16.cn.us-east.joyent.us  -
-    RA09027  18.cn.us-east.joyent.us  -
-    RA09041  15.cn.us-east.joyent.us  -
-
-Note that the column name is "storage_ids" (with a trailing "s") because it's
-technically possible to have multiple storage nodes per host, though you'd only
-ever do that in development.
 
 ## Locating Object Data
 
