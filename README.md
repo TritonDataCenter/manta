@@ -189,7 +189,7 @@ Finally, scripts used to set up these component zones live in the
 For more details on the architecture, including how these pieces actually fit
 together, see "Architecture Basics" in the
 [Manta Operator's
-Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md).
+Guide](https://joyent.github.io/manta/).
 
 
 ## Deploying your own Manta Builds
@@ -206,7 +206,7 @@ of builds so that if something goes wrong, you know where to start looking.  To
 do this:
 
 1. Complete the Manta deployment procedure from the [Manta Operator's
-Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md).
+Guide](https://joyent.github.io/manta/).
 1. Build a zone image for whatever zone you want to replace.  See the
    instructions for building [SmartDataCenter](https://github.com/joyent/sdc)
    zone images using Mountain Gorilla.  Manta zones work the same way.  The
@@ -226,7 +226,7 @@ Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md)
            sdc-imgadm import -m /var/tmp/my_manifest.json -f /var/tmp/my_image
 
 1. Now you can use the normal Manta zone update procedure (from the [Manta
-   Operator's Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md).
+   Operator's Guide](https://joyent.github.io/manta/).
    This involves saving the current configuration to a JSON
    file using "manta-adm show -sj > config.json", updating the configuration
    file, and then applying the changes with "manta-adm update < config.json".
@@ -242,7 +242,7 @@ manta-init but before deploying anything.  Note that each subsequent
 only used for the initial deployment anyway.  The other option is to apply the
 fully-manual install procedure from the
 [Manta Operator's
-Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md)
+Guide](https://joyent.github.io/manta/)
 (i.e., instead of
 using manta-deploy-coal or manta-deploy-lab) and use a custom "manta-adm"
 configuration file in the first place.  If this is an important use case, file
@@ -252,7 +252,7 @@ The above procedure works to update Manta *zones*, which are most of the
 components above.  The other two kinds of components are the *platform* and
 *agents*.  Both of these procedures are documented in the
 [Manta Operator's
-Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md), and they work to deploy custom builds as well as the official Joyent
+Guide](https://joyent.github.io/manta/), and they work to deploy custom builds as well as the official Joyent
 builds.
 
 
