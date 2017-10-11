@@ -101,7 +101,7 @@ to bootstrap a Manta installation.
 
 Once you have Triton set up, follow the instructions in the
 [Manta Operator's
-Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide/index.md)
+Guide](https://joyent.github.io/manta/)
 to deploy Manta.  The easiest way to play around with your own Manta
 installation is to first set up a Triton cloud-on-a-laptop (COAL) installation
 in VMware and then follow those instructions to deploy Manta on it.
