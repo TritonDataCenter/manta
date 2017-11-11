@@ -352,6 +352,39 @@ handles PUT/GET/DELETE requests to the front door, including requests to:
 * create multipart uploads, upload parts, fetch multipart upload state, commit
   multipart uploads, and abort multipart uploads
 
+Each "webapi" zone is equipped with its own coarse request throttle. The
+throttle treats all requests equally, not distinguishing between different
+operations (reads and writes), or different originating users or IPs. The
+throttle is disabled by default and should be used when manta is under
+extreme load and availability issues cannot be isolated to a single component.
+
+The coarse request throttle exposes three tunables, which are configurable via
+SAPI. Changes to these tunables will require restarting muskie to take effect.
+The names of the SAPI tunables are:
+
+* MUSKIE_THROTTLED_ENABLED - false by default.
+* MUSKIE_THROTTLE_CONCURRENCY - an integer value indicating how many requests
+  the muskie instance can process at once.
+* MUSKIE_THROTTLE_QUEUE_TOLERANCE - an integer value indicating the number of
+  requests muskie will queue, in the event that the concurrency threshold has
+  been reached, before it begins throttling requests.
+
+Requests are throttled with an HTTP status code 503. In general, higher
+concurrency values will result in a busier muskie that handles more requests at
+once. Lower concurrency values will limit the number of requests the muskie will
+handle at once, decreasing throughput. Lower concurrency values should be set to
+limit the load on manta.
+
+Higher queue tolerance values will decrease the likelihood of requests being
+rejected when manta is under high load but may increase the average latency of
+queued requests. This latency increase can be the reuslt of longer queues
+inducing longer delays before dispatch.
+
+Lower queue tolerance values will make requests more likely to be throttled
+quickly under load. Lower queue tolerance values should be used when high
+latency is not acceptable and the application is likely to retry on receipt of a
+503 anyway.
+
 ### Objects and directories
 
 Requests for objects and directories involve:
