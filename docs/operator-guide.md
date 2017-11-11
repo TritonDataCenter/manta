@@ -1845,6 +1845,88 @@ account, even though there is only a single set of copies of the objects.
 Metering also rounds up small objects to a minimum object size.
 
 
+## Request Throttling
+
+Manta provides a coarse request throttle intended to be used when the system is
+under extreme load and is sufferring availability problems that cannot be
+isolated to a single Manta component. When the throttle is enabled and muskie
+has reached its configured capacity, the throttle will cause muskie to drop new
+requests and notify clients their requests have been throttled by sending a
+response with HTTP status code 503. The throttle is disabled by default.
+
+Inbound request activity and throttle statistics can be observed by running
+
+	$ /opt/smartdc/muskie/bin/throttlestat.d
+
+in a webapi zone in which the muskie processes have the throttle enabled. The
+script will output rows of a table with the following columns every second:
+
+* `THROTTLED-PER-SEC` - The number of requests throttled in the last second.
+* `AVG-LATENCY-MS` - The average number of milliseconds that requests which
+completed in the last second spent in the request queue.
+* `MAX-QLEN` - The maximum number of queued requests observed in the last
+second.
+* `MAX-RUNNING` - The maximum number of concurrent dispatched request handlers
+observed in the last second.
+
+If the throttle is not enabled, this script will print an error message
+indicating a missing DTrace provider. The message will look like this:
+
+	dtrace: failed to compile script ./throttlestat.d: line 16: probe 
+	description muskie-throttle*:::queue_enter does not match any probes
+
+If the script is run when the throttle is enabled, and it continues running as
+the throttle is disabled, it will subsequently appear to indicate no request
+activity. This is neither an error nor a sign of service availability lapse. It
+just indicates the fact that the DTrace probes being used by the script are not
+firing. Care should be taken to ensure that this script is used to collect
+metrics only when the throttle is enabled.
+
+The throttle is "coarse" because its capacity is a function of all requests to
+the system, regardless of their originating user, IP address, or API operation.
+Any type of request can be throttled.
+
+The request throttle is implemented on a per-process level, with each "muskie"
+process in a "webapi" zone having its own throttle. The throttle exposes three
+tunables:
+
+| Tunable Name                      | Default Value | Description                           |
+| --------------------------------- | ------------- | ------------------------------------- |
+|  MUSKIE_THROTTLE_ENABLED          | false         | whether the throttle enabled          |
+|  MUSKIE_THROTTLE_CONCURRENCY      | 50            | number of allowed concurrent requests |
+|  MUSKIE_THROTTLE_QUEUE_TOLERANCE  | 25            | number of allowed queued requests     |
+
+These tunables can be modified with commands of the following form:
+
+	$ sapiadm update $(sdc-sapi /services?name=webapi | json -Ha uuid) \
+		metadata."MUSKIE_THROTTLE_ENABLED"=true
+
+Muskies must be restarted to use the new configuration:
+
+	$ manta-oneach -s webapi 'svcadm restart "*muskie-*"'
+
+Requests are throttled when the muskie process has exhausted all slots available
+for concurrent requests and reached its queue threshold.
+
+### Throttle Parameter Trade-offs
+
+In general, higher concurrency values will result in a busier muskie process
+that handles more requests at once. Lower concurrency values will limit the
+number of requests the muskie will handle at once. Lower concurrency values
+should be set to limit the CPU load on Manta.
+
+Higher queue tolerance values will decrease the likelihood of requests being
+rejected when Manta is under high load but may increase the average latency of
+queued requests. This latency increase can be the result of longer queues
+inducing longer delays before dispatch.
+
+Lower queue tolerance values will make requests more likely to be throttled
+quickly under load. Lower queue tolerance values should be used when high
+latency is not acceptable and the application is likely to retry on receipt of
+a 503. Low queue tolerance values are also desirable if the zone is under memory
+pressure.
+
+
 # Debugging: general tasks
 
 ## Locating servers
