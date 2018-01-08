@@ -56,38 +56,40 @@ another, requests may fail rather than serve potentially incorrect data.
 **High availability.**  Manta must survive failure of any service, physical
 server, rack, or even an entire datacenter, assuming it's been deployed
 appropriately.  Development installs of Manta can fit on a single system, and
-obviously those don't survive server failure, but the us-east production
-deployment spans three datacenters and survives partitioning or failure of an
-entire datacenter without downtime for the other two.
+obviously those don't survive server failure, but several production deployments
+span three datacenters and survive partitioning or failure of an entire
+datacenter without downtime for the other two.
 
 ## Basic terminology
 
 We use **nodes** to refer to physical servers.  **Compute nodes** mean the same
-thing they mean in SDC, which is any physical server that's not a head node.
+thing they mean in Triton, which is any physical server that's not a head node.
 **Storage nodes** are compute nodes that are designated to store actual Manta
 objects.  These are the same servers that run users' compute jobs, but we don't
-call those compute nodes because that would be confusing with the SDC
+call those compute nodes because that would be confusing with the Triton
 terminology.
 
 A Manta install uses:
 
-* a headnode (see "Manta and SDC" below)
+* a headnode (see "Manta and Triton" below)
 * one or more storage nodes to store user objects and run compute jobs
 * one or more non-storage compute nodes for the other Manta services.
 
 We use the term *datacenter* (or DC) to refer to an availability zone (or AZ).
-Each datacenter represents a single SDC deployment (see below).  Manta supports
-being deployed in either 1 or 3 datacenters within a single *region*, which is a
-group of datacenters having a high-bandwidth, low-latency network connection.
+Each datacenter represents a single Triton deployment (see below).  Manta
+supports being deployed in either 1 or 3 datacenters within a single *region*,
+which is a group of datacenters having a high-bandwidth, low-latency network
+connection.
 
 
-## Manta and SDC
+## Manta and Triton (SDC)
 
-Manta is built atop SmartDataCenter.  A three-datacenter deployment of Manta is
-built atop three separate SmartDataCenter deployments.  The presence of Manta
-does not change the way SmartDataCenter is deployed or operated.  Administrators
-still have AdminUI, APIs, and they're still responsible for managing the SDC
-services, platform versions, and the like through the normal SDC mechanisms.
+Manta is built atop Triton (formerly known as SmartDataCenter).  A
+three-datacenter deployment of Manta is built atop three separate Triton
+deployments.  The presence of Manta does not change the way Triton is deployed
+or operated.  Administrators still have AdminUI, APIs, and they're still
+responsible for managing the Triton services, platform versions, and the like
+through the normal Triton mechanisms.
 
 
 ## Components of Manta
@@ -110,7 +112,7 @@ In order to make all this work, there are several other pieces:
   servers that actually handle user HTTP requests.  All user interaction with
   Manta happens over HTTP (even compute jobs), so the front door handles all
   user-facing operations.
-* An **authentication cache** maintains a read-only copy of the Joyent user
+* An **authentication cache** maintains a read-only copy of the Joyent account
   database.  All front door requests are authenticated against this cache.
 * A **garbage collection and auditing** system periodically compares the
   contents of the metadata tier with the contents of the storage tier to
@@ -128,8 +130,8 @@ In order to make all this work, there are several other pieces:
 
 ## Services, instances, and agents
 
-Just like with SDC, components are divided into services, instances, and agents.
-Services and instances are SAPI concepts.
+Just like with Triton, components are divided into services, instances, and
+agents.  Services and instances are SAPI concepts.
 
 A **service** is a group of **instances** of the same kind.  For example,
 "jobsupervisor" is a service, and there may be multiple jobsupervisor zones.
@@ -169,13 +171,13 @@ services.
 
 ## Consensus and internal service discovery
 
-In some sense, the heart of Manta (and SDC) is a service discovery mechanism
+In some sense, the heart of Manta (and Triton) is a service discovery mechanism
 (based on ZooKeeper) for keeping track of which service instances are running.
 In a nutshell, this works like this:
 
-1. Setup: There are 3-5 "nameservice" zones deployed that form a ZooKeeper cluster.
-   There's a "binder" DNS server in each of these zones that serves DNS requests
-   based on the contents of the ZooKeeper data store.
+1. Setup: There are 3-5 "nameservice" zones deployed that form a ZooKeeper
+   cluster.  There's a "binder" DNS server in each of these zones that serves
+   DNS requests based on the contents of the ZooKeeper data store.
 2. Setup: When other zones are deployed, part of their configuration includes
    the IP addresses of the nameservice zones.  These DNS servers are the only
    components that each zone knows about directly.
@@ -612,10 +614,16 @@ datacenters, not including the Marlin compute zones.)  So when setting up a
 Manta deployment, it's very important to think ahead of time about which
 components will run where!
 
-While we intend to provide a tool to automatically lay out these zones
-(see MANTA-2023), that doesn't exist yet.  The most important production
-configurations are described below, but for reference, here are the principles
-to keep in mind:
+**The `manta-adm genconfig` tool (when used with the --from-file option) can be
+very helpful in laying out zones for Manta.  See the `manta-adm` manual page for
+details.**  `manta-adm genconfig --from-file` takes as input a list of physical
+servers and information about each one.  Large deployments that use Device 42 to
+manage hardware inventory may find the
+[manta-genazconfig](https://github.com/joyent/manta-genazconfig) tool useful for
+constructing the input for `manta-adm genconfig`.
+
+The most important production configurations are described below,
+but for reference, here are the principles to keep in mind:
 
 * **Storage** zones should only be colocated with **marlin** zones, and only on
   storage nodes.  Neither makes sense without the other, and we do not recommend
@@ -649,8 +657,8 @@ to keep in mind:
   preferably separate datacenters).
 
 Most of these constraints are required in order to maintain availability in the
-event of failure of any component, server, or datacenter.  Obviously they're
-pretty complicated, so we have some recommended configurations.
+event of failure of any component, server, or datacenter.  Below are some
+example configurations.
 
 ## Example single-datacenter, multi-server configuration
 
@@ -710,8 +718,7 @@ or "moray" for shard 1.
 ## Other configurations
 
 For testing purposes, it's fine to deploy all of Manta on a single system.
-Obviously it won't survive server failure, and there are known issues around
-bringing the system back up after a reboot.  This is not supported for a
+Obviously it won't survive server failure.  This is not supported for a
 production deployment.
 
 It's not supported to run Manta in an even number of datacenters since there
@@ -726,8 +733,8 @@ specifically:
   failure, and we'd also have no way to resolve the split-brain problem where
   both datacenters accept conflicting writes after the partition.
 * For even numbers N >= 4, we could theoretically survive datacenter failure,
-  but any N/2 -- N/2 split would be unresolvable.  You'd be better off with N -
-  1 datacenters.
+  but any N/2 -- N/2 split would be unresolvable.  You'd likely be better off
+  dividing the same hardware into N - 1 datacenters.
 
 It's not supported to run Manta across multiple datacenters not in the same
 region (i.e., not having a reliable, low-latency, high-bandwidth connection
@@ -739,19 +746,21 @@ Before you get started for anything other than a COAL or lab deployment, be
 sure to read and fully understand the section on "Planning a Manta deployment"
 above.
 
-These instructions assume a single-datacenter installation, but they work on
-anything from COAL to a multi-compute-node deployment.  The general process is:
+These general instructions should work for anything from COAL to a
+multi-DC, multi-compute-node deployment.  The general process is:
 
-1. Set up SDC in each datacenter, including the headnode, all SDC services, and
-   all compute nodes you intend to use.  For easier management of hosts, we
-   reccommend that the hostname reflect the type of server and, possibly, the
-   intended purpose of the host.  For example, we use the the "RA" or "RM"
-   prefix for "Richmond-A" hosts and "MS" prefix for "Mantis Shrimp" hosts.
-2. In the global zone of the headnode, set up a manta deployment zone using:
+1. Set up Triton in each datacenter, including the headnode, all Triton
+   services, and all compute nodes you intend to use.  For easier management of
+   hosts, we recommend that the hostname reflect the type of server and,
+   possibly, the intended purpose of the host.  For example, we use the the "RA"
+   or "RM" prefix for "Richmond-A" hosts and "MS" prefix for "Mantis Shrimp"
+   hosts.
+2. In the global zone of each Triton headnode, set up a manta deployment zone
+   using:
 
         /usbkey/scripts/setup_manta_zone.sh
 
-3. Generate a Manta networking configuration file.
+3. In each datacenter, generate a Manta networking configuration file.
 
     a. For COAL, from the GZ, use:
 
@@ -767,28 +776,38 @@ anything from COAL to a multi-compute-node deployment.  The general process is:
     c. For other deployments, see "Networking configuration" below.
 
 4. Once you've got the networking configuration file, configure networks by
-   running this in the global zone of the headnode:
+   running this in the global zone of each Triton headnode:
 
         headnode$ ln -s /zones/$(vmadm lookup alias=manta0)/root/opt/smartdc/manta-deployment/networking /var/tmp/networking
         headnode$ cd /var/tmp/networking
         headnode$ ./manta-net.sh CONFIG_FILE
 
    This step is idempotent.  Note that if you are setting up a multi-DC Manta,
-   ensure that (1) your SDC networks have cross datacenter connectivity and
-   routing set up and (2) the SDC firewalls allow TCP and UDP traffic cross-
+   ensure that (1) your Triton networks have cross datacenter connectivity and
+   routing set up and (2) the Triton firewalls allow TCP and UDP traffic cross-
    datacenter.
 
-5. If you'll be deploying a loadbalancer on any compute nodes *other* than a
+5. For multi-datacenter deployments, you must [link the datacenters within
+   Triton](https://docs.joyent.com/private-cloud/install/headnode-installation/linked-data-centers)
+   so that the UFDS database is replicated across all three datacenters.
+
+6. For multi-datacenter deployments, you must [configure SAPI for
+   multi-datacenter
+   support](https://github.com/joyent/sdc-sapi/blob/master/docs/index.md#multi-dc-mode).
+
+7. If you'll be deploying a loadbalancer on any compute nodes *other* than a
    headnode, then you'll need to create the "external" NIC tag on those CNs.
    For common single-system configurations (for dev and test systems), you don't
    usually need to do anything for this step.  For multi-CN configurations,
-   you probably *will* need to do this.  See the SDC documentation for
+   you probably *will* need to do this.  See the Triton documentation for
    [how to add a NIC tag to a
    CN](https://docs.joyent.com/sdc7/nic-tags#AssigningaNICTagtoaComputeNode).
 
-6. Inside the manta deployment zone, run:
+8. In each datacenter's manta deployment zone, run the following:
 
         manta$ manta-init -s SIZE -e YOUR_EMAIL
+
+   **`manta-init` must not be run concurrently in multiple datacenters.**
 
    `SIZE` must be one of "coal", "lab", or "production".  `YOUR_EMAIL` is used
    to create an Amon contact for alarm notifications.
@@ -803,7 +822,7 @@ anything from COAL to a multi-compute-node deployment.  The general process is:
    multi-GB image that is used for zones in which Manta compute jobs run.
    See the "Workaround for manta-marlin image import failure" section below.
 
-7. Inside the manta deployment zone, deploy Manta.
+9. In each datacenter's manta deployment zone, deploy Manta components.
 
     a. In COAL, just run `manta-deploy-coal`.  This step is idempotent.
 
@@ -821,19 +840,32 @@ anything from COAL to a multi-compute-node deployment.  The general process is:
        "manta-adm update".  Each of these steps is idempotent, but the shard and
        hash ring must be set up before deploying any zones.
 
-8. If desired, set up connectivity to the "ops", "marlin-dashboard", and
-   "madtom" zones.  See "Overview of Operating Manta" below for details.
+10. If desired, set up connectivity to the "ops", "marlin-dashboard", and
+    "madtom" zones.  See "Overview of Operating Manta" below for details.
 
-9. If you wish to enable basic monitoring, run:
+11. For multi-datacenter deployments, set the MUSKIE\_MULTI\_DC SAPI property.
+    This is required to enforce that object writes are distributed to multiple
+    datacenters.  In the SAPI master datacenter:
+
+        headnode $ app_uuid="$(sdc-sapi /applications?name=manta | json -H uuid)"
+        headnode $ echo '{ "metadata": { "MUSKIE_MULTI_DC": true } }' | \
+            sapiadm update "$app_uuid"
+
+    Repeat the following in each datacenter.
+
+        headnode $ manta-oneach -s webapi 'svcadm restart "*muskie*"'
+
+12. If you wish to enable basic monitoring, run the following in each
+    datacenter:
 
         manta-adm alarm config update
 
-   to deploy Amon probes and probe groups shipped with Manta.  This will cause
-   alarms to be opened when parts of Manta are not functioning.  Email
-   notifications are enabled by default using the address provided to
-   `manta-init` above.  (Email notifications only work after you have configured
-   the Amon service for sending email.)  If you want to be notified about alarm
-   events via XMPP, see "Changing alarm contact methods" below.
+    to deploy Amon probes and probe groups shipped with Manta.  This will cause
+    alarms to be opened when parts of Manta are not functioning.  Email
+    notifications are enabled by default using the address provided to
+    `manta-init` above.  (Email notifications only work after you have
+    configured the Amon service for sending email.)  If you want to be notified
+    about alarm events via XMPP, see "Changing alarm contact methods" below.
 
 
 ## Post-Deployment Steps
@@ -883,7 +915,8 @@ Some things in that guide will not be as clear for users of custom deployments.
 
     Multiple addresses will be returned. Choose any one and set `MANTA_URL`
     to `https://$that_ip`.
-2. `MANTA_USER` will be the account you setup in "Set up a Manta Account" section.
+2. `MANTA_USER` will be the account you setup in "Set up a Manta Account"
+   section.
 3. `MANTA_KEY_ID` will be the ssh key id you added in "Set up a Manta
    Account" section.
 4. If the key you used is in an environment that has not installed a
@@ -927,9 +960,10 @@ properties:
 | `mac_mappings`    | object                     | (deprecated) maps each server uuid from `manta_nodes` to an object mapping each network name ("admin", "manta", and "marlin") to the MAC address on that server over which that network should be created. |
 | `distribute_svcs` | boolean                    | control switch over boot-time networking detection performed by `manta-net.sh` (see below)                                                                                                                 |
 
-"admin", "manta", and "marlin" all describe these networks that are built into Manta:
+"admin", "manta", and "marlin" all describe these networks that are built into
+Manta:
 
-* `admin`: the SDC administrative network
+* `admin`: the Triton administrative network
 * `manta`: the Manta administrative network, used for high-volume communication
   between all Manta services.
 * `marlin`: the network used for compute zones.  This is usually a network that
@@ -941,7 +975,7 @@ Each of these is an object with several properties:
 
 | Property  | Kind   | Description                                                            |
 | --------- | ------ | ---------------------------------------------------------------------- |
-| `network` | string | Name for the SDC network object (usually the same as the network name) |
+| `network` | string | Name for the Triton network object (usually the same as the network name) |
 | `nic_tag` | string | NIC tag name for this network (usually the same as the network name)   |
 
 Besides those two, each of these blocks has a property for the current
@@ -1154,7 +1188,7 @@ compute node.  For most zones, the "kind" of zone is just the service name
 (e.g., "storage").  For sharded zones, you also have to specify the shard
 number.
 
-After you've run "manta-init", you can generate a sample configuration for a
+After you've run `manta-init`, you can generate a sample configuration for a
 single-system install using "manta-adm genconfig".  Use that to give you an
 idea of what this looks like:
 
@@ -1218,7 +1252,7 @@ genconfig coal` or `manta-adm genconfig lab` to a file and use that.  This is
 what the `manta-deploy-coal` and `manta-deploy-lab` scripts do, and you may as
 well just use those.
 
-Once you have a file like this, you can pass it to "manta-adm update", which
+Once you have a file like this, you can pass it to `manta-adm update`, which
 will show you what it will do in order to make the deployment match the
 configuration file, and then it will go ahead and do it.  For more information,
 see "manta-adm help update".
@@ -1258,7 +1292,7 @@ method for all zones other than the "marlin" zones.
     the image in the first column.
 
 2. Figure out which zones you want to reprovision. In the headnode GZ of a given
-   datacenter, you can enumerate the zones and versions for a given manta_role
+   datacenter, you can enumerate the zones and versions for a given manta\_role
    using:
 
         headnode$ manta-adm show jobsupervisor
@@ -1269,11 +1303,13 @@ method for all zones other than the "marlin" zones.
 
 Run this in each datacenter:
 
-1. Download updated images.  The supported approach is to re-run the manta-init
-   command that you used when initially deploying Manta inside the
-   manta-deployment zone.  For us-east, that's:
+1. Download updated images.  The supported approach is to re-run the
+   `manta-init` command that you used when initially deploying Manta inside the
+   manta-deployment zone.  For us-east, use:
 
         $ manta-init -e manta+us-east@joyent.com -s production -c 10
+
+   **Do not run `manta-init` concurrently in multiple datacenters.**
 
 2. Inside the Manta deployment zone, generate a configuration file representing
    the current deployment state:
@@ -1288,9 +1324,11 @@ Run this in each datacenter:
         $ sdc-sapi "/services?name=[service name]&include_master=true" | \
             json -Ha params.image_uuid
 
-4. Pass the updated file to "manta-adm update":
+4. Pass the updated file to `manta-adm update`:
 
         $ manta-adm update config.json
+
+   **Do not run `manta-adm update` concurrently in multiple datacenters.**
 
 5. Update the alarm configuration as needed.  See "Amon Alarm Updates" below for
    details.
@@ -1314,22 +1352,22 @@ Run this procedure for each datacenter whose Marlin agents you want to upgrade.
 
 3. Copy the tarball to each of the storage nodes:
 
-        headnode$ sdc-oneachnode -n $(manta-adm cn -n storage) \
+        headnode$ manta-oneach -G -s storage \
             -d /var/tmp -g "/var/tmp/${uuid}-file.gz"
 
 4. Apply the update to all shrimps with:
 
-        headnode$ sdc-oneachnode -n $(manta-adm cn -n storage) \
+        headnode$ manta-oneach -G -s storage \
             "/opt/smartdc/agents/bin/apm install /var/tmp/${uuid}-file.gz"
 
 5. Verify that agents are online with:
 
-        headnode$ sdc-oneachnode -n $(manta-adm cn -n storage) 'svcs marlin-agent'
+        headnode$ manta-oneach -G -s storage 'svcs marlin-agent'
 
 6. Make sure most of the compute zones become ready. For this, you can use the
    dashboard or run this periodically:
 
-        headnode$ sdc-oneachnode -n $(manta-adm cn -n storage) mrzones
+        headnode$ manta-oneach -G -s storage mrzones
 
 Note: The "apm install" operation will restart the marlin-agent service, which
 has the impact of aborting any currently-running tasks on that system and
@@ -1483,6 +1521,10 @@ provisioned and older ones are deprovisioned.)
 
 ## Manta deployment zone upgrades
 
+Since the Manta deployment zone is actually a Triton component, use `sdcadm` to
+update it:
+
+    headnode$ sdcadm self-update --latest
     headnode$ sdcadm update manta
 
 ## Amon Alarm Updates
@@ -1504,74 +1546,39 @@ To update the set of probes and probe groups deployed, use:
 This command is idempotent.
 
 
-## SDC zone and agent upgrades
+## Triton zone and agent upgrades
 
-SDC zones and agents are upgraded exactly as they are in non-Manta installs.
+Triton zones and agents are upgraded exactly as they are in non-Manta installs.
 
-Note that the SDC agents include the Marlin agent.  If you don't want to update
-the Marlin agent with the SDC agents, you'll need to manually exclude it.
+Note that the Triton agents include the Marlin agent.  If you don't want to
+update the Marlin agent with the Triton agents, you'll need to manually exclude
+it.
 
 
 ## Platform upgrades
 
 Platform updates for compute nodes (including the headnode) are exactly the same
-as for any other SDC compute node.  For reference, this is documented here.
+as for any other Triton compute node.  Use the `sdcadm platform` command to
+download platform images and assign them to compute nodes.
 
-1. Find the platform you want to use.  Joyent's public builds are stored under
-   /Joyent\_Dev/public.  You can find the latest with:
+Platform updates require rebooting CNs.  Note that:
 
-        $ platform=$(mfind -n 'platform-master-.*.tgz' \
-            $(mget -q /Joyent_Dev/public/builds/platform/master-latest))
-
-2. Copy the platform to /var/tmp on the headnode.  You can download that build
-   with:
-
-        headnode$ cd /var/tmp;
-        headnode$ curl -O -k $MANTA_URL$platform
-
-   where $platform is from step 1 above.
-
-3. On the headnode, run:
-
-        headnode$ /usbkey/scripts/install-platform.sh PATH_TO_PLATFORM
-
-   where the PATH_TO_PLATFORM is the path to the file in /var/tmp.
-
-4. Stage the new platform onto the compute nodes that you want to update.  This
-   step does not actually reboot the node.
-
-    a. To update the headnode, use:
-
-        headnode$ /usbkey/scripts/switch-platform.sh DATESTAMP
-
-    b. To update any other node with server uuid SERVER_UUID, use:
-
-        headnode$ sdc-cnapi /boot/SERVER_UUID -d '{"platform": "DATESTAMP"}' -X POST
-
-5. As desired, reboot the CNs, with the following caveats:
-
-    * Rebooting the system hosting the ZooKeeper leader will trigger a new
-      leader election.  Write service may be lost for a minute or two while this
-      happens.
-    * Rebooting the leader of any manatee shard will trigger a manatee flip.
-      Write service will be lost for a minute or two while this happens.
-    * Other than the above constraints, you may reboot any number of nodes
-      within a single AZ at the same time, since Manta survives loss of an
-      entire AZ.  If you reboot more than one CN from different AZs at the same
-      time, you may lose availability of some services or objects.
-
-6. If you store authorized keys on compute nodes, you'll need to propagate these
-   to whatever nodes you've rebooted:
-
-        headnode$ sdc-oneachnode -n SERVER_UUID 'mkdir /root/.ssh'
-        ...
-        headnode$ sdc-oneachnode -n SERVER_UUID -d /root/.ssh -g /root/.ssh/authorized_keys
+* Rebooting the system hosting the ZooKeeper leader will trigger a new
+  leader election.  This should have minimal impact on service.
+* Rebooting the primary peer in any Manatee shard will trigger a Manatee
+  takeover.  Write service will be lost for a minute or two while this happens.
+* Other than the above constraints, you may reboot any number of nodes
+  within a single AZ at the same time, since Manta survives loss of an
+  entire AZ.  If you reboot more than one CN from different AZs at the same
+  time, you may lose availability of some services or objects.
 
 
 ## SSL Certificate Updates
 
+The certificates used for the front door TLS terminators can be updated.
+
 1. Verify your PEM file.  Your PEM file should contain the private key and the
-   certificate chain, including your leaf certificate.  Is should be in the
+   certificate chain, including your leaf certificate.  It should be in the
    format:
 
         -----BEGIN RSA PRIVATE KEY-----
@@ -1619,16 +1626,20 @@ as for any other SDC compute node.  For reference, this is documented here.
         manta$ /opt/smartdc/manta-deployment/cmd/manta-replace-cert.js \
             /var/tmp/ssl_cert.pem
 
-5. Restart your loadbalancers.  For each `manta-login loadbalancer`:
+5. Restart your loadbalancers:
 
         # Verify your new certificate is in place
-        loadbalancer$ cat /opt/smartdc/muppet/etc/ssl.pem
-        loadbalancer$ svcadm restart stud
+        headnode$ manta-oneach -s loadbalancer 'cat /opt/smartdc/muppet/etc/ssl.pem`
+
+        # Restart stud
+        headnode$ manta-oneach -s loadbalancer 'svcadm restart stud'
+
         # Verify no errors in the log
-        loadbalancer$ cat `svcs -L stud`
+        headnode$ manta-oneach -s loadbalancer 'cat `svcs -L stud`'
+
         # Verify the loadbalancer is serving the new certificate
-        loadbalancer$ echo QUIT | openssl s_client -host 127.0.0.1 \
-                -port 443 -showcerts
+        headnode$ manta-oneach -s loadbalancer \
+            'echo QUIT | openssl s_client -host 127.0.0.1 -port 443 -showcerts'
 
    An invalid certificate will result in an error like this in the stud logs:
 
@@ -1675,7 +1686,7 @@ See "Amon Alarm Updates".
 
 ## Alarms
 
-Manta integrates with **Amon**, the SDC alarming and monitoring system, to
+Manta integrates with **Amon**, the Triton alarming and monitoring system, to
 notify operators when something is wrong with a Manta deployment.  It's
 recommended to review Amon basics in the [Amon
 documentation](https://github.com/joyent/sdc-amon/blob/master/docs/index.md).
@@ -2418,7 +2429,8 @@ for the reducer, and the reducer.  For each task, it shows the host assigned to
 run it.  You'd get the exact same output if you specified tasks
 1b370599-90b3-4c03-a388-c8967798d396 or 015f6dbb-8bb3-4b07-b806-12bdf46fd8a8.
 
-Here's an example where one of the early phase map tasks failed and had to be retried:
+Here's an example where one of the early phase map tasks failed and had to be
+retried:
 
 
     ops$ mrjob taskhistory a322ebe6-3279-40ee-8c7e-88130def17b4
@@ -3235,10 +3247,10 @@ There are three pieces of metadata which define how shards are used:
 Right now, marlin uses only a single shard.
 
 Currently, the hash ring topology for electric-moray is created once during
-Manta setup and stored as an image in an SDC imgapi.  The image uuid and
+Manta setup and stored as an image in a Triton imgapi.  The image uuid and
 imgapi endpoint are stored in the following sapi parameters:
 
-    HASH_RING_IMAGE             The hash rimg image uuid
+    HASH_RING_IMAGE             The hash ring image uuid
     HASH_RING_IMGAPI_SERVICE    The imageapi that stores the image.
 
 In a cross-datacenter deployment, the HASH_RING_IMGAPI_SERVICE may be in
