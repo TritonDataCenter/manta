@@ -23,6 +23,7 @@ They are also available to your jobs in the compute environment.
 * [mlogin](mlogin.html) - Interactive session client
 * [mln](mln.html) - Makes link between objects
 * [mmkdir](mmkdir.html) - Make directories
+* [mmpu](mmpu.html) - Create and commit objects using multipart uploads
 * [mrm](mrm.html) - Remove objects or directories
 * [mrmdir](mrmdir.html) - Remove empty directories
 * [msign](msign.html) - Create a signed URL to a object stored in the service
