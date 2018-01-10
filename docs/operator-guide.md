@@ -847,7 +847,7 @@ multi-DC, multi-compute-node deployment.  The general process is:
     This is required to enforce that object writes are distributed to multiple
     datacenters.  In the SAPI master datacenter:
 
-        headnode $ app_uuid="$(sdc-sapi /applications?name=manta | json -H uuid)"
+        headnode $ app_uuid="$(sdc-sapi /applications?name=manta | json -Ha uuid)"
         headnode $ echo '{ "metadata": { "MUSKIE_MULTI_DC": true } }' | \
             sapiadm update "$app_uuid"
 
