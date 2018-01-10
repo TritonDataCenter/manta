@@ -1215,7 +1215,7 @@ See the "Workaround for manta-marlin image import failure" section below.</p></l
 This is required to enforce that object writes are distributed to multiple
 datacenters.  In the SAPI master datacenter:</p>
 
-<pre><code>headnode $ app_uuid="$(sdc-sapi /applications?name=manta | json -H uuid)"
+<pre><code>headnode $ app_uuid="$(sdc-sapi /applications?name=manta | json -Ha uuid)"
 headnode $ echo '{ "metadata": { "MUSKIE_MULTI_DC": true } }' | \
     sapiadm update "$app_uuid"
 </code></pre>
