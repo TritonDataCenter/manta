@@ -134,7 +134,7 @@ Copy all of the text below, and paste it into your `~/.bash_profile` or `~/.bash
 	export MANTA_URL=https://us-east.manta.joyent.com
 	export MANTA_USER=$TRITON_CLOUD_USER_NAME
 	unset MANTA_SUBUSER # Unless you have subusers
-	export MANTA_KEY_ID=$(ssh-keygen -l -f $HOME/.ssh/id_rsa.pub | awk '{print $2}')
+    export MANTA_KEY_ID=$(ssh-keygen -E md5 -l -f ~/.ssh/id_rsa.pub | awk '{print $2}' | tr -d '\n' | cut -d: -f 2-)
 
 An easy way to do this in Mac OS X, is to copy the text, then use the `pbpaste` command
 to add the text in the clipboard to your file. like this:
@@ -160,6 +160,7 @@ Everything works if typing `mls /$MANTA_USER/` returns the top level contents.
       public/
       reports/
       stor/
+      uploads/
 
 The shortcut `~~` is equivalent to typing `/$MANTA_USER`.
 Since many operations require full Manta paths,
@@ -171,6 +172,7 @@ of this document.
       public/
       reports/
       stor/
+      uploads/
 
 
 # CLI
@@ -239,6 +241,7 @@ entries. In addition to `/:login/stor`, there are a few other top-level
 ||/:login/jobs||Job reports. Only you can read and destroy them; it is written by the system only.||
 ||/:login/public||Public object storage. Anyone can access objects in this directory and its subdirectories. Only you can create and destroy them.||
 ||/:login/reports||Usage and Access log reports.  Only you can read and destroy them; it is written by the system only.||
+||/:login/uploads||Multipart uploads.  Ongoing multipart uploads are stored in this directory.||
 ||/:login/stor||Private object storage. Only you can create, destroy, and access objects in this directory and its subdirectories.||
 
 Directories are useful when you want to logically group objects (or other

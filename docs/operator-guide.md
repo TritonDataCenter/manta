@@ -349,6 +349,8 @@ handles PUT/GET/DELETE requests to the front door, including requests to:
 * create, list, and delete directories
 * create compute jobs, submit input, end input, fetch inputs, fetch outputs,
   fetch errors, and cancel jobs
+* create multipart uploads, upload parts, fetch multipart upload state, commit
+  multipart uploads, and abort multipart uploads
 
 ### Objects and directories
 
@@ -357,7 +359,7 @@ Requests for objects and directories involve:
 * validating the request
 * authenticating the user (via mahi, the auth cache)
 * looking up the requested object's metadata (via electric moray)
-* authorizing the user for access to the specifed resource
+* authorizing the user for access to the specified resource
 
 For requests on directories and zero-byte objects, the last step is to update or
 return the right metadata.
@@ -490,6 +492,33 @@ them.  For example, supervisors poll for tasks assigned to them that have been
 completed but not committed and agents poll for tasks assigned to them that have
 been dispatched but not accepted.
 
+## Multipart uploads
+
+Multipart uploads provide an alternate way for users to upload Manta objects.
+The user creates the multipart upload, uploads the object in parts, and exposes
+the object in Manta by committing the multipart upload.  Generally, these
+operations are implemented using existing Manta constructs:
+
+* Parts are normal Manta objects, with a few key differences.  Users cannot use
+  the GET, POST or DELETE HTTP methods on parts.  Additionally, all parts are
+  co-located on the same set of storage nodes, which are selected when the
+  multipart upload is created.
+* All parts for a given multipart upload are stored in a parts directory, which
+  is a normal Manta directory.
+* Part directories are stored in the top-level `/$MANTA_USER/uploads` directory
+  tree.
+
+Most of the logic for multipart uploads is performed by Muskie, but there are
+some additional features of the system only used for multipart uploads:
+
+* the **manta_uploads** bucket in Moray stores **finalizing records** for a
+  given shard.  A finalizing record is inserted atomically with the target
+  object record when a multipart upload is committed.
+* the mako zones have a custom **mako-finalize** operation invoked by muskie
+  when a multipart upload is committed. This operation creates the target object
+  from the parts and subsequently deletes the parts from disk.  This operation
+  is invoked on all storage nodes that will contain the target object when the
+  multipart upload is committed.
 
 ## Garbage collection, auditing, and metering
 
@@ -505,6 +534,21 @@ the metadata tier (taken periodically and stored into Manta), and determines
 which objects can safely be deleted.  These delete requests are batched and sent
 to each storage node, which moves the objects to a "tombstone" area.  Objects in
 the tombstone area are deleted after a fixed interval.
+
+**Multipart upload garbage collection** is the process of cleaning up data
+associated with finalized multipart uploads.  When a multipart upload is
+finalized (committed or aborted), there are several items associated with it
+that need to be cleaned up, including:
+
+* its upload directory metadata
+* part object metadata
+* part data on disk (if not removed during the `mako-finalize` operation)
+* its finalizing metadata
+
+Similar to the basic garbage collection job, there is a multipart upload
+garbage collection job that operates on dumps of the metadata tier to determine
+what data associated with multipart uploads can be safely deleted.  A separate
+operation deletes these items after the job has been completed.
 
 **Auditing** is the process of ensuring that each object is replicated as
 expected.  This is a similar job run over the contents of the metadata tier and
@@ -529,7 +573,7 @@ In the storage tier:
 
 * total size of data (scalable with additional storage servers)
 * size of data per object (limited to the amount of storage on any single
-  system, typically in the tens of terrabytes, which is far larger than
+  system, typically in the tens of terabytes, which is far larger than
   is typically practical)
 
 In terms of performance:
@@ -625,7 +669,7 @@ constructing the input for `manta-adm genconfig`.
 The most important production configurations are described below,
 but for reference, here are the principles to keep in mind:
 
-* **Storage** zones should only be colocated with **marlin** zones, and only on
+* **Storage** zones should only be co-located with **marlin** zones, and only on
   storage nodes.  Neither makes sense without the other, and we do not recommend
   combining them with other zones.  All other zones should be deployed onto
   non-storage compute nodes.
@@ -752,7 +796,7 @@ multi-DC, multi-compute-node deployment.  The general process is:
 1. Set up Triton in each datacenter, including the headnode, all Triton
    services, and all compute nodes you intend to use.  For easier management of
    hosts, we recommend that the hostname reflect the type of server and,
-   possibly, the intended purpose of the host.  For example, we use the the "RA"
+   possibly, the intended purpose of the host.  For example, we use the "RA"
    or "RM" prefix for "Richmond-A" hosts and "MS" prefix for "Mantis Shrimp"
    hosts.
 2. In the global zone of each Triton headnode, set up a manta deployment zone
@@ -814,7 +858,7 @@ multi-DC, multi-compute-node deployment.  The general process is:
 
    This step runs various initialization steps, including downloading all of
    the zone images required to deploy Manta.  This can take a while the first
-   time you run it, so you may want to run it in a screen seesion.  It's
+   time you run it, so you may want to run it in a screen session.  It's
    idempotent.
 
    A common failure mode for those without quite fast internet links is a
@@ -949,7 +993,7 @@ properties:
 
 | Property          | Kind                       | Description                                                                                                                                                                                                |
 | ----------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `azs`             | array&nbsp;of&nbsp;strings | list of all availabililty zones (datacenters) participating in Manta in this region                                                                                                                        |
+| `azs`             | array&nbsp;of&nbsp;strings | list of all availability zones (datacenters) participating in Manta in this region                                                                                                                        |
 | `this_az`         | string                     | string (in `azs`) denoting this availability zone                                                                                                                                                          |
 | `manta_nodes`     | array&nbsp;of&nbsp;strings | list of server uuid's for *all* servers participating in Manta in this AZ                                                                                                                                  |
 | `marlin_nodes`    | array&nbsp;of&nbsp;strings | list of server uuid's (subset of `manta_nodes`) that are storage nodes                                                                                                                                     |
@@ -1936,6 +1980,66 @@ quickly under load. Lower queue tolerance values should be used when high
 latency is not acceptable and the application is likely to retry on receipt of
 a 503. Low queue tolerance values are also desirable if the zone is under memory
 pressure.
+
+## Multipart uploads prefix length
+
+### Overview
+
+The Manta multipart upload API stores the part directories of an account's
+ongoing multipart uploads under the directory tree `/$MANTA_USER/uploads`.
+Within the top-level directory, part directories are stored in subdirectories
+based on some number of the first characters of the multipart upload's UUID.
+The number of characters used to split multipart uploads is referred to as the
+"prefix length".
+
+For example, in a Manta deployment for which the prefix length is set to 3,
+a multipart upload would have an upload directory that looks like this:
+
+    /$MANTA_USER/uploads/f00/f00e51d2-7e47-4732-8edf-eb871296b343
+
+Note that the parent directory of the parts directory, also referred to
+as its "prefix directory", has 3 characters, the same as the prefix length.
+
+The following multipart upload would have been created in a Manta deployment
+with a prefix length of 1:
+
+    /$MANTA_USER/uploads/d/d77feb78-cd7f-481f-a6c7-f653c80c7331
+
+
+### Changing the prefix length
+
+The prefix length is configurable in SAPI, represented as the
+`MUSKIE_MPU_PREFIX_DIR_LEN` SAPI variable under the "webapi" service.  For
+example, to change the prefix length of a deployment to 2, you could run:
+
+    $ sapiadm update $(sdc-sapi /services?name=webapi | json -Ha uuid) \
+        metadata."MUSKIE_MPU_PREFIX_DIR_LEN"=2
+
+As with other configuration changes to the "webapi" service, you must restart
+the "webapi" zones to see the configuration change.
+
+Multipart uploads created with a different prefix length within the same Manta
+deployment will continue to work after the prefix length is changed.
+
+### Prefix length tradeoffs
+
+The prefix length dictates the number of subdirectories allowed in the top-level
+`/$MANTA_USER/uploads` directory.  Because the number of entries in a Manta
+directory should be limited, this affects how many ongoing multipart uploads are
+available for a given account.  Increasing the prefix length also increases the
+number of requests required to list all multipart uploads under a given account.
+Consequently, a smaller prefix length allows for fewer ongoing multipart uploads
+for a single account, but less work to list them all; larger prefix directories
+allow more ongoing multipart uploads, but require more work to list them.
+
+For example, in a Manta deployment with a prefix length of 3, a given account
+may have up to 4096 prefix directories, allowing for about 4 billion ongoing
+multipart uploads for a given account.  Listing all of the multipart uploads
+ongoing requires a maximum of 4096 directory listings operations.  Compare this
+to a deployment with a prefix length of 1, which has a maximum of 256 prefix
+directories and allows for about 256 million multipart uploads, but only up to
+256 directory listings are required to list all multipart uploads under an
+account.
 
 
 # Debugging: general tasks
