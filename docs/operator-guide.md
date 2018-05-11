@@ -10,7 +10,7 @@ apisections: .
 -->
 
 <!--
-    Copyright (c) 2017, Joyent, Inc.
+    Copyright (c) 2018, Joyent, Inc.
 -->
 
 # Operator's Guide for Manta, Triton's object storage and converged analytics solution
@@ -1769,13 +1769,13 @@ hourly into /var/log/manta/upload inside each zone, and then uploading the files
 in that directory to Manta.
 
 The most commonly searched logs are the muskie logs, since these contain logs
-for all requests to the public API.  As with all logs, these are pushed to Manta
-hourly, and they're stored at /poseidon/stor/logs/YYYY/MM/DD/HH.  There's one
-object in that directory per muskie server instance.  If you need to look at the
-live logs (because you're debugging a problem within the hour that it happened,
-or because Manta is currently down), see "real-time logs" below.  Either way, if
-you have the x-server-name from a request, that will tell you which muskie
-instance handled the request so that you don't need to search all of them.
+for all requests to the public API. There's one object in each
+`/poseidon/stor/logs/muskie/YYYY/MM/DD/HH/` directory per muskie server
+instance. If you need to look at the live logs (because you're debugging a
+problem within the hour that it happened, or because Manta is currently down),
+see "real-time logs" below. Either way, if you have the x-server-name from a
+request, that will tell you which muskie instance handled the request so that
+you don't need to search all of them.
 
 If Manta is not up, then the first priority is generally to get Manta up, and
 you'll have to use the real-time logs to do that.
