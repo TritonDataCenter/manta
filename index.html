@@ -26,6 +26,7 @@
     <li><div><a href="#metadata-tier">Metadata tier</a></div></li>
     <li><div><a href="#the-front-door">The front door</a></div></li>
     <li><div><a href="#compute-tier-aka-marlin">Compute tier (a.k.a., Marlin)</a></div></li>
+    <li><div><a href="#multipart-uploads">Multipart uploads</a></div></li>
     <li><div><a href="#garbage-collection-auditing-and-metering">Garbage collection, auditing, and metering</a></div></li>
     <li><div><a href="#manta-scalability">Manta Scalability</a></div></li>
   </ul></li>
@@ -67,6 +68,8 @@
     <li><div><a href="#logs">Logs</a></div></li>
     <li><div><a href="#job-archives">Job archives</a></div></li>
     <li><div><a href="#usage-reports-and-storage-capacity">Usage reports and storage capacity</a></div></li>
+    <li><div><a href="#request-throttling">Request Throttling</a></div></li>
+    <li><div><a href="#multipart-uploads-prefix-length">Multipart uploads prefix length</a></div></li>
   </ul></li>
   <li><div><a href="#debugging-general-tasks">Debugging: general tasks</a></div>
   <ul>
@@ -148,7 +151,7 @@
 -->
 
 <!--
-    Copyright (c) 2017, Joyent, Inc.
+    Copyright (c) 2018, Joyent, Inc.
 -->
 
 
@@ -613,6 +616,8 @@ handles PUT/GET/DELETE requests to the front door, including requests to:</p>
 <li>create, list, and delete directories</li>
 <li>create compute jobs, submit input, end input, fetch inputs, fetch outputs,
 fetch errors, and cancel jobs</li>
+<li>create multipart uploads, upload parts, fetch multipart upload state, commit
+multipart uploads, and abort multipart uploads</li>
 </ul>
 
 <h3 id="objects-and-directories">Objects and directories</h3>
@@ -623,7 +628,7 @@ fetch errors, and cancel jobs</li>
 <li>validating the request</li>
 <li>authenticating the user (via mahi, the auth cache)</li>
 <li>looking up the requested object's metadata (via electric moray)</li>
-<li>authorizing the user for access to the specifed resource</li>
+<li>authorizing the user for access to the specified resource</li>
 </ul>
 
 <p>For requests on directories and zero-byte objects, the last step is to update or
@@ -764,6 +769,38 @@ them.  For example, supervisors poll for tasks assigned to them that have been
 completed but not committed and agents poll for tasks assigned to them that have
 been dispatched but not accepted.</p>
 
+<h2 id="multipart-uploads">Multipart uploads</h2>
+
+<p>Multipart uploads provide an alternate way for users to upload Manta objects.
+The user creates the multipart upload, uploads the object in parts, and exposes
+the object in Manta by committing the multipart upload.  Generally, these
+operations are implemented using existing Manta constructs:</p>
+
+<ul>
+<li>Parts are normal Manta objects, with a few key differences.  Users cannot use
+the GET, POST or DELETE HTTP methods on parts.  Additionally, all parts are
+co-located on the same set of storage nodes, which are selected when the
+multipart upload is created.</li>
+<li>All parts for a given multipart upload are stored in a parts directory, which
+is a normal Manta directory.</li>
+<li>Part directories are stored in the top-level <code>/$MANTA_USER/uploads</code> directory
+tree.</li>
+</ul>
+
+<p>Most of the logic for multipart uploads is performed by Muskie, but there are
+some additional features of the system only used for multipart uploads:</p>
+
+<ul>
+<li>the <strong>manta_uploads</strong> bucket in Moray stores <strong>finalizing records</strong> for a
+given shard.  A finalizing record is inserted atomically with the target
+object record when a multipart upload is committed.</li>
+<li>the mako zones have a custom <strong>mako-finalize</strong> operation invoked by muskie
+when a multipart upload is committed. This operation creates the target object
+from the parts and subsequently deletes the parts from disk.  This operation
+is invoked on all storage nodes that will contain the target object when the
+multipart upload is committed.</li>
+</ul>
+
 <h2 id="garbage-collection-auditing-and-metering">Garbage collection, auditing, and metering</h2>
 
 <p>Garbage collection, auditing, and metering all run as cron jobs out of the "ops"
@@ -778,6 +815,23 @@ the metadata tier (taken periodically and stored into Manta), and determines
 which objects can safely be deleted.  These delete requests are batched and sent
 to each storage node, which moves the objects to a "tombstone" area.  Objects in
 the tombstone area are deleted after a fixed interval.</p>
+
+<p><strong>Multipart upload garbage collection</strong> is the process of cleaning up data
+associated with finalized multipart uploads.  When a multipart upload is
+finalized (committed or aborted), there are several items associated with it
+that need to be cleaned up, including:</p>
+
+<ul>
+<li>its upload directory metadata</li>
+<li>part object metadata</li>
+<li>part data on disk (if not removed during the <code>mako-finalize</code> operation)</li>
+<li>its finalizing metadata</li>
+</ul>
+
+<p>Similar to the basic garbage collection job, there is a multipart upload
+garbage collection job that operates on dumps of the metadata tier to determine
+what data associated with multipart uploads can be safely deleted.  A separate
+operation deletes these items after the job has been completed.</p>
 
 <p><strong>Auditing</strong> is the process of ensuring that each object is replicated as
 expected.  This is a similar job run over the contents of the metadata tier and
@@ -805,7 +859,7 @@ by the marlin agent), the metadata dumps, and the muskie request logs.</p>
 <ul>
 <li>total size of data (scalable with additional storage servers)</li>
 <li>size of data per object (limited to the amount of storage on any single
-system, typically in the tens of terrabytes, which is far larger than
+system, typically in the tens of terabytes, which is far larger than
 is typically practical)</li>
 </ul>
 
@@ -906,7 +960,7 @@ constructing the input for <code>manta-adm genconfig</code>.</p>
 but for reference, here are the principles to keep in mind:</p>
 
 <ul>
-<li><strong>Storage</strong> zones should only be colocated with <strong>marlin</strong> zones, and only on
+<li><strong>Storage</strong> zones should only be co-located with <strong>marlin</strong> zones, and only on
 storage nodes.  Neither makes sense without the other, and we do not recommend
 combining them with other zones.  All other zones should be deployed onto
 non-storage compute nodes.</li>
@@ -1124,7 +1178,7 @@ multi-DC, multi-compute-node deployment.  The general process is:</p>
 <li>Set up Triton in each datacenter, including the headnode, all Triton
 services, and all compute nodes you intend to use.  For easier management of
 hosts, we recommend that the hostname reflect the type of server and,
-possibly, the intended purpose of the host.  For example, we use the the "RA"
+possibly, the intended purpose of the host.  For example, we use the "RA"
 or "RM" prefix for "Richmond-A" hosts and "MS" prefix for "Mantis Shrimp"
 hosts.</li>
 <li><p>In the global zone of each Triton headnode, set up a manta deployment zone
@@ -1185,7 +1239,7 @@ to create an Amon contact for alarm notifications.</p>
 
 <p>This step runs various initialization steps, including downloading all of
 the zone images required to deploy Manta.  This can take a while the first
-time you run it, so you may want to run it in a screen seesion.  It's
+time you run it, so you may want to run it in a screen session.  It's
 idempotent.</p>
 
 <p>A common failure mode for those without quite fast internet links is a
@@ -1236,6 +1290,64 @@ notifications are enabled by default using the address provided to
 <code>manta-init</code> above.  (Email notifications only work after you have
 configured the Amon service for sending email.)  If you want to be notified
 about alarm events via XMPP, see "Changing alarm contact methods" below.</p></li>
+<li><p><strong>In development environments with more than one storage zone on a single
+system, it may be useful to apply quotas to storage zones so that if the
+system fills up, there remains space in the storage pool to address the
+problem.</strong>  You can do this by finding the total size of the storage pool
+using <code>zfs list zones</code> in the global zone:</p>
+
+<pre><code># zfs list zones
+NAME    USED  AVAIL  REFER  MOUNTPOINT
+zones  77.5G   395G   612K  /zones
+</code></pre>
+
+<p>Determine how much you want to allow the storage zones to use.  In this
+case, we'll allow the zones to use 100 GiB each, making up 300 GiB, or 75%
+of the available storage.  Now, find the storage zones:</p>
+
+<pre><code># manta-adm show storage
+SERVICE          SH ZONENAME                             GZ ADMIN IP
+storage           1 15711409-ca77-4204-b733-1058f14997c1 172.25.10.4
+storage           1 275dd052-5592-45aa-a371-5cd749dba3b1 172.25.10.4
+storage           1 b6d2c71f-ec3d-497f-8b0e-25f970cb2078 172.25.10.4
+</code></pre>
+
+<p>and for each one, update the quota using <code>vmadm update</code>.  You can apply a
+100 GiB quota to all of the storage zones on a single-system Manta using:</p>
+
+<pre><code>manta-adm show -H -o zonename storage | while read zonename; do
+    vmadm update $zonename quota=100; done
+</code></pre>
+
+<p><strong>Note:</strong> This only prevents Manta storage zones from using more disk space
+than you've budgeted for them.  If the rest of the system uses more than
+expected, you could still run out of disk space.  To avoid this, make sure
+that all zones have quotas and the sum of quotas does not exceed the space
+available on the system.</p>
+
+<p><strong>Background:</strong> Manta operators are responsible for basic monitoring of
+components, including monitoring disk usage to avoid components running out
+of disk space.  Out of the box, Manta stops using storage zones that are
+nearly full.  This mechanism relies on storage zones reporting how full they
+are, which they determine by dividing used space by available space.
+However, Manta storage zones are typically deployed without quotas, which
+means their available space is limited by the total space in the ZFS storage
+pool.  This accounting is not correct when there are multiple storage zones
+on the same system.</p>
+
+<p>To make this concrete, consider a system with 400 GiB of total ZFS pool
+space.  Suppose there are three storage zones, each using 100 GiB of space,
+and suppose that the rest of the system uses negligible storage space.  In
+this case, there are 300 GiB in use overall, so there's 100 GiB available in
+the pool.  As a result, each zone reports that it's using 100 GiB and has
+100 GiB available, so it's 50% full.  In reality, though, the system is 75%
+full.  Each zone reports that it has 100 GiB free, but if we were to write
+just 33 GiB to each zone, the whole system would be full.</p>
+
+<p>This problem only affects deployments that place multiple storage zones on
+the same system, which is not typical outside of development.  In
+development, the problem can be worked around by applying appropriate quotas
+in each zone (as described above).</p></li>
 </ol>
 
 <h2 id="post-deployment-steps">Post-Deployment Steps</h2>
@@ -1335,7 +1447,7 @@ properties:</p>
 <tr>
   <td><code>azs</code></td>
   <td>array&nbsp;of&nbsp;strings</td>
-  <td>list of all availabililty zones (datacenters) participating in Manta in this region</td>
+  <td>list of all availability zones (datacenters) participating in Manta in this region</td>
 </tr>
 <tr>
   <td><code>this_az</code></td>
@@ -2234,13 +2346,13 @@ hourly into /var/log/manta/upload inside each zone, and then uploading the files
 in that directory to Manta.</p>
 
 <p>The most commonly searched logs are the muskie logs, since these contain logs
-for all requests to the public API.  As with all logs, these are pushed to Manta
-hourly, and they're stored at /poseidon/stor/logs/YYYY/MM/DD/HH.  There's one
-object in that directory per muskie server instance.  If you need to look at the
-live logs (because you're debugging a problem within the hour that it happened,
-or because Manta is currently down), see "real-time logs" below.  Either way, if
-you have the x-server-name from a request, that will tell you which muskie
-instance handled the request so that you don't need to search all of them.</p>
+for all requests to the public API. There's one object in each
+<code>/poseidon/stor/logs/muskie/YYYY/MM/DD/HH/</code> directory per muskie server
+instance. If you need to look at the live logs (because you're debugging a
+problem within the hour that it happened, or because Manta is currently down),
+see "real-time logs" below. Either way, if you have the x-server-name from a
+request, that will tell you which muskie instance handled the request so that
+you don't need to search all of them.</p>
 
 <p>If Manta is not up, then the first priority is generally to get Manta up, and
 you'll have to use the real-time logs to do that.</p>
@@ -2385,6 +2497,176 @@ compression, physical usage may be less than the logical usage that metering
 reports indicate. Storage reports also count cross-account links once for each
 account, even though there is only a single set of copies of the objects.
 Metering also rounds up small objects to a minimum object size.</p>
+
+<h2 id="request-throttling">Request Throttling</h2>
+
+<p>Manta provides a coarse request throttle intended to be used when the system is
+under extreme load and is sufferring availability problems that cannot be
+isolated to a single Manta component. When the throttle is enabled and muskie
+has reached its configured capacity, the throttle will cause muskie to drop new
+requests and notify clients their requests have been throttled by sending a
+response with HTTP status code 503. The throttle is disabled by default.</p>
+
+<p>Inbound request activity and throttle statistics can be observed by running</p>
+
+<pre class="shell"><code>/opt/smartdc/muskie/bin/throttlestat.d
+</code></pre>
+
+<p>in a webapi zone in which the muskie processes have the throttle enabled. The
+script will output rows of a table with the following columns every second:</p>
+
+<ul>
+<li><code>THROTTLED-PER-SEC</code> - The number of requests throttled in the last second.</li>
+<li><code>AVG-LATENCY-MS</code> - The average number of milliseconds that requests which
+completed in the last second spent in the request queue.</li>
+<li><code>MAX-QLEN</code> - The maximum number of queued requests observed in the last
+second.</li>
+<li><code>MAX-RUNNING</code> - The maximum number of concurrent dispatched request handlers
+observed in the last second.</li>
+</ul>
+
+<p>If the throttle is not enabled, this script will print an error message
+indicating a missing DTrace provider. The message will look like this:</p>
+
+<pre><code>dtrace: failed to compile script ./throttlestat.d: line 16: probe
+description muskie-throttle*:::queue_enter does not match any probes
+</code></pre>
+
+<p>If the script is run when the throttle is enabled, and it continues running as
+the throttle is disabled, it will subsequently appear to indicate no request
+activity. This is neither an error nor a sign of service availability lapse. It
+just indicates the fact that the DTrace probes being used by the script are not
+firing. Care should be taken to ensure that this script is used to collect
+metrics only when the throttle is enabled.</p>
+
+<p>The throttle is "coarse" because its capacity is a function of all requests to
+the system, regardless of their originating user, IP address, or API operation.
+Any type of request can be throttled.</p>
+
+<p>The request throttle is implemented on a per-process level, with each "muskie"
+process in a "webapi" zone having its own throttle. The throttle exposes three
+tunables:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Tunable Name</th>
+  <th>Default Value</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>MUSKIE_THROTTLE_ENABLED</code></td>
+  <td>false</td>
+  <td>whether the throttle enabled</td>
+</tr>
+<tr>
+  <td><code>MUSKIE_THROTTLE_CONCURRENCY</code></td>
+  <td>50</td>
+  <td>number of allowed concurrent requests</td>
+</tr>
+<tr>
+  <td><code>MUSKIE_THROTTLE_QUEUE_TOLERANCE</code></td>
+  <td>25</td>
+  <td>number of allowed queued requests</td>
+</tr>
+</tbody>
+</table>
+
+<p>These tunables can be modified with commands of the following form:</p>
+
+<pre class="shell"><code>sapiadm update $(sdc-sapi /services?name=webapi | json -Ha uuid) \
+    metadata."MUSKIE_THROTTLE_ENABLED"=true
+</code></pre>
+
+<p>Muskies must be restarted to use the new configuration:</p>
+
+<pre class="shell"><code>manta-oneach -s webapi 'svcadm restart "*muskie-*"'
+</code></pre>
+
+<p>Requests are throttled when the muskie process has exhausted all slots available
+for concurrent requests and reached its queue threshold.</p>
+
+<h3 id="throttle-parameter-trade-offs">Throttle Parameter Trade-offs</h3>
+
+<p>In general, higher concurrency values will result in a busier muskie process
+that handles more requests at once. Lower concurrency values will limit the
+number of requests the muskie will handle at once. Lower concurrency values
+should be set to limit the CPU load on Manta.</p>
+
+<p>Higher queue tolerance values will decrease the likelihood of requests being
+rejected when Manta is under high load but may increase the average latency of
+queued requests. This latency increase can be the result of longer queues
+inducing longer delays before dispatch.</p>
+
+<p>Lower queue tolerance values will make requests more likely to be throttled
+quickly under load. Lower queue tolerance values should be used when high
+latency is not acceptable and the application is likely to retry on receipt of
+a 503. Low queue tolerance values are also desirable if the zone is under memory
+pressure.</p>
+
+<h2 id="multipart-uploads-prefix-length">Multipart uploads prefix length</h2>
+
+<h3 id="overview">Overview</h3>
+
+<p>The Manta multipart upload API stores the part directories of an account's
+ongoing multipart uploads under the directory tree <code>/$MANTA_USER/uploads</code>.
+Within the top-level directory, part directories are stored in subdirectories
+based on some number of the first characters of the multipart upload's UUID.
+The number of characters used to split multipart uploads is referred to as the
+"prefix length".</p>
+
+<p>For example, in a Manta deployment for which the prefix length is set to 3,
+a multipart upload would have an upload directory that looks like this:</p>
+
+<pre><code>/$MANTA_USER/uploads/f00/f00e51d2-7e47-4732-8edf-eb871296b343
+</code></pre>
+
+<p>Note that the parent directory of the parts directory, also referred to
+as its "prefix directory", has 3 characters, the same as the prefix length.</p>
+
+<p>The following multipart upload would have been created in a Manta deployment
+with a prefix length of 1:</p>
+
+<pre><code>/$MANTA_USER/uploads/d/d77feb78-cd7f-481f-a6c7-f653c80c7331
+</code></pre>
+
+<h3 id="changing-the-prefix-length">Changing the prefix length</h3>
+
+<p>The prefix length is configurable in SAPI, represented as the
+<code>MUSKIE_MPU_PREFIX_DIR_LEN</code> SAPI variable under the "webapi" service.  For
+example, to change the prefix length of a deployment to 2, you could run:</p>
+
+<pre class="shell"><code>sapiadm update $(sdc-sapi /services?name=webapi | json -Ha uuid) \
+    metadata."MUSKIE_MPU_PREFIX_DIR_LEN"=2
+</code></pre>
+
+<p>As with other configuration changes to the "webapi" service, you must restart
+the "webapi" zones to see the configuration change.</p>
+
+<p>Multipart uploads created with a different prefix length within the same Manta
+deployment will continue to work after the prefix length is changed.</p>
+
+<h3 id="prefix-length-tradeoffs">Prefix length tradeoffs</h3>
+
+<p>The prefix length dictates the number of subdirectories allowed in the top-level
+<code>/$MANTA_USER/uploads</code> directory.  Because the number of entries in a Manta
+directory should be limited, this affects how many ongoing multipart uploads are
+available for a given account.  Increasing the prefix length also increases the
+number of requests required to list all multipart uploads under a given account.
+Consequently, a smaller prefix length allows for fewer ongoing multipart uploads
+for a single account, but less work to list them all; larger prefix directories
+allow more ongoing multipart uploads, but require more work to list them.</p>
+
+<p>For example, in a Manta deployment with a prefix length of 3, a given account
+may have up to 4096 prefix directories, allowing for about 4 billion ongoing
+multipart uploads for a given account.  Listing all of the multipart uploads
+ongoing requires a maximum of 4096 directory listings operations.  Compare this
+to a deployment with a prefix length of 1, which has a maximum of 256 prefix
+directories and allows for about 256 million multipart uploads, but only up to
+256 directory listings are required to list all multipart uploads under an
+account.</p>
 
 <h1 id="debugging-general-tasks">Debugging: general tasks</h1>
 
