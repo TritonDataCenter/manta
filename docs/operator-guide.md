@@ -911,6 +911,61 @@ multi-DC, multi-compute-node deployment.  The general process is:
     configured the Amon service for sending email.)  If you want to be notified
     about alarm events via XMPP, see "Changing alarm contact methods" below.
 
+13. **In development environments with more than one storage zone on a single
+    system, it may be useful to apply quotas to storage zones so that if the
+    system fills up, there remains space in the storage pool to address the
+    problem.**  You can do this by finding the total size of the storage pool
+    using `zfs list zones` in the global zone:
+
+        # zfs list zones
+        NAME    USED  AVAIL  REFER  MOUNTPOINT
+        zones  77.5G   395G   612K  /zones
+
+    Determine how much you want to allow the storage zones to use.  In this
+    case, we'll allow the zones to use 100 GiB each, making up 300 GiB, or 75%
+    of the available storage.  Now, find the storage zones:
+
+        # manta-adm show storage
+        SERVICE          SH ZONENAME                             GZ ADMIN IP
+        storage           1 15711409-ca77-4204-b733-1058f14997c1 172.25.10.4
+        storage           1 275dd052-5592-45aa-a371-5cd749dba3b1 172.25.10.4
+        storage           1 b6d2c71f-ec3d-497f-8b0e-25f970cb2078 172.25.10.4
+
+    and for each one, update the quota using `vmadm update`.  You can apply a
+    100 GiB quota to all of the storage zones on a single-system Manta using:
+
+        manta-adm show -H -o zonename storage | while read zonename; do
+            vmadm update $zonename quota=100; done
+
+    **Note:** This only prevents Manta storage zones from using more disk space
+    than you've budgeted for them.  If the rest of the system uses more than
+    expected, you could still run out of disk space.  To avoid this, make sure
+    that all zones have quotas and the sum of quotas does not exceed the space
+    available on the system.
+
+    **Background:** Manta operators are responsible for basic monitoring of
+    components, including monitoring disk usage to avoid components running out
+    of disk space.  Out of the box, Manta stops using storage zones that are
+    nearly full.  This mechanism relies on storage zones reporting how full they
+    are, which they determine by dividing used space by available space.
+    However, Manta storage zones are typically deployed without quotas, which
+    means their available space is limited by the total space in the ZFS storage
+    pool.  This accounting is not correct when there are multiple storage zones
+    on the same system.
+
+    To make this concrete, consider a system with 400 GiB of total ZFS pool
+    space.  Suppose there are three storage zones, each using 100 GiB of space,
+    and suppose that the rest of the system uses negligible storage space.  In
+    this case, there are 300 GiB in use overall, so there's 100 GiB available in
+    the pool.  As a result, each zone reports that it's using 100 GiB and has
+    100 GiB available, so it's 50% full.  In reality, though, the system is 75%
+    full.  Each zone reports that it has 100 GiB free, but if we were to write
+    just 33 GiB to each zone, the whole system would be full.
+
+    This problem only affects deployments that place multiple storage zones on
+    the same system, which is not typical outside of development.  In
+    development, the problem can be worked around by applying appropriate quotas
+    in each zone (as described above).
 
 ## Post-Deployment Steps
 
