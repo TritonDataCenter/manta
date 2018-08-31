@@ -3336,66 +3336,169 @@ To tear down an existing manta deployment, use manta-factoryreset:
 ## Configuring NAT for Marlin compute zones
 
 Recall that while we want users to be able to access the internet from Marlin
-zones, we don't want to give each zone a public IP.  In production, we've
-configured a hardware NAT on the private network that the compute zones use, but
+zones, we don't want to give each zone a public IP.  In production, we
+configure a hardware NAT on the private network that the compute zones use, but
 in development, this connectivity is usually absent.  As a result, among other
 things, mlogin(1) doesn't work.
 
-If you want to set up NAT for your marlin compute zones in development, you can
-do so by creating a NAT zone.  The following procedure is inspired by the
-analogous [SmartOS
-procedure](http://wiki.smartos.org/display/DOC/NAT+using+Etherstubs).
+In a development environment, we can use a simple NAT zone to allow users
+to access the 'external' network by creating a NAT zone. Note that while this
+configuration is likely to be sufficient for development use, it is not a
+highly-available solution and should not be used for production deployments.
+
+The following instructions describe how to create a NAT zone.
 
 First, create a VMAPI CreateVM payload that looks like this:
 
     {
-        "uuid": "49f6a6d6-82df-11e3-bb95-4f10bd8af0dd",
-        "owner_uuid": "66bc8d77-2024-4a88-ba2a-e5e85e565059",
+        "uuid": "18af1ec0-9976-11e8-b80d-bfdc56a11139",
+        "owner_uuid": "60575e4e-ab96-40ae-8913-a0597b009afa",
         "brand": "joyent",
         "ram": 256,
-        "image_uuid": "01b2c898-945f-11e1-a523-af1afbe22822",
+        "image_uuid": "04a48d7d-6bb5-4e83-8c3b-e60a99e0f48f",
         "networks": [ {
                 "name": "external",
-                "primary": true
+                "primary": true,
+                "allow_ip_spoofing": true
         }, {
-                "name": "mantanat"
+                "name": "mantanat",
+                "allow_ip_spoofing": true
         } ],
 
         "alias": "forwarder",
         "hostname": "forwarder",
-        "server_uuid": "00000000-0000-0000-0000-002590943378"
+        "server_uuid": "564d3f7a-1bee-1af9-2711-bed3da5551c6"
     }
 
 **Be sure to make the following changes:**
 
 * **uuid** should be a randomly-generated uuid (e.g., from the uuid(1) command)
+
 * **owner_uuid** should be poseidon's uuid (i.e., from "sdc-ldap search
   objectclass=sdcperson")
-* **server_uuid** should be your development server's uuid (e.g., "sdc-cnapi
+
+* **server_uuid** should be our development server's uuid (e.g., "sdc-cnapi
   /servers | json -Ha uuid")
 
-The **image_uuid** can be any reasonable SmartOS image.  The above example
-uses smartos-1.6.3, since it's currently guaranteed to be available.
+* **mantanat** is the name of the network used by marlin in these examples,
+  and in the default 'coal' configuration. Your configuration may vary and
+  references to 'mantanat' in the instructions below should be adjusted to
+  reflect your marlin network.
 
-Once you've made those changes, you can create the VM with:
+* The **image_uuid** can be any reasonable SmartOS image.  The above example
+  uses triton-origin-multiarch-15.4.1, since it's currently guaranteed to be
+  available.
 
-    $ sdc-vm create -f YOURFILE.json
+Once we've made those changes, we can create the VM with:
 
-Once the VM is provisioned, you'll want to explicitly enable IP spoofing in the
-zone.  Construct an "update" file like this one:
+    sdc-vmadm create -f our_payload.json
 
-    {
-            "update_nics": [ {
-                    "mac": "90:b8:d0:5f:bc:e4",
-                    "allow_ip_spoofing": "1"
-            }, {
-                    "mac": "90:b8:d0:c4:87:54",
-                    "allow_ip_spoofing": "1"
-            } ]
-    }
+Next we can login to the 'forwarder' zone and add the NAT configuration.
 
-**Be sure to update the two "mac" properties based on the MACs assigned to the
-zone you created above.**  See "vmadm get YOUR_VM_UUID | json nics".
+In this example, our 'external' network IP is 10.88.88.8 on the 'net0' interface
+and our 'mantanat' network is 10.66.66.7 on the 'net1' interface. The IP
+addresses in your 'forwarder' zone may differ.
+
+    [root@forwarder ~]# ifconfig
+    lo0: flags=2001000849<UP,LOOPBACK,RUNNING,MULTICAST,IPv4,VIRTUAL> mtu 8232 index 1
+    	inet 127.0.0.1 netmask ff000000
+    net0: flags=1100843<UP,BROADCAST,RUNNING,MULTICAST,ROUTER,IPv4> mtu 1500 index 2
+    	inet 10.88.88.8 netmask ffffff00 broadcast 10.88.88.255
+    	ether 90:b8:d0:7d:da:ca
+    net1: flags=1100843<UP,BROADCAST,RUNNING,MULTICAST,ROUTER,IPv4> mtu 1500 index 3
+    	inet 10.66.66.7 netmask ffffff00 broadcast 10.66.66.255
+    	ether 90:b8:d0:7c:8f:a8
+    lo0: flags=2002000849<UP,LOOPBACK,RUNNING,MULTICAST,IPv6,VIRTUAL> mtu 8252 index 1
+    	inet6 ::1/128
+
+Use the following ipnat.conf file:
+
+    [root@forwarder ~]# cat /etc/ipf/ipnat.conf
+    map net0 10.66.66.0/24 -> 0/32 portmap tcp/udp auto
+    map net0 10.66.66.0/24 -> 0/32
+
+Enable IP forwarding:
+
+    [root@forwarder ~]# routeadm -u -e ipv4-forwarding
+
+Then enable ipfilter:
+
+    [root@forwarder ~]# svcadm enable ipfilter
+
+Now we need to set the default gateway of the 'mantanat' network to point to
+our NAT-enabled 'forwarder' zone. To do this, determine the uuid of
+the mantanat network:
+
+    [root@headnode (coal-1) ~]# UUID=$(sdc-napi --no-headers /networks |
+        json -ac 'this.name === "mantanat"' uuid)
+
+Now set the gateway to point at the IP address of the mantanat interface in the
+forwarder zone:
+
+    [root@headnode (coal-1) ~]# sdc-napi /networks/$UUID -X PUT \
+        -d@- <<< '{"gateway": "10.66.66.7"}'
+
+Finally, we restart the marlin-agent on the headnode, which will cause the
+marlin zones to reboot, and to be configured with the updated gateway.
+
+    [root@headnode (coal-1) ~]# svcadm restart marlin-agent
+
+Having done this, we should see that when logging into any of the marlin
+compute zones, our default gateway has changed, and we are able to reach
+external addresses:
+
+    [root@headnode (coal-1) ~]# vmadm list | grep marlin
+    0be5c6c1-8ae2-4249-ab64-8c6f1c54363e  OS    1024     running           marlin.coal.example.com-0be5c6c1
+    ab73226d-1a76-40c3-8a33-7dd731da20ed  OS    1024     running           marlin.coal.example.com-ab73226d
+    [root@headnode (coal-1) ~]# zlogin 0be5c6c1-8ae2-4249-ab64-8c6f1c54363e
+    .
+    .
+    .
+    [root@0be5c6c1-8ae2-4249-ab64-8c6f1c54363e ~]# netstat -rn | grep default
+    default              10.66.66.7           UG        1          2 net0
+    [root@0be5c6c1-8ae2-4249-ab64-8c6f1c54363e ~]# ifconfig
+    lo0: flags=2001000849<UP,LOOPBACK,RUNNING,MULTICAST,IPv4,VIRTUAL> mtu 8232 index 1
+    	inet 127.0.0.1 netmask ff000000
+    net0: flags=1000843<UP,BROADCAST,RUNNING,MULTICAST,IPv4> mtu 1500 index 2
+    	inet 10.66.66.5 netmask ffffff00 broadcast 10.66.66.255
+    	ether 90:b8:d0:3f:37:e0
+    lo0: flags=2002000849<UP,LOOPBACK,RUNNING,MULTICAST,IPv6,VIRTUAL> mtu 8252 index 1
+    	inet6 ::1/128
+    [root@0be5c6c1-8ae2-4249-ab64-8c6f1c54363e ~]# nslookup www.joyent.com
+    Server:         8.8.8.8
+    Address:        8.8.8.8#53
+
+    Non-authoritative answer:
+    .
+    .
+    .
+
+We should also see that there are active sessions in the NAT tables in our
+'forwarder' zone:
+
+    [root@forwarder ~]# ipnat -l
+    List of active MAP/Redirect filters:
+    map net0 10.66.66.0/24 -> 0.0.0.0/32 portmap tcp/udp auto
+    map net0 10.66.66.0/24 -> 0.0.0.0/32
+
+    List of active sessions:
+    MAP 10.66.66.6      51662 <- -> 10.88.88.8      2538  [8.8.8.8 53]
+    MAP 10.66.66.6      40025 <- -> 10.88.88.8      2745  [8.8.8.8 53]
+
+At this point, we should be able to use mlogin with our usual manta
+credentials:
+
+    [root@test-machine ~]# env | grep MANTA
+    MANTA_USER=poseidon
+    MANTA_KEY_ID=50:c1:03:95:31:4c:6a:a2:ff:f6:4c:f0:58:24:50:72
+    MANTA_URL=https://10.88.88.7
+    MANTA_TLS_INSECURE=true
+    [root@test-machine ~]# mlogin
+     * created interactive job -- 27305f4c-61b7-ef62-bb7e-97aa871a263c
+     * waiting for session... | established
+    poseidon@manta # mdata-get sdc:uuid
+    0be5c6c1-8ae2-4249-ab64-8c6f1c54363e
+    poseidon@manta #
 
 
 ## Configuration
