@@ -83,7 +83,7 @@ which will be stored and returned back (HTTP content-negotiation will be handled
 If you do not specify a content type, the default is `application/octet-stream`.
 
 If you specify a `Content-MD5` header, the system validates that the content
-uploaded matches the value of the header.
+uploaded matches the value of the header. You must encode MD5 headers in Base64.
 
 
 The `durability-level` header is a value from 1 to 6
