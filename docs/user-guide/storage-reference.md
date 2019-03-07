@@ -24,7 +24,7 @@ The storage service is based on three concepts: object, directories, and SnapLin
 the storage service. The data portion is opaque. The metadata is a set of
   HTTP headers that describe the object, such as `Content-Type` and
   `Content-MD5`. An object is identified by a name.
-* **Directories**, are namded groups of objects, as on traditional file systems.
+* **Directories** are named groups of objects, as on traditional file systems.
   Every object belongs to a directory.
   The private storage directory, `/:login/stor` functions as the top level, or
   root directory.
@@ -74,7 +74,8 @@ which will be stored and returned back (HTTP content-negotiation will be handled
 If you do not specify a content type, the default is `application/octet-stream`.
 
 If you specify a `Content-MD5` header, the system validates that the content
-uploaded matches the value of the header. You must encode MD5 headers in Base64.
+uploaded matches the value of the header. You must encode MD5 headers in Base64,
+as described in [RFC 1864](https://www.ietf.org/rfc/rfc1864.txt).
 
 
 The `durability-level` header is a value from 1 to 6
@@ -120,8 +121,8 @@ and only the *matching* value is returned, if any. For example:
 
 If no `origin` header is sent, the system assumes the request is not originating from
 a browser and the original list of values is echoed back.
-Note this does not non-conform to the CORS specification,
-but does allow you to administratively see
+While this behavior does not conform to the CORS specification,
+it does allow you to administratively see
 what is stored on your object.
 
 `access-control-expose-headers` is supported as a list of HTTP headers that a
@@ -360,7 +361,7 @@ When the number of copies requested is greater than one,
 the system ensures that *at least* two copies are placed in two different
 data centers,
 and then stripes the other copies across data centers.
-If any given datacenter is down at the time,
+If any given data center is down at the time,
 you may have copies unbalanced with extra replicas in fewer data centers,
 but there will always be at least two data centers with your copy of data.
 This allows you to still access your data in the event
