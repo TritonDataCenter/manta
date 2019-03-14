@@ -1,4 +1,4 @@
----
+ ---
 title: Object Storage Reference
 markdown2extras: wiki-tables, code-friendly
 ---
@@ -28,7 +28,7 @@ the storage service. The data portion is opaque. The metadata is a set of
   Every object belongs to a directory.
   The private storage directory, `/:login/stor` functions as the top level, or
   root directory.
-* **SnapLinks** enable you to create a point-in-time reference to the data and
+* **SnapLinks** create a point-in-time reference to the data and
   metadata that constitutes another object.
   Unlike hard links or symbolic links in Unix, when the source object changes,
   the SnapLink does not.
@@ -42,7 +42,8 @@ Objects can be of any size, including zero bytes.
 Objects consist of your raw, uninterpreted data,
 as well as the metadata (HTTP headers) returned when you retrieve an object.
 
-There are several headers for objects that control HTTP semantics.
+# Headers
+There are several headers for objects that control HTTP semantics in Manta.
 
 ## Content Length
 
@@ -119,7 +120,7 @@ and only the *matching* value is returned, if any. For example:
     x-response-time: 7
     x-server-name: fef8c5b8-3483-458f-95dc-7d9172ecefd1
 
-If no `origin` header is sent, the system assumes the request is not originating from
+If no `origin` header is sent, the system assumes that the request did not originate from
 a browser and the original list of values is echoed back.
 While this behavior does not conform to the CORS specification,
 it does allow you to administratively see
@@ -198,7 +199,7 @@ Once a jobs is archived, listing a job directory would return this.
     stor/
 
 The contents of a job's directory is a complete snapshot of all data available over the jobs API.
-You can clean this data up using `mrm -r`. You can also use a command such as `mfind` that generates a list of objects in the directory.
+You can clean this data up using `mrm -r`. You can also use `mfind` to generate a list of objects in the directory.
 
 Only you or jobs you create can read, write, and delete data in this directory.
 
@@ -215,7 +216,7 @@ Note that only data emitted during the last phase of a job will have data here.
 
 `/:login/reports` is the location where the system delivers aggregated usage reports
 and raw HTTP access logs.
-You can learn more about the data in these directories in the [Reports Reference](reports.html) section.
+Learn more about the reports directory in the [Reports Reference](reports.html) section.
 Only you can manage data under `/:login/reports`.
 
 ## Working with Directories
@@ -311,9 +312,9 @@ Several principles guide the design of the service:
   It chooses to be strongly consistent, at
   the risk of more HTTP 500 errors than an eventually consistent system.
   This system is engineered to minimize errors in the event of network or system
-  failures, and to recover as quickly as possible, but more errors will occur than
-  in an eventually consistent system. However, you can always read your writes
-  immediately, and the distinction between a HTTP 404 response and a HTTP 500 response is very clear.
+  failures and to recover as quickly as possible, but more errors will occur than
+  in an eventually consistent system. However, it is possible to read the writes
+  immediately. The distinction between a HTTP 404 response and a HTTP 500 response is very clear:
   A 404 response *really* means your data isn't there.
   A 500 response means that it might be, but there is some sort of outage.
 * When the system responds with an HTTP 200, you can be certain your data is
@@ -349,9 +350,11 @@ large XML document.
 
 By default, the system stores two copies of your object.
 These two copies are placed in two different data centers.
+The system relies on ZFS RAID-Z to store your objects, so the durability is actually greater than two would imply. Your data is erasure encoded across a large number of disks on physically separate machines.  
+
 The system relies on ZFS RAID-Z to store your objects,
 so your durability is actually greater than two would imply.
-Your data is erasure encoded across a large number of disks on physically separate machines.
+Your data is erasure-encoded across a large number of disks on physically separate machines.
 
 You are billed for exactly the number of bytes you consume in the system.
 For example, if you write a 1MB object with the default number of copies (2),
