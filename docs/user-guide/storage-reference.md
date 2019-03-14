@@ -5,7 +5,6 @@ markdown2extras: wiki-tables, code-friendly
 
 # Object Storage Reference
 
-
 The Joyent Manta Storage Service uses a REST API to read, write, and delete objects.
 This document assumes that you are familiar with HTTP-based REST systems, including
 HTTP requests, responses, status codes, and headers.
@@ -350,11 +349,7 @@ large XML document.
 
 By default, the system stores two copies of your object.
 These two copies are placed in two different data centers.
-The system relies on ZFS RAID-Z to store your objects, so the durability is actually greater than two would imply. Your data is erasure encoded across a large number of disks on physically separate machines.  
-
-The system relies on ZFS RAID-Z to store your objects,
-so your durability is actually greater than two would imply.
-Your data is erasure-encoded across a large number of disks on physically separate machines.
+The system relies on ZFS RAID-Z to store your objects, so the durability is actually greater than two would imply.
 
 You are billed for exactly the number of bytes you consume in the system.
 For example, if you write a 1MB object with the default number of copies (2),
