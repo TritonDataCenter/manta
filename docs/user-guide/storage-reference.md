@@ -1,4 +1,4 @@
- ---
+---
 title: Object Storage Reference
 markdown2extras: wiki-tables, code-friendly
 ---
