@@ -5,7 +5,7 @@
 -->
 
 <!--
-    Copyright (c) 2017, Joyent, Inc.
+    Copyright 2019, Joyent, Inc.
 -->
 
 # Manta: Triton's object storage and converged analytics solution
@@ -62,11 +62,10 @@ see [Dave Pacheco](https://github.com/davepacheco)'s blog entry on
 
 Community discussion about Manta happens in two main places:
 
-* The *manta-discuss* mailing list.  Once you [subscribe to the
-  list](https://www.listbox.com/subscribe/?list_id=247448), you can send mail
-  to the list address: manta-discuss@lists.mantastorage.org.  The mailing list
-  archives are also [available on the
-  web](https://www.listbox.com/member/archive/247448/=now).
+* The *manta-discuss*
+  [mailing list](https://mantastorage.topicbox.com/groups/manta-discuss).
+  If you wish to send mail to the list you'll need to join, but you can view
+  and search the archives online without being a member.
 
 * In the *#manta* IRC channel on the [Freenode IRC
   network](https://freenode.net/).
