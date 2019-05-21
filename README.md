@@ -5,7 +5,7 @@
 -->
 
 <!--
-    Copyright 2019, Joyent, Inc.
+    Copyright 2019 Joyent, Inc.
 -->
 
 # Manta: Triton's object storage and converged analytics solution
@@ -55,8 +55,8 @@ article on its design and implementation.
 see [Dave Pacheco](https://github.com/davepacheco)'s blog entry on
 [Fault Tolerence in Manta](http://dtrace.org/blogs/dap/2013/07/03/fault-tolerance-in-manta/) -- which, it must be said, received [the highest possible praise](https://twitter.com/eric_brewer/status/352804538769604609).
 
-* For help with working on Manta and testing your changes, see the [developer
-  notes](docs/dev-notes.md)
+* For help with working on Manta and building and testing your changes,
+  see the [developer notes](docs/dev-notes.md)
 
 ## Community
 
@@ -207,11 +207,11 @@ do this:
 1. Complete the Manta deployment procedure from the [Manta Operator's
 Guide](https://joyent.github.io/manta/).
 1. Build a zone image for whatever zone you want to replace.  See the
-   instructions for building [SmartDataCenter](https://github.com/joyent/sdc)
-   zone images using Mountain Gorilla.  Manta zones work the same way.  The
-   output of this process will be a zone **image**, identified by uuid.  The
-   image is comprised of two files: an image manifest (a JSON file) and the
-   image file itself (a binary blob).
+   instructions for building [Triton](https://github.com/joyent/triton)
+   zone images.  Manta zones work the same way.  The output of this process
+   will be a zone **image**, identified by uuid.  The image is comprised of
+   two files: an image manifest (a JSON file) and the image file itself
+   (a binary blob).
 1. Import the image into the Triton DataCenter that you're using to deploy Manta.
    (If you've got a multi-datacenter Manta deployment, you'll need to import the
    image into each datacenter separately using this same procedure.)

@@ -5,7 +5,7 @@
 -->
 
 <!--
-    Copyright (c) 2016, Joyent, Inc.
+    Copyright 2019 Joyent, Inc.
 -->
 
 # Manta Contribution Guidelines
@@ -24,7 +24,7 @@ information about building and testing the software.
 
 Manta repositories use the same [Joyent Engineering
 Guidelines](https://github.com/joyent/eng/blob/master/docs/index.md) as
-the SDC project.  Notably:
+the Triton project.  Notably:
 
 * The #master branch should be first-customer-ship (FCS) quality at all times.
   Don't push anything until it's tested.
