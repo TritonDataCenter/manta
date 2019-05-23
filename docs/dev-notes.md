@@ -5,7 +5,7 @@
 -->
 
 <!--
-    Copyright (c) 2015, Joyent, Inc.
+    Copyright 2019 Joyent, Inc.
 -->
 
 # Manta developer notes
@@ -35,30 +35,33 @@ For a typical zone (take "muppet"), the process from source code to deployment
 works like this:
 
 1. Build the repository itself.
-2. Build an image (which is basically a zone filesystem template) from the
+2. Build an image (a zone filesystem template and some metadata) from the
    contents of the built repository.
-3. Publish the image to updates.joyent.com.
-4. Import the image into an SDC instance.
+3. Optionally, publish the image to updates.joyent.com.
+4. Import the image into a Triton instance.
 5. Provision a new zone from the imported image.
 6. During the first boot, the zone executes a one-time setup script.
 7. During the first and all subsequent boots, the zone executes another
    configuration script.
 
-There are tools to automate most of this (and again, for using them, see the
-links above):
+There are tools to automate most of this:
 
-* Mountain Gorilla (MG), part of the [SDC](http://github.com/joyent/sdc) build
-  process, takes care of steps (1) through (3).  It does this by cloning the
-  repo, using a "make" target to build a tarball to be splatted down onto a bare
-  zone, deploys a bare zone, splats down the tarball, and uses the SDC APIs to
-  create a new image from that zone.  This image basically represents a template
-  filesystem with which instances of this component will be stamped out.  After
-  the image is built, it gets uploaded to updates.joyent.com.
+* The build tools contained in the `eng.git` submodule, usually found in
+  `deps/eng` in manta repositories include a tool called `buildimage`
+  which assembles an image containing the built Manta component.  The image
+  represents a template filesystem with which instances of this
+  component will be stamped out.  After the image is built, it can be uploaded
+  to updates.joyent.com. Alternatively, the image can be manually imported to
+  a Triton instance by copying the image manifest and image file
+  (a compressed zfs send stream) to the headnode and running
+  "sdc-imgadm import".
 * The "manta-init" command takes care of step 4.  You run this as part of any
   deployment.  See the [Manta Operator's Guide](https://joyent.github.io/manta)
-  for details.  After the first run, basically all it does is find new images in
-  updates.joyent.com, import them into the current SDC instance, and mark them
-  for use by "manta-deploy".
+  for details.  After the first run, subsequent runs find new images in
+  updates.joyent.com, import them into the current Triton instance, and mark
+  them for use by "manta-deploy". Alternatively, if you have images that were
+  manually imported using "sdc-imgadm import", then "manta-init" can be run
+  with the "-n" flag to use those local images instead.
 * The "manta-adm" and "manta-deploy" commands (whichever you choose to use) take
   care of step 5.  See the Manta Operator's Guide for details.
 * Steps 6 and 7 happen automatically when the zone boots as a result of the
@@ -103,33 +106,43 @@ the README in the marlin repo).
 
 ## Building and deploying your own zone images
 
-As described above, Manta's build and deployment model is exactly like SDC's,
+As described above, Manta's build and deployment model is exactly like Triton's,
 which is that most components are delivered as zone images and deployed by
 provisioning new zones from these images.  While the deployment tools are
-slightly different than SDC's, the build process is nearly identical.  The
-common instructions for building zone images is part of the [SDC
-documentation](https://github.com/joyent/sdc/blob/master/docs/developer-guide/building.md).  
+slightly different than Triton's, the build process is nearly identical.  The
+common instructions for building zone images are part of the [Triton
+documentation](https://github.com/joyent/triton/blob/master/docs/developer-guide/building.md).
 
 ### Building with your changes
 
-By default, Mountain Gorilla is configured to build #master from the canonical
-(github) repositories.  If you want to build from your local changes instead,
-then *before* running "configure" in MG, modify targets.json.in so that the
-"url" for your repo points to your copy of the repo rather than the canonical
-(github) copy.  For example:
+Building a repository checked out to a given git branch will include those
+changes in the resulting image.
 
-           "zookeeper-client-3.4.3"
-         ],
-         "repos": [
-    -      {"url": "git@github.com:joyent/manta-madtom.git"}
-    +      {"url": "/home/dap/manta-madtom"}
-         ],
-         "public": true,
-         "deps": [
+One exception, is any `agents` (for example
+[`amon`](https://github.com/joyent/sdc-amon),
+[`config-agent`](https://github.com/joyent/sdc-config-agent/),
+[`registrar`](https://github.com/joyent/registrar), (there are others)) that
+are bundled within the image.
 
-MG will clone this repo, so it won't pick up any uncommitted local changes.
-If you change your repo, you'll need to reconfigure again to pick up the
-changes.
+At build-time, the build will attempt to build agents from the same branch
+name as the checked-out branch of the component being built. If that branch
+name doesn't exist in the respective agent repository, the build will use
+the `master` branch of the agent repository.
+
+To include agents built from alternate branches at build time, set
+`$AGENT_BRANCH` in the shell environment. The build will then try to build
+all required agents from that branch. If no matching branch is found for a given
+agent, the build then will try to checkout the agent repository at the same
+branch name as the checked-out branch of the component you're building, before
+finally falling back to the `master` branch of that agent repository.
+
+The mechanism used is described in the
+[`Makefile.agent_prebuilt.defs`](https://github.com/joyent/eng/blob/master/tools/mk/Makefile.agent_prebuilt.defs),
+[`Makefile.agent_prebuilt.targ`](https://github.com/joyent/eng/blob/master/tools/mk/Makefile.agent_prebuilt.targ),
+and
+[`agent-prebuilt.sh`](https://github.com/joyent/eng/blob/master/tools/agent_prebuilt.sh)
+files, likely appearing as a git submodule beneath `deps/eng` in the
+component repository.
 
 ### What if you're changing dependencies?
 
@@ -155,8 +168,7 @@ points the repo at your local dependency:
                      "posix-getopt": "1.0.0",
                      "pg": "0.11.3",
 
-This approach ensures that the MG build picks up your private copy of both
-madtom and the node-checker dependency.  Remember that this change needs to be
-committed in order for MG to pick it up.  But when you're ready for the final
+This approach ensures that the build picks up your private copy of both
+madtom and the node-checker dependency.  But when you're ready for the final
 push, be sure to push your changes to the dependency first, and remember to
 remove (don't just revert) the above change to the zone's package.json!
