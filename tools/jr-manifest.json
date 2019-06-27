@@ -128,6 +128,12 @@
             "name": "java-manta"
         },
         {
+            "name": "joyent-repos"
+        },
+        {
+            "name": "kang"
+        },
+        {
             "name": "mahi",
             "labels": {
                 "release": true,
@@ -239,6 +245,9 @@
         },
         {
             "name": "manta-mdshovel"
+        },
+        {
+            "name": "manta-mdu"
         },
         {
             "name": "manta-medusa",
@@ -420,6 +429,9 @@
             "name": "node-smartdc-auth"
         },
         {
+            "name": "node-spawn-async"
+        },
+        {
             "name": "node-watershed"
         },
         {
@@ -478,10 +490,37 @@
             "name": "rust-cueball"
         },
         {
+            "name": "rust-cueball-dns-resolver"
+        },
+        {
+            "name": "rust-cueball-postgres-connection"
+        },
+        {
+            "name": "rust-cueball-static-resolver"
+        },
+        {
+            "name": "rust-cueball-tcp-stream-connection"
+        },
+        {
             "name": "rust-fast"
         },
         {
+            "name": "rust-illumos-priv"
+        },
+        {
+            "name": "rust-libmanta"
+        },
+        {
             "name": "rust-manta"
+        },
+        {
+            "name": "rust-moray"
+        },
+        {
+            "name": "rust-muppet"
+        },
+        {
+            "name": "rust-sharkspotter"
         },
         {
             "name": "s3-manta-bridge"
@@ -546,7 +585,6 @@
         "cloudapi-gql",
         "conch",
         "conch-docs",
-        "conch-report-card",
         "conch-reporter-smartos",
         "conch-shell",
         "conch-ui",
@@ -559,23 +597,26 @@
         "cr-update-reviewers",
         "ctf2json",
         "daggr",
-        "dcim_agent",
         "debian-image-tests",
         "debian-lx-brand-image-builder",
         "docker-machine-driver-triton",
         "dogpatch",
         "dragnet",
+        "drone",
+        "drone-runtime",
         "dtrace-runner",
         "dtracetools",
         "dtracetools-lx",
         "dtruss-osx",
+        "epoll-test-suite",
         "eslint-config-joyent-portal",
         "evttool",
         "fedora-kvm-image-builder",
         "fedora-kvm-image-tests",
         "fedora-lx-brand-image-builder",
+        "firewall-logger-agent",
         "fishbulb",
-        "freebsd",
+        "fm-log-report",
         "freebsd-image-tests",
         "freebsd-kvm-image-builder",
         "freebsd-live",
@@ -586,6 +627,7 @@
         "gerrit-test-rewind",
         "gerritbot",
         "github-enterprise-triton-image",
+        "go",
         "gosdc",
         "grr",
         "hackathon-nvtool",
@@ -613,6 +655,7 @@
         "joyent-gerrit",
         "jsstyle",
         "kafka-connect-manta",
+        "kbmd",
         "keyapi",
         "kirby-preview-base",
         "knife-joyent",
@@ -625,6 +668,7 @@
         "machine",
         "manifest-creator",
         "manta-archiver",
+        "manta-mreq",
         "manta-munistats",
         "manta-nfs",
         "manta-shortener-client",
@@ -648,6 +692,7 @@
         "mi-debian-8",
         "mi-debian-9",
         "mi-debian-bhyve-8",
+        "mi-debian-bhyve-9",
         "mi-example",
         "mi-freebsd-10",
         "mi-hadoop",
@@ -659,12 +704,14 @@
         "mi-postgresql",
         "mi-riak",
         "mi-standard",
+        "mi-ubuntu-hybrid",
         "mibe",
         "mill",
         "milld-nginx",
         "minecrab",
         "minio",
         "mjob-cost",
+        "mmlog",
         "mock-docker-registry",
         "mod_usdt",
         "moray-etl-jsonb",
@@ -672,14 +719,19 @@
         "nginx",
         "nhttpsnoop",
         "nic-audit",
+        "node-amon-common",
+        "node-amon-plugins",
         "node-amqp",
         "node-amqp-joyent",
+        "node-amqpsnoop",
         "node-asn1",
         "node-assert-plus",
+        "node-async-hook",
         "node-bcrypt-pbkdf",
         "node-bunyan-syslog",
         "node-catstreams",
         "node-checker",
+        "node-cls-hooked",
         "node-cmdutil",
         "node-codel",
         "node-consulite",
@@ -698,6 +750,7 @@
         "node-forkexec",
         "node-fuzzstream",
         "node-gerritbot",
+        "node-getopt",
         "node-http-signature",
         "node-httpstream",
         "node-imgmanifest",
@@ -731,6 +784,7 @@
         "node-progbar",
         "node-remote-tester-drone",
         "node-restify",
+        "node-restify-clients",
         "node-restify-warden",
         "node-sdc-changefeed",
         "node-skinner",
@@ -744,7 +798,6 @@
         "node-strsplit",
         "node-tab",
         "node-tar",
-        "node-tar-1",
         "node-timefilter",
         "node-timeseries-heatmap",
         "node-trace-event",
@@ -786,6 +839,7 @@
         "pg_sample",
         "pglockanalyze",
         "php-manta",
+        "pivy",
         "pkgbuild",
         "pkgin",
         "pkgin-test-suite",
@@ -806,12 +860,13 @@
         "sdc-agents-core",
         "sdc-agents-installer",
         "sdc-amon",
+        "sdc-amon-agent",
+        "sdc-amon-relay",
         "sdc-amonadm",
         "sdc-amonredis",
         "sdc-assets",
         "sdc-booter",
         "sdc-bunyan-serializers",
-        "sdc-cloud-analytics",
         "sdc-cloudapi",
         "sdc-cn-agent",
         "sdc-cnapi",
@@ -820,7 +875,6 @@
         "sdc-docker-build",
         "sdc-docker-build-dl",
         "sdc-dockerlogger",
-        "sdc-events",
         "sdc-firewaller-agent",
         "sdc-fwapi",
         "sdc-fwrule",
@@ -858,7 +912,6 @@
         "sdc-wf-shared",
         "sdc-workflow",
         "sdcadm",
-        "sdcboot",
         "sdev-tests",
         "smartmachine_cookbooks",
         "smartos-changelog",
@@ -894,6 +947,7 @@
         "triton-grafana",
         "triton-kbmapi",
         "triton-kubernetes",
+        "triton-logarchiver",
         "triton-mockcloud",
         "triton-mockcloud-common",
         "triton-report",
