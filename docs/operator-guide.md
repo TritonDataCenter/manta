@@ -917,7 +917,7 @@ multi-DC, multi-compute-node deployment.  The general process is:
     c. For any other installation (including a multi-CN installation), you'll
        need to run several more steps: assign shards for storage and object
        metadata with "manta-shardadm"; create a hash ring with
-       "manta-create-topology.sh"; generate a "manta-adm" configuration file
+       "manta-adm create-topology"; generate a "manta-adm" configuration file
        (see "manta-adm configuration" below); and finally run "manta-adm update
        config.json" to deploy those zones.  Your best bet is to examine the
        "manta-deploy-dev" script to see how it uses these tools.  See
