@@ -10,14 +10,26 @@
 
 # Manta Contribution Guidelines
 
-The Manta project uses [cr.joyent.us](https://cr.joyent.us) for code review of
-all changes.  Any registered GitHub user can submit changes through this system.
-If you want to contribute a change, please see the [cr.joyent.us user
-guide](https://github.com/joyent/joyent-gerrit/blob/master/docs/user/README.md).
+Thanks for using Manta and for considering contributing to it!
+
+
+# Code
+
+All changes to Manta project repositories go through code review. Currently
+that is via one of the following:
+
+- Joyent's Gerrit at [cr.joyent.us](https://cr.joyent.us), if the repo is
+  listed at <https://cr.joyent.us/#/admin/projects/>. Any registered GitHub user
+  can submit changes through this system. If you want to contribute a change,
+  please see the [Joyent Gerrit user
+  guide](https://github.com/joyent/joyent-gerrit/blob/master/docs/user/README.md).
+
+- GitHub PRs, at the usual place on each repo.
+
 If you're making a substantial change, you probably want to contact developers
-on the mailing list or IRC first.  If you have any trouble with the contribution
-process, please feel free to contact developers [on the mailing list or
-IRC](README.md#community).
+[on the mailing list or IRC](README.md#community) first. If you have any trouble
+with the contribution process, please feel free to contact developers [on the
+mailing list or IRC](README.md#community).
 
 See the (work-in-progress) [developer guide](docs/dev-notes.md) for useful
 information about building and testing the software.
@@ -31,15 +43,23 @@ the Triton project.  Notably:
 * All repositories should be "make check" clean at all times.
 * All repositories should have tests that run cleanly at all times.
 
-"make check" checks both JavaScript style and lint.  Style is checked with
-[jsstyle](https://github.com/davepacheco/jsstyle).  The specific style rules are
-somewhat repo-specific.  See the jsstyle configuration file in each repo for
-exceptions to the default jsstyle rules.
+Typically each repository has `make check` to lint and check code style.
+Specific code style can vary by repository.
 
-Lint is checked with
-[javascriptlint](https://github.com/davepacheco/javascriptlint).  ([Don't
-conflate lint with
-style!](http://dtrace.org/blogs/dap/2011/08/23/javascriptlint/)  There are gray
-areas, but generally speaking, style rules are arbitrary, while lint warnings
-identify potentially broken code.)  Repos sometimes have repo-specific lint
-rules, but this is less common.
+
+## Issues
+
+There are two separate issue trackers that are relevant for Manta code:
+
+- An internal-to-Joyent JIRA instance.
+
+  A JIRA ticket has an ID like `MANTA-380`, where "MANTA" is the JIRA project
+  name. A read-only view of many JIRA tickets is made available at
+  <https://smartos.org/bugview/> (e.g.
+  <https://smartos.org/bugview/MANTA-380>).
+
+- GitHub issues for the relevant repository.
+
+Before Manta was open sourced, Joyent engineering used a private JIRA instance.
+While Joyent continues to use JIRA internally, we also use GitHub issues for
+tracking -- primarily to allow interaction with those without access to JIRA.
