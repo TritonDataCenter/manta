@@ -402,6 +402,9 @@
             "name": "node-boray"
         },
         {
+            "name": "node-checker"
+        },
+        {
             "name": "node-crc"
         },
         {
@@ -785,7 +788,6 @@
         "node-bcrypt-pbkdf",
         "node-bunyan-syslog",
         "node-catstreams",
-        "node-checker",
         "node-cls-hooked",
         "node-cmdutil",
         "node-codel",
