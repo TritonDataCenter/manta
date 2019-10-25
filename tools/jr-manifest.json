@@ -323,7 +323,7 @@
             }
         },
         {
-            "name": "manta-remora",
+            "name": "manta-rebalancer",
             "labels": {
                 "release": true,
                 "vm": true,
