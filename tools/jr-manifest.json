@@ -128,6 +128,9 @@
             "name": "java-manta"
         },
         {
+            "name": "jenkins-joylib"
+        },
+        {
             "name": "joyent-repos"
         },
         {
@@ -159,6 +162,15 @@
             "name": "manta",
             "labels": {
                 "meta": true
+            }
+        },
+        {
+            "name": "manta-buckets-api",
+            "labels": {
+                "vm": true,
+                "mg": "manta-buckets-api",
+                "mantaservice": "buckets-api",
+                "image": "manta-buckets-api"
             }
         },
         {
@@ -283,6 +295,9 @@
             "name": "manta-monitor"
         },
         {
+            "name": "manta-monitor-deploy-stack"
+        },
+        {
             "name": "manta-mprune"
         },
         {
@@ -297,6 +312,23 @@
         },
         {
             "name": "manta-physusage"
+        },
+        {
+            "name": "manta-picker",
+            "labels": {
+                "vm": true,
+                "mg": "manta-picker",
+                "mantaservice": "picker",
+                "image": "manta-picker"
+            }
+        },
+        {
+            "name": "manta-rebalancer",
+            "labels": {
+                "vm": true,
+                "mantaservice": "rebalancer",
+                "image": "manta-rebalancer"
+            }
         },
         {
             "name": "manta-reshard",
@@ -350,9 +382,6 @@
             }
         },
         {
-            "name": "mountain-gorilla"
-        },
-        {
             "name": "muppet",
             "labels": {
                 "release": true,
@@ -370,6 +399,9 @@
         },
         {
             "name": "node-boray"
+        },
+        {
+            "name": "node-checker"
         },
         {
             "name": "node-crc"
@@ -466,6 +498,9 @@
             "name": "python-manta"
         },
         {
+            "name": "redfish-util"
+        },
+        {
             "name": "registrar"
         },
         {
@@ -491,6 +526,9 @@
         },
         {
             "name": "rust-cueball-dns-resolver"
+        },
+        {
+            "name": "rust-cueball-manatee-primary-resolver"
         },
         {
             "name": "rust-cueball-postgres-connection"
@@ -520,10 +558,22 @@
             "name": "rust-muppet"
         },
         {
+            "name": "rust-quickcheck-helpers"
+        },
+        {
             "name": "rust-sharkspotter"
         },
         {
+            "name": "rust-triton-clients"
+        },
+        {
+            "name": "rust-utils"
+        },
+        {
             "name": "s3-manta-bridge"
+        },
+        {
+            "name": "sastopo2svg"
         },
         {
             "name": "sdc-config-agent"
@@ -543,6 +593,9 @@
         },
         {
             "name": "sdcnode"
+        },
+        {
+            "name": "topo-digraph-xml"
         },
         {
             "name": "triton-origin-image"
@@ -623,8 +676,7 @@
         "freebsd-vpc",
         "gcc",
         "gerrit",
-        "gerrit-test",
-        "gerrit-test-rewind",
+        "gerrit-migration",
         "gerritbot",
         "github-enterprise-triton-image",
         "go",
@@ -659,6 +711,7 @@
         "keyapi",
         "kirby-preview-base",
         "knife-joyent",
+        "kosh",
         "leveldown",
         "libMicro",
         "libfaketime",
@@ -668,14 +721,18 @@
         "machine",
         "manifest-creator",
         "manta-archiver",
+        "manta-fspopulate",
         "manta-mreq",
         "manta-munistats",
         "manta-nfs",
         "manta-shortener-client",
+        "manta-storspan",
         "manufacturing",
         "mdata-client",
+        "mdata-docs",
         "mdb_go",
         "mdb_v8",
+        "mdb_v8_testing",
         "me-centos",
         "me-freebsd",
         "mesos",
@@ -730,7 +787,6 @@
         "node-bcrypt-pbkdf",
         "node-bunyan-syslog",
         "node-catstreams",
-        "node-checker",
         "node-cls-hooked",
         "node-cmdutil",
         "node-codel",
@@ -753,6 +809,7 @@
         "node-getopt",
         "node-http-signature",
         "node-httpstream",
+        "node-imgadm",
         "node-imgmanifest",
         "node-in-the-industry",
         "node-ip6addr",
@@ -763,7 +820,6 @@
         "node-juju",
         "node-krill",
         "node-kstat",
-        "node-ldapjs",
         "node-libdtrace-async",
         "node-lockfd",
         "node-lomstream",
@@ -782,6 +838,7 @@
         "node-piloted",
         "node-png-joyent",
         "node-progbar",
+        "node-qlocker",
         "node-remote-tester-drone",
         "node-restify",
         "node-restify-clients",
@@ -809,6 +866,7 @@
         "node-triton-package-boilerplate",
         "node-triton-tags",
         "node-ufds",
+        "node-uname",
         "node-urclient",
         "node-vasync",
         "node-verror",
@@ -823,8 +881,10 @@
         "node-zfile",
         "node-zfs",
         "node-zkstream",
+        "node-zoneid",
         "node-zonename",
         "node-zsock",
+        "node-zsock-async",
         "node-zuora-rest",
         "node-zutil",
         "node_zuora",
@@ -849,12 +909,14 @@
         "pkgsrc-wiki",
         "pkgsrc-wip",
         "pkgsrc.joyent.com",
+        "play",
         "portsnoop",
         "presto-manta",
         "promstat",
         "prsigset",
         "publicsuffix-list",
         "pyserial",
+        "rancher",
         "schemas",
         "sdc-adminui",
         "sdc-agents-core",
@@ -916,6 +978,7 @@
         "smartmachine_cookbooks",
         "smartos-changelog",
         "smartos-dev-tools",
+        "smartos-docs",
         "smartos-image-tests",
         "smartos-live",
         "smartos-vmtools",
@@ -923,11 +986,13 @@
         "smfgen",
         "smtools",
         "snoopdump",
+        "sshpk-crypt",
         "statemap",
         "summit-workshop",
         "syslinux",
         "teamcity-manta-artifact-storage-plugin",
         "terraform",
+        "terraform-provider-triton",
         "terraform-triton-bastion",
         "terraform-triton-grafana",
         "terraform-triton-kafka",
@@ -935,6 +1000,7 @@
         "terraform-triton-prometheus",
         "terraform-triton-redash",
         "terraform-triton-zookeeper",
+        "tokio-zookeeper",
         "toshstomp",
         "triton",
         "triton-cmon",
@@ -956,6 +1022,7 @@
         "tsg-graphql",
         "ubuntu-certified-image-tests",
         "ubuntu-lx-brand-image-builder",
+        "ufds-terror-alert",
         "ursa",
         "uvxbridge",
         "v8plus",
