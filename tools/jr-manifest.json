@@ -55,7 +55,7 @@
             }
         },
         {
-            "name": "boray",
+            "name": "buckets-mdapi",
             "labels": {
                 "vm": true
             }
@@ -70,7 +70,7 @@
             "name": "cosbench"
         },
         {
-            "name": "electric-boray",
+            "name": "buckets-mdplacement",
             "labels": {
                 "vm": true
             }
@@ -398,7 +398,7 @@
             "name": "node-artedi"
         },
         {
-            "name": "node-boray"
+            "name": "node-buckets-mdapi"
         },
         {
             "name": "node-checker"
