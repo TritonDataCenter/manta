@@ -7,3 +7,4 @@
 /docs/user-guide/examples/*/job.out
 /docs/user-guide/examples/*/index.md
 .DS_Store
+.idea/

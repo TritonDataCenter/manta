@@ -128,6 +128,9 @@
             "name": "java-manta"
         },
         {
+            "name": "java-manta-test-harness"
+        },
+        {
             "name": "jenkins-joylib"
         },
         {
