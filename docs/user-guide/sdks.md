@@ -94,7 +94,7 @@ it add the following to your project's pom.xml:
 
 	<dependency>
         <groupId>com.joyent.manta</groupId>
-        <artifactId>java-manta</artifactId>
+        <artifactId>java-manta-client</artifactId>
         <!-- replace this value with the specific version number -->
         <version>LATEST</version>
     </dependency>
