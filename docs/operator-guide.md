@@ -10,7 +10,7 @@ apisections: .
 -->
 
 <!--
-    Copyright (c) 2018, Joyent, Inc.
+    Copyright 2019 Joyent, Inc.
 -->
 
 # Operator's Guide for Manta, Triton's object storage and converged analytics solution
@@ -840,10 +840,12 @@ multi-DC, multi-compute-node deployment.  The general process is:
    possibly, the intended purpose of the host.  For example, we use the "RA"
    or "RM" prefix for "Richmond-A" hosts and "MS" prefix for "Mantis Shrimp"
    hosts.
+
 2. In the global zone of each Triton headnode, set up a manta deployment zone
    using:
 
-        /usbkey/scripts/setup_manta_zone.sh
+        sdcadm post-setup common-external-nics  # enable downloading service images
+        sdcadm post-setup manta --mantav1
 
 3. In each datacenter, generate a Manta networking configuration file.
 
