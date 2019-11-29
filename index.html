@@ -159,7 +159,7 @@
 -->
 
 <!--
-    Copyright (c) 2018, Joyent, Inc.
+    Copyright 2019 Joyent, Inc.
 -->
 
 
@@ -1224,16 +1224,17 @@ above.</p>
 multi-DC, multi-compute-node deployment.  The general process is:</p>
 
 <ol>
-<li>Set up Triton in each datacenter, including the headnode, all Triton
+<li><p>Set up Triton in each datacenter, including the headnode, all Triton
 services, and all compute nodes you intend to use.  For easier management of
 hosts, we recommend that the hostname reflect the type of server and,
 possibly, the intended purpose of the host.  For example, we use the "RA"
 or "RM" prefix for "Richmond-A" hosts and "MS" prefix for "Mantis Shrimp"
-hosts.</li>
+hosts.</p></li>
 <li><p>In the global zone of each Triton headnode, set up a manta deployment zone
 using:</p>
 
-<pre><code>/usbkey/scripts/setup_manta_zone.sh
+<pre><code>sdcadm post-setup common-external-nics  # enable downloading service images
+sdcadm post-setup manta --mantav1
 </code></pre></li>
 <li><p>In each datacenter, generate a Manta networking configuration file.</p>
 
