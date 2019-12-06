@@ -67,7 +67,7 @@ Manta.
 
 
 
-# Sign Up
+# Request Account
 
 To use Triton's object storage, you need a Triton Compute account.  If
 you don't already have an account, contact your administrator.
