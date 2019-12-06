@@ -15,17 +15,17 @@
         {
             "name": "release",
             "type": "boolean",
-            "description": "a top-level repo for a Manta release component"
+            "description": "a top-level repo for a Mantav2 release component"
         },
         {
             "name": "image",
             "type": "string",
-            "description": "the image name for repos that produce a VM image"
+            "description": "the VM image name produced from this repo for Mantav2, if any"
         },
         {
             "name": "mantaservice",
             "type": "string",
-            "description": "the top-level repo for a Manta core service, e.g. mantaservice=muskie"
+            "description": "the Mantav2 service name, if this is a top-level Manta service repo"
         },
         {
             "name": "mantav1",
@@ -56,14 +56,17 @@
                 "vm": true,
                 "mg": "binder",
                 "mantaservice": "nameservice",
-                "image": "manta-nameservice",
+                "image": "mantav2-nameservice",
                 "mantav1": true
             }
         },
         {
             "name": "buckets-mdapi",
             "labels": {
-                "vm": true
+                "vm": true,
+                "release": true,
+                "mantaservice": "boray",
+                "image": "mantav2-boray"
             }
         },
         {
@@ -78,7 +81,10 @@
         {
             "name": "buckets-mdplacement",
             "labels": {
-                "vm": true
+                "vm": true,
+                "release": true,
+                "mantaservice": "electric-boray",
+                "image": "mantav2-electric-boray"
             }
         },
         {
@@ -88,7 +94,7 @@
                 "vm": true,
                 "mg": "electric-moray",
                 "mantaservice": "electric-moray",
-                "image": "manta-electric-moray",
+                "image": "mantav2-electric-moray",
                 "mantav1": true
             }
         },
@@ -153,7 +159,7 @@
                 "vm": true,
                 "mg": "mahi",
                 "mantaservice": "authcache",
-                "image": "manta-authcache",
+                "image": "mantav2-authcache",
                 "mantav1": true
             }
         },
@@ -181,7 +187,7 @@
                 "vm": true,
                 "mg": "manta-buckets-api",
                 "mantaservice": "buckets-api",
-                "image": "manta-buckets-api"
+                "image": "mantav2-buckets-api"
             }
         },
         {
@@ -200,7 +206,7 @@
                 "vm": true,
                 "mantaservice": "garbage-collector",
                 "mg": "manta-garbage-collector",
-                "image": "manta-garbage-collector",
+                "image": "mantav2-garbage-collector",
                 "mantav1": true
             }
         },
@@ -225,7 +231,7 @@
                 "vm": true,
                 "mantaservice": "madtom",
                 "mg": "madtom",
-                "image": "manta-madtom",
+                "image": "mantav2-madtom",
                 "mantav1": true
             }
         },
@@ -236,7 +242,7 @@
                 "vm": true,
                 "mantaservice": "storage",
                 "mg": "mako",
-                "image": "manta-storage",
+                "image": "mantav2-storage",
                 "mantav1": true
             }
         },
@@ -247,29 +253,21 @@
                 "vm": true,
                 "mantaservice": "postgres",
                 "mg": "manta-manatee",
-                "image": "manta-postgres",
+                "image": "mantav2-postgres",
                 "mantav1": true
             }
         },
         {
             "name": "manta-marlin",
             "labels": {
-                "release": true,
                 "vm": true,
-                "mantaservice": "jobsupervisor",
-                "mg": "marlin",
-                "image": "manta-jobsupervisor",
                 "mantav1": true
             }
         },
         {
             "name": "manta-marlin-dashboard",
             "labels": {
-                "release": true,
                 "vm": true,
-                "mantaservice": "marlin-dashboard",
-                "mg": "marlin-dashboard",
-                "image": "manta-marlin-dashboard",
                 "mantav1": true
             }
         },
@@ -282,11 +280,7 @@
         {
             "name": "manta-medusa",
             "labels": {
-                "release": true,
                 "vm": true,
-                "image": "manta-medusa",
-                "mg": "medusa",
-                "mantaservice": "medusa",
                 "mantav1": true
             }
         },
@@ -308,7 +302,7 @@
                 "vm": true,
                 "mg": "mola",
                 "mantaservice": "ops",
-                "image": "manta-ops",
+                "image": "mantav2-ops",
                 "mantav1": true
             }
         },
@@ -327,7 +321,7 @@
                 "release": true,
                 "vm": true,
                 "mg": "muskie",
-                "image": "manta-webapi",
+                "image": "mantav2-webapi",
                 "mantaservice": "webapi",
                 "mantav1": true
             }
@@ -341,7 +335,7 @@
                 "vm": true,
                 "mg": "manta-picker",
                 "mantaservice": "picker",
-                "image": "manta-picker"
+                "image": "mantav2-picker"
             }
         },
         {
@@ -349,7 +343,7 @@
             "labels": {
                 "vm": true,
                 "mantaservice": "rebalancer",
-                "image": "manta-rebalancer"
+                "image": "mantav2-rebalancer"
             }
         },
         {
@@ -359,7 +353,7 @@
                 "vm": true,
                 "mg": "manta-reshard",
                 "mantaservice": "reshard",
-                "image": "manta-reshard",
+                "image": "mantav2-reshard",
                 "mantav1": true
             }
         },
@@ -381,11 +375,7 @@
         {
             "name": "manta-wrasse",
             "labels": {
-                "release": true,
                 "vm": true,
-                "mg": "wrasse",
-                "mantaservice": "jobpuller",
-                "image": "manta-jobpuller",
                 "mantav1": true
             }
         },
@@ -402,7 +392,7 @@
                 "vm": true,
                 "mg": "moray",
                 "mantaservice": "moray",
-                "image": "manta-moray",
+                "image": "mantav2-moray",
                 "mantav1": true
             }
         },
@@ -413,7 +403,7 @@
                 "vm": true,
                 "mg": "muppet",
                 "mantaservice": "loadbalancer",
-                "image": "manta-loadbalancer",
+                "image": "mantav2-loadbalancer",
                 "mantav1": true
             }
         },
@@ -508,7 +498,7 @@
                 "vm": true,
                 "mg": "pgstatsmon",
                 "mantaservice": "pgstatsmon",
-                "image": "manta-pgstatsmon",
+                "image": "mantav2-pgstatsmon",
                 "mantav1": true
             }
         },
@@ -615,7 +605,7 @@
                 "vm": true,
                 "mg": "manta-deployment",
                 "tritonservice": "manta",
-                "image": "manta-deployment",
+                "image": "mantav2-deployment",
                 "mantav1": true
             }
         },
@@ -633,7 +623,7 @@
             "labels": {
                 "release": true,
                 "mantaservice": "prometheus",
-                "image": "manta-prometheus",
+                "image": "mantav2-prometheus",
                 "mg": "prometheus",
                 "vm": true,
                 "mantav1": true
