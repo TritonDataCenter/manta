@@ -420,6 +420,9 @@
             "name": "node-checker"
         },
         {
+            "name": "node-contract"
+        },
+        {
             "name": "node-crc"
         },
         {
@@ -810,7 +813,6 @@
         "node-cmdutil",
         "node-codel",
         "node-consulite",
-        "node-contract",
         "node-ctype",
         "node-debug-school",
         "node-debugging-methodologies",
