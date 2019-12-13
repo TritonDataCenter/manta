@@ -67,12 +67,10 @@ Manta.
 
 
 
-# Sign Up
+# Request Account
 
-To use Triton's object storage, you need a Triton Public Cloud account.  If
-you don't already have an account, you can create one at
-[https://my.joyent.com/signup](https://my.joyent.com/signup). You will
-not be charged for object storage until you use it.
+To use Triton's object storage, you need a Triton Compute account.  If
+you don't already have an account, contact your administrator.
 
 Once you have signed up, you will need to add an SSH public key to your account. Joyent recommends using RSA keys, as the node-manta CLI programs will work with RSA keys both locally, and with the `ssh agent`. DSA keys will only work if the
 private key is on the same system as the CLI, and not password-protected.
