@@ -332,6 +332,7 @@
         {
             "name": "manta-picker",
             "labels": {
+                "release": true,
                 "vm": true,
                 "mg": "manta-picker",
                 "mantaservice": "picker",
@@ -341,7 +342,9 @@
         {
             "name": "manta-rebalancer",
             "labels": {
+                "release": true,
                 "vm": true,
+                "mg": "manta-rebalancer",
                 "mantaservice": "rebalancer",
                 "image": "mantav2-rebalancer"
             }
