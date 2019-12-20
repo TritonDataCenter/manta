@@ -79,7 +79,10 @@ as described in [RFC 1864](https://www.ietf.org/rfc/rfc1864.txt).
 
 
 The `durability-level` header is a value from 1 to 6
-that specifies how many copies of an object the system stores. If you do not specify a durability level, the default is 2. While you can set a durability-level of 1, doing so would put your data at risk of loss.
+that specifies how many copies of an object the system stores.
+If you do not specify a durability level, the default is 2.
+While you can set a durability-level of 1, doing so would put your data at
+a higher risk of loss.
 
 ## Conditional Request Headers
 
@@ -346,10 +349,21 @@ large XML document.
 
 ## Durability
 
-At a simple level, durability is a system's ability to tolerate failures without a loss of data. By default, the system stores two copies of your object and these two copies are placed in two different data centers. Distributing copies of your objects reduces the risk of data loss in the event of a failure. The system relies on ZFS RAID-Z to store your objects, so the durability is actually greater than two would imply. You can store anywhere from 1 to 6 copies.
+At a simple level, durability is a system's ability to tolerate failures without
+a loss of data. By default, the system stores two copies of your object and these
+two copies are placed in two different data centers. Distributing copies of your
+objects reduces the risk of data loss in the event of a failure. The system
+relies on ZFS RAID-Z to store your objects, so the durability is actually greater
+ than two would imply. You can store anywhere from 1 to 6 copies.
 
 You are billed for exactly the number of bytes you consume in the system.
 For example, if you write a 1MB object with the default number of copies (2),
-you will be billed for 2MB of storage each month. When the number of copies requested is greater than one, the system ensures that *at least* two copies are placed in two different data centers, and then stripes the other copies across data centers.
-If any given data center is down at the time, you may have copies unbalanced with extra replicas in fewer data centers, but there will always be at least two data centers with your copy of data. This allows you to still access your data in the event
-of any one data center failure.
+you will be billed for 2MB of storage each month. When the number of copies
+requested is greater than one, the system ensures that *at least* two copies
+are placed in two different data centers, and then stripes the other copies
+across data centers.
+
+If any given data center is down at the time, you may have copies unbalanced with
+extra replicas in fewer data centers, but there will always be at least two data
+centers with your copy of data. This allows you to still access your data in the
+event of any one data center failure.
