@@ -184,6 +184,7 @@
         {
             "name": "manta-buckets-api",
             "labels": {
+                "release": true,
                 "vm": true,
                 "mg": "manta-buckets-api",
                 "mantaservice": "buckets-api",
