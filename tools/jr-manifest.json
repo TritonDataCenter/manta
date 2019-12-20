@@ -61,12 +61,12 @@
             }
         },
         {
-            "name": "buckets-mdapi",
+            "name": "manta-buckets-mdapi",
             "labels": {
                 "vm": true,
                 "release": true,
-                "mantaservice": "boray",
-                "image": "mantav2-boray"
+                "mantaservice": "buckets-mdapi",
+                "image": "mantav2-buckets-mdapi"
             }
         },
         {
@@ -79,12 +79,12 @@
             "name": "cosbench"
         },
         {
-            "name": "buckets-mdplacement",
+            "name": "manta-buckets-mdplacement",
             "labels": {
                 "vm": true,
                 "release": true,
-                "mantaservice": "electric-boray",
-                "image": "mantav2-electric-boray"
+                "mantaservice": "buckets-mdplacement",
+                "image": "mantav2-buckets-mdplacement"
             }
         },
         {
