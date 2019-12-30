@@ -15,16 +15,8 @@ Thanks for using Manta and for considering contributing to it!
 
 # Code
 
-All changes to Manta project repositories go through code review. Currently
-that is via one of the following:
-
-- Joyent's Gerrit at [cr.joyent.us](https://cr.joyent.us), if the repo is
-  listed at <https://cr.joyent.us/#/admin/projects/>. Any registered GitHub user
-  can submit changes through this system. If you want to contribute a change,
-  please see the [Joyent Gerrit user
-  guide](https://github.com/joyent/joyent-gerrit/blob/master/docs/user/README.md).
-
-- GitHub PRs, at the usual place on each repo.
+All changes to Manta project repositories go through code review via a GitHub
+pull request.
 
 If you're making a substantial change, you probably want to contact developers
 [on the mailing list or IRC](README.md#community) first. If you have any trouble
