@@ -552,18 +552,6 @@
             "name": "rust-cueball-dns-resolver"
         },
         {
-            "name": "rust-cueball-manatee-primary-resolver"
-        },
-        {
-            "name": "rust-cueball-postgres-connection"
-        },
-        {
-            "name": "rust-cueball-static-resolver"
-        },
-        {
-            "name": "rust-cueball-tcp-stream-connection"
-        },
-        {
             "name": "rust-fast"
         },
         {
