@@ -653,8 +653,8 @@ Your naming scheme depends on your intended userbase.  For a global userbase
 where geographical location on Earth is important, an example region deployed to
 the west coast of the USA might be called "us-west-1", with its 3 availability
 zones (i.e. Triton datacenters) called "us-west-1a", "us-west-1b", and
-"us-west-1c".  This way, if further deployments are planned for the same physical
-location, the region name "us-west-2" could be used to avoid conflicts.
+"us-west-1c".  This way, if new region deployments are planned for the same
+physical location, the region name "us-west-2" could be used to avoid conflicts.
 
 The datacenter and region name are decided at Triton setup time.  A Manta
 deployment will take its region name from the datacenter that you have decided
