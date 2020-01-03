@@ -635,10 +635,31 @@ where these limits are.
 
 Before even starting to deploy Manta, you must decide:
 
+* the name of your region and datacenters
 * the number of datacenters
 * the number of metadata shards
 * the number of storage and non-storage compute nodes
 * how to lay out the non-storage zones across the fleet
+
+## Choosing the name of your region and datacenters
+
+As mentioned in the "Basic terminology" section, a region is deployed to a set
+of Triton datacenters (in Manta referred to as availability zones).  This means
+there are many parts of the deployment that will need to be named, and
+consideration should be given to these names so as not to cause confusion or
+naming conflicts as your Manta footprint expands.
+
+Your naming scheme depends on your intended userbase.  For a global userbase
+where geographical location on Earth is important, an example region deployed to
+the west coast of the USA might be called "us-west-1", with its 3 availability
+zones (i.e. Triton datacenters) called "us-west-1a", "us-west-1b", and
+"us-west-1c".  This way, if further deployments are planned for the same physical
+location, the region name "us-west-2" could be used to avoid conflicts.
+
+The datacenter and region name are decided at Triton setup time.  A Manta
+deployment will take its region name from the datacenter that you have decided
+to be the master (see "Deploying Manta" for more information on this particular
+decision).
 
 ## Choosing the number of datacenters
 
