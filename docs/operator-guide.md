@@ -155,7 +155,6 @@
   - [Heartbeats, failures, and health checking](#heartbeats-failures-and-health-checking)
   - [Kang state](#kang-state)
   - [Fetching information about historical jobs](#fetching-information-about-historical-jobs)
-- [.](#)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -4755,7 +4754,3 @@ database:
    those directories.  Unfortunately, there's not great tooling for summarizing
    extracted jobs (i.e., there's no analog to `mrjob log` or `mrjobreport`), but
    you can use the `json` and `daggr` tools to pick apart these records.
-
-
-
-# .

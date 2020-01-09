@@ -1,5 +1,6 @@
 /tmp
 /build
+/node_modules
 /docs/operator-guide.html
 /docs/operator-guide.json
 /docs/user-guide/examples/*/job.id
