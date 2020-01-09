@@ -1,0 +1,9 @@
+{
+  "name": "manta-project",
+  "version": "1.0.0",
+  "description": "Manta project landing repo",
+  "private": true,
+  "devDependencies": {
+    "doctoc": "~1.3.0"
+  }
+}
