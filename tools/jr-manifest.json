@@ -30,7 +30,17 @@
         {
             "name": "mantav1",
             "type": "boolean",
-            "description": "Repositories which were branched for mantav1. See https://github.com/joyent/manta/blob/master/docs/mantav2.md"
+            "description": "Repositories are related to mantav1. See https://github.com/joyent/manta/blob/master/docs/mantav2.md"
+        },
+        {
+            "name": "mantav1branch",
+            "type": "boolean",
+            "description": "Repositories which were branched for mantav1."
+        },
+        {
+            "name": "mantav1only",
+            "type": "boolean",
+            "description": "Repositories which are only needed for mantav1."
         }
     ],
     "defaults": {
@@ -57,7 +67,8 @@
                 "mg": "binder",
                 "mantaservice": "nameservice",
                 "image": "mantav2-nameservice",
-                "mantav1": true
+                "mantav1": true,
+                "mantav1branch": true
             }
         },
         {
@@ -95,7 +106,8 @@
                 "mg": "electric-moray",
                 "mantaservice": "electric-moray",
                 "image": "mantav2-electric-moray",
-                "mantav1": true
+                "mantav1": true,
+                "mantav1branch": true
             }
         },
         {
@@ -160,7 +172,8 @@
                 "mg": "mahi",
                 "mantaservice": "authcache",
                 "image": "mantav2-authcache",
-                "mantav1": true
+                "mantav1": true,
+                "mantav1branch": true
             }
         },
         {
@@ -208,7 +221,8 @@
                 "mantaservice": "garbage-collector",
                 "mg": "manta-garbage-collector",
                 "image": "mantav2-garbage-collector",
-                "mantav1": true
+                "mantav1": true,
+                "mantav1branch": true
             }
         },
         {
@@ -222,7 +236,8 @@
             "labels": {
                 "release": true,
                 "mg": "mackerel",
-                "mantav1": true
+                "mantav1": true,
+                "mantav1branch": true
             }
         },
         {
@@ -233,7 +248,8 @@
                 "mantaservice": "madtom",
                 "mg": "madtom",
                 "image": "mantav2-madtom",
-                "mantav1": true
+                "mantav1": true,
+                "mantav1branch": true
             }
         },
         {
@@ -244,7 +260,8 @@
                 "mantaservice": "storage",
                 "mg": "mako",
                 "image": "mantav2-storage",
-                "mantav1": true
+                "mantav1": true,
+                "mantav1branch": true
             }
         },
         {
@@ -255,21 +272,26 @@
                 "mantaservice": "postgres",
                 "mg": "manta-manatee",
                 "image": "mantav2-postgres",
-                "mantav1": true
+                "mantav1": true,
+                "mantav1branch": true
             }
         },
         {
             "name": "manta-marlin",
             "labels": {
                 "vm": true,
-                "mantav1": true
+                "mantav1": true,
+                "mantav1branch": true,
+                "mantav1only": true
             }
         },
         {
             "name": "manta-marlin-dashboard",
             "labels": {
                 "vm": true,
-                "mantav1": true
+                "mantav1": true,
+                "mantav1branch": true,
+                "mantav1only": true
             }
         },
         {
@@ -282,7 +304,9 @@
             "name": "manta-medusa",
             "labels": {
                 "vm": true,
-                "mantav1": true
+                "mantav1": true,
+                "mantav1branch": true,
+                "mantav1only": true
             }
         },
         {
@@ -290,7 +314,8 @@
             "labels": {
                 "release": true,
                 "mg": "minnow",
-                "mantav1": true
+                "mantav1": true,
+                "mantav1branch": true
             }
         },
         {
@@ -304,7 +329,8 @@
                 "mg": "mola",
                 "mantaservice": "ops",
                 "image": "mantav2-ops",
-                "mantav1": true
+                "mantav1": true,
+                "mantav1branch": true
             }
         },
         {
@@ -324,7 +350,8 @@
                 "mg": "muskie",
                 "image": "mantav2-webapi",
                 "mantaservice": "webapi",
-                "mantav1": true
+                "mantav1": true,
+                "mantav1branch": true
             }
         },
         {
@@ -358,7 +385,8 @@
                 "mg": "manta-reshard",
                 "mantaservice": "reshard",
                 "image": "mantav2-reshard",
-                "mantav1": true
+                "mantav1": true,
+                "mantav1branch": true
             }
         },
         {
@@ -380,7 +408,9 @@
             "name": "manta-wrasse",
             "labels": {
                 "vm": true,
-                "mantav1": true
+                "mantav1": true,
+                "mantav1branch": true,
+                "mantav1only": true
             }
         },
         {
@@ -397,7 +427,8 @@
                 "mg": "moray",
                 "mantaservice": "moray",
                 "image": "mantav2-moray",
-                "mantav1": true
+                "mantav1": true,
+                "mantav1branch": true
             }
         },
         {
@@ -408,7 +439,8 @@
                 "mg": "muppet",
                 "mantaservice": "loadbalancer",
                 "image": "mantav2-loadbalancer",
-                "mantav1": true
+                "mantav1": true,
+                "mantav1branch": true
             }
         },
         {
@@ -424,7 +456,11 @@
             "name": "node-checker"
         },
         {
-            "name": "node-contract"
+            "name": "node-contract",
+            "labels": {
+                "mantav1": true,
+                "mantav1only": true
+            }
         },
         {
             "name": "node-crc"
@@ -493,6 +529,13 @@
             "name": "node-zookeeper-client"
         },
         {
+            "name": "node-zsock-async",
+            "labels": {
+                "mantav1": true,
+                "mantav1only": true
+            }
+        },
+        {
             "name": "pg_prefaulter"
         },
         {
@@ -506,7 +549,8 @@
                 "mg": "pgstatsmon",
                 "mantaservice": "pgstatsmon",
                 "image": "mantav2-pgstatsmon",
-                "mantav1": true
+                "mantav1": true,
+                "mantav1branch": true
             }
         },
         {
@@ -601,7 +645,8 @@
                 "mg": "manta-deployment",
                 "tritonservice": "manta",
                 "image": "mantav2-deployment",
-                "mantav1": true
+                "mantav1": true,
+                "mantav1branch": true
             }
         },
         {
@@ -621,7 +666,8 @@
                 "image": "mantav2-prometheus",
                 "mg": "prometheus",
                 "vm": true,
-                "mantav1": true
+                "mantav1": true,
+                "mantav1branch": true
             }
         },
         {
@@ -897,7 +943,6 @@
         "node-zoneid",
         "node-zonename",
         "node-zsock",
-        "node-zsock-async",
         "node-zuora-rest",
         "node-zutil",
         "node_zuora",
