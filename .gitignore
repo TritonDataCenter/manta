@@ -6,5 +6,6 @@
 /docs/user-guide/examples/*/job.err
 /docs/user-guide/examples/*/job.out
 /docs/user-guide/examples/*/index.md
+/node_modules
 .DS_Store
 .idea/
