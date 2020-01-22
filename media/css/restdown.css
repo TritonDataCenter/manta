@@ -245,6 +245,7 @@ pre.shell code::before {
   -o-border-radius: 5px;
   border-radius: 5px;
   margin-bottom:40px;
+  font-size: 1.3em;
 }
 .intro pre.base {
   background:#444;

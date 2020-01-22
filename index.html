@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Operator's Guide</title>
+    <title>Mantav1 Operator Guide</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <link rel="stylesheet" type="text/css" href="media/css/restdown.css">
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
 </head>
 <body>
 <div id="header">
-    <h1>Operator's Guide Documentation</h1>
+    <h1>Mantav1 Operator Guide</h1>
 </div>
 
     <div id="sidebar">
@@ -163,13 +163,27 @@
 -->
 
 
-<h1>Operator's Guide for Manta, Triton's object storage and converged analytics solution</h1>
+<h1>Mantav1 Operator Guide</h1>
+
 <div class="intro">
+<p>This document is obsolete. There are now <i>two</i> active major versions of
+Manta and two active versions of the Manta Operator Guide. Please visit the
+appropriate link below for your version of Manta:</p>
+
+<ol>
+    <li><a href="https://github.com/joyent/manta/blob/mantav1/docs/operator-guide.md">Mantav1 Operator Guide</a></li>
+    <li><a href="https://github.com/joyent/manta/blob/master/docs/operator-guide.md">Mantav2 Operator Guide</a></li>
+</ol>
+
+<p>This page will remain as convenience for the time being, but might be out of
+date with the latest Mantav1 Operator Guide. See the <a
+href="https://github.com/joyent/manta/blob/master/docs/mantav2.md">mantav2
+document</a> for details on mantav2 vs. mantav1.</p>
+</div>
 
 
-<p>Manta, Triton's object storage and converged analytics solution, is an
-internet-facing object store with in-situ Unix-based compute as a first class
-operation. The user interface to Manta is essentially:</p>
+<p>Manta (v1) is an internet-facing object store with in-situ Unix-based compute as a
+first class operation. The user interface to Manta is essentially:</p>
 
 <ul>
 <li>A filesystem-like namespace, with <em>directories</em> and <em>objects</em>, accessible over
@@ -194,7 +208,6 @@ tools and the compute jobs features. You should also be comfortable with all the
 from a user's perspective.</strong></p>
 
 
-</div>
 <h1 id="architecture-basics">Architecture basics</h1>
 
 <h2 id="design-constraints">Design constraints</h2>
