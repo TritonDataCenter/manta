@@ -1,8 +1,3 @@
----
-title: Operator's Guide
-markdown2extras: tables, code-friendly
-apisections: .
----
 <!--
     This Source Code Form is subject to the terms of the Mozilla Public
     License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -13,7 +8,36 @@ apisections: .
     Copyright 2020 Joyent, Inc.
 -->
 
-# Manta Operator Guide
+# Manta v1 Operator Guide
+
+Manta (v1) is an internet-facing object store with in-situ Unix-based compute as a
+first class operation. The user interface to Manta is essentially:
+
+* A filesystem-like namespace, with *directories* and *objects*, accessible over
+  HTTP
+* *Objects* are arbitrary-size blobs of data
+* Users can use standard HTTP `PUT`/`GET`/`DELETE` verbs to create and remove
+  directories and objects as well as to list directories
+* Users can fetch arbitrary ranges of an object, but may not *modify* an object
+  except by replacing it
+* Users submit map-reduce *compute jobs* that run arbitrary Unix programs on
+  their objects.
+
+Users can interact with Manta through the official Node.js CLI; the Joyent user
+portal; the Node, Python, Ruby, or Java SDKs; curl(1); or any web browser.
+
+For more information, see the official [public user
+documentation](http://apidocs.joyent.com/manta/).  **Before reading this
+document, you should be very familiar with using Manta, including both the CLI
+tools and the compute jobs features. You should also be comfortable with all the
+[reference material](http://apidocs.joyent.com/manta/) on how the system works
+from a user's perspective.**
+
+*(Note: This is the operator guide for Manta v1. See [this
+document](https://github.com/joyent/manta/blob/master/docs/mantav2.md) for
+information on mantav1 vs mantav2. If you are using mantav2, please see the
+[Mantav2 Operator
+Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide.md).)*
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -172,31 +196,6 @@ apisections: .
   - [Fetching information about historical jobs](#fetching-information-about-historical-jobs)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
-
-Manta, Triton's object storage and converged analytics solution, is an
-internet-facing object store with in-situ Unix-based compute as a first class
-operation. The user interface to Manta is essentially:
-
-* A filesystem-like namespace, with *directories* and *objects*, accessible over
-  HTTP
-* *Objects* are arbitrary-size blobs of data
-* Users can use standard HTTP `PUT`/`GET`/`DELETE` verbs to create and remove
-  directories and objects as well as to list directories
-* Users can fetch arbitrary ranges of an object, but may not *modify* an object
-  except by replacing it
-* Users submit map-reduce *compute jobs* that run arbitrary Unix programs on
-  their objects.
-
-Users can interact with Manta through the official Node.js CLI; the Joyent user
-portal; the Node, Python, Ruby, or Java SDKs; curl(1); or any web browser.
-
-For more information, see the official [public user
-documentation](http://apidocs.joyent.com/manta/).  **Before reading this
-document, you should be very familiar with using Manta, including both the CLI
-tools and the compute jobs features. You should also be comfortable with all the
-[reference material](http://apidocs.joyent.com/manta/) on how the system works
-from a user's perspective.**
 
 
 # Architecture basics
