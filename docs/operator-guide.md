@@ -918,7 +918,7 @@ existing account, you can test your Manta install with the Manta CLI
 tools you installed above in "Prerequisites".
 
 There are complete instructions on how to get started with the CLI
-tools [on the apidocs page](https://apidocs.joyent.com/manta/#getting-started).
+tools [in the User Guide](./user-guide/#getting-started).
 
 Some things in that guide will not be as clear for users of custom deployments.
 
@@ -1779,18 +1779,14 @@ these are the pieces you need to locate the object:
 * "sharks": indicate which backend storage servers contain copies of this object
 * "creator": uuid of the user who created the object
 * "objectId": uuid for this object in the system.  Note that an objectid is
-  allocated when an object is first created.  Two objects with the same content
-  do not generally get the same objectid, unless the second object was created
-  with "mln".
+  allocated when an object is first created.
 
 You won't need the following fields to locate the object, but they may be useful
 to know about:
 
 * "key": the internal name of this object (same as the public name, but the
   login is replaced with the user's uuid)
-* "owner": uuid of the user being billed for this link.  This can differ from
-  the creator if the owner used "mln" to create their own link to an object
-  created by someone else.
+* "owner": uuid of the user being billed for this link.
 * "\_node"."pnode": indicates which metadata shard stores information about this
   object.
 * "type": indicates whether something refers to an object or directory
@@ -1848,37 +1844,12 @@ elevated error rates from either the HTTP API or the compute service.
 **To check for a major event affecting the API**, locate the muskie logs for the
 hour in question (see "Logs" above) and look for elevated server-side error
 rates.  An easy first cut is to count requests and group by HTTP status code.
-You can run this from the ops zone (or any environment configured with a Manta
-account that can access the logs):
 
-    # mfind -t o /poseidon/stor/logs/muskie/2014/11/21/22 | \
-        mjob create -o
-	   -m "grep '\"audit\"' | json -ga res.statusCode | sort | uniq -c" \
-	   -r "awk '{ s[\$2] += \$1; } END {
-	      for(code in s) { printf(\"%8d %s\n\", s[code], code); } }'"
-
-That example searches all the logs from 2014-11-21 hour 22 (22:00 to 23:00 UTC)
-for requests ("audit" records), pulls out the HTTP status code from each one,
-and then counts the number of requests for each status code.  The reduce phase
-combines the outputs from scanning each log file by adding the counts for each
-status code and then printing out the aggregated results.  The end output might
-look something like this:
-
-      293950 200
-         182 201
-         179 202
-      267786 204
-      ...
-
-(You can also use [Dragnet](https://github.com/joyent/dragnet) to scan logs more
-quickly.)
-
-That output indicates 294,000 requests with code 200, 268,000 requests with code
-204, and so on.  In HTTP, codes under 300 are normal.  Codes from 400 to 500
-(including 400, not 500) are generally client problems.  Codes over 500 indicate
-server problems.  Some number of 500 errors don't necessarily indicate a problem
-with the service -- it could be a bug or a transient problem -- but if the
-number is high (particularly compared to normal hours), then that may indicate a
+In HTTP, codes under 300 are normal.  Codes from 400 to 500 (including 400, not
+500) are generally client problems.  Codes over 500 indicate server problems.
+Some number of 500 errors don't necessarily indicate a problem with the service
+-- it could be a bug or a transient problem -- but if the number is high
+(particularly compared to normal hours), then that may indicate a
 serious Manta issue at the time in question.
 
 If the number of 500-level requests is not particularly high, then that may
