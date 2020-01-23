@@ -135,7 +135,7 @@ In the example above, we don't have a local file, so `mput` doesn't attempt to
 set the MIME type. To make sure our object is properly readable by a browser, we
 set the HTTP `Content-Type` header explicitly.
 
-## "~~/stor" and "~~/public"
+## "\~\~/stor" and "\~\~/public"
 
 Now, about `~~/stor`. Your "namespace" is `/:login/stor`. This is where all of
 your data that you would like to keep private is stored. You can create any
