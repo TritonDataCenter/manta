@@ -31,10 +31,8 @@ wishes to do.
   Queue](http://queue.acm.org/) article on its design and implementation.
 
 * To understand the [CAP tradeoffs](http://en.wikipedia.org/wiki/CAP_theorem) in Manta,
-  see [Fault Tolerence in
-  Manta](http://dtrace.org/blogs/dap/2013/07/03/fault-tolerance-in-manta/) --
-  which, it must be said, received [the highest possible
-  praise](https://twitter.com/eric_brewer/status/352804538769604609).
+  see [Fault Tolerence in Manta](http://dtrace.org/blogs/dap/2013/07/03/fault-tolerance-in-manta/) --
+  which received [some notable praise](https://twitter.com/eric_brewer/status/352804538769604609).
 
 * For help with working on Manta and building and testing your changes,
   see the [developer notes](docs/dev-notes.md)
