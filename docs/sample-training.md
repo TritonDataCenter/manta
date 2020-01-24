@@ -10,8 +10,7 @@ This document outlines sample topics for a training course on operating Manta.
 * Architecture Review
 * Using Manta
     * Get new users set up for Manta
-    * `m* tools`: `mmkdir`, `mrmdir`, `mls`, `mfind`, `mput`, `mget`, `msign`, `mrm`, `mln`, `mlogin`, `mjob`
-    * On compute: `mpipe`, `msplit`, `mtee`
+    * `m* tools`: `mmkdir`, `mrmdir`, `mls`, `mfind`, `mput`, `mget`, `msign`, `mrm`,
     * Basic Map/reduce patterns
 * Discovery/Moving around
     * `sdc-cnapi`
@@ -56,6 +55,3 @@ This document outlines sample topics for a training course on operating Manta.
         * Storage
             * `/manta/[owner]/[object_id]`
             * `/manta/tombstone/[date]/[object_id]`
-        * GZ of Storage Zones
-            * `mrzones`
-            * `mrgroups`

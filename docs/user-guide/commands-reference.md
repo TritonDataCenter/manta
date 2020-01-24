@@ -1,45 +1,18 @@
----
-title: CLI Utilities Reference
-markdown2extras: wiki-tables, code-friendly
----
+# CLI Command Reference
 
-# CLI Utilities Reference
+This document lists the command-line interface (CLI) tools available from the
+Manta [Node.js SDK](./sdks.md#nodejs-sdk). See the [Getting
+Started](./#getting-started) notes for installing.
 
-This document lists the command line interface (CLI) tools available from the
-Joyent Manta [Node.js SDK](sdks.html#nodejs-sdk-and-cli) as well as the CLI tools available to you in the
-compute environment.
-
-# Client-Side Utilities
-
-These commands are installed locally on your machine as part of the Joyent Manta Node.js SDK.
-They are also available to your jobs in the compute environment.
-
-* [mls](mls.html) - Lists directory contents
-* [mput](mput.html) - Uploads data to an object
-* [mget](mget.html) - Downloads an object from the service
-* [minfo](minfo.html) - show HTTP headers for a Manta object
-* [mjob](mjob.html) - Creates and runs a computational job on the service
-* [mfind](mfind.html) - Walks a hierarchy to find names of objects by name, size, or type
-* [mlogin](mlogin.html) - Interactive session client
-* [mln](mln.html) - Makes link between objects
-* [mmkdir](mmkdir.html) - Make directories
-* [mmpu](mmpu.html) - Create and commit objects using multipart uploads
-* [mrm](mrm.html) - Remove objects or directories
-* [mrmdir](mrmdir.html) - Remove empty directories
-* [msign](msign.html) - Create a signed URL to a object stored in the service
-* [muntar](muntar.html) - Create a directory hierarchy from a tar file
-* [mchmod](mchmod.html) - Change object role tags
-* [mchattr](mchattr.html) - Change object attributes
-
-# Compute Environment Utilities
-
-These commands are available to your jobs in the compute environment.
-
-* [maggr](maggr.html) - Performs key-wise aggregation on plain text files.
-* [mcat](mcat.html) - Emits the named object as an output for the current task.
-* [mpipe](mpipe.html) - Output pipe for the current task.
-* [msplit](msplit.html) - Split the output stream for the current task to many reducers.
-* [mtee](mtee.html) - Capture stdin and write to both stdout and a object.
-
-See [Compute Environment Software](compute-instance-software.html) for a
-list all of the software that is preinstalled in the compute environment.
+* [mls](https://github.com/joyent/node-manta/blob/master/docs/man/mls.md) - Lists directory contents
+* [mput](https://github.com/joyent/node-manta/blob/master/docs/man/mput.md) - Uploads data to an object
+* [mget](https://github.com/joyent/node-manta/blob/master/docs/man/mget.md) - Downloads an object from the service
+* [minfo](https://github.com/joyent/node-manta/blob/master/docs/man/minfo.md) - show HTTP headers for a Manta object
+* [mfind](https://github.com/joyent/node-manta/blob/master/docs/man/mfind.md) - Walks a hierarchy to find names of objects by name, size, or type
+* [mmkdir](https://github.com/joyent/node-manta/blob/master/docs/man/mmkdir.md) - Make directories
+* [mrm](https://github.com/joyent/node-manta/blob/master/docs/man/mrm.md) - Remove objects or directories
+* [mrmdir](https://github.com/joyent/node-manta/blob/master/docs/man/mrmdir.md) - Remove empty directories
+* [msign](https://github.com/joyent/node-manta/blob/master/docs/man/msign.md) - Create a signed URL to a object stored in the service
+* [muntar](https://github.com/joyent/node-manta/blob/master/docs/man/muntar.md) - Create a directory hierarchy from a tar file
+* [mchmod](https://github.com/joyent/node-manta/blob/master/docs/man/mchmod.md) - Change object role tags
+* [mchattr](https://github.com/joyent/node-manta/blob/master/docs/man/mchattr.md) - Change object attributes

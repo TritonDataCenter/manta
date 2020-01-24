@@ -5,28 +5,14 @@
 -->
 
 <!--
-    Copyright 2019 Joyent, Inc.
+    Copyright 2020 Joyent, Inc.
 -->
 
-# Manta: Triton's object storage and converged analytics solution
+# Manta: a scalable, distributed object store
 
-Manta, Triton's object storage and converged analytics solution, is an
-open-source, HTTP-based object store that uses OS containers to enable running
-arbitrary compute on data at rest (i.e., without copying data out of the object
-store).  The intended use-cases are wide-ranging:
-
-* web assets (e.g., images, HTML and CSS files, and so on), with the ability to
-  convert or resize images without copying any data out of Manta
-* backup storage (e.g., tarballs)
-* video storage and transcoding
-* log storage and analysis
-* data warehousing
-* software crash dump storage and analysis
-
-Joyent operates a public-facing production [Manta
-service](https://www.joyent.com/products/manta), but all the pieces required to
-deploy and operate your own Manta are open source.  This repo provides
-documentation for the overall Manta project and pointers to the other
+Manta is an open-source, scalable, HTTP-based object store. All the pieces
+required to deploy and operate your own Manta are open source. This repo
+provides documentation for the overall Manta project and pointers to the other
 repositories that make up a complete Manta deployment.
 
 ## Getting started
@@ -34,26 +20,19 @@ repositories that make up a complete Manta deployment.
 The fastest way to get started with Manta depends on what exactly one
 wishes to do.
 
-* To experiment with Manta, the fastest way is to start playing with [Joyent's
-Manta service](https://www.joyent.com/products/manta); see the [Getting
-Started](https://apidocs.joyent.com/manta/index.html#getting-started) guide in
-the user documentation for details.
-
-* To see a detailed, real example of using Manta, check out [Kartlytics: Applying Big Data Analytics to Mario Kart](http://www.joyent.com/blog/introducing-kartlytics-mario-kart-64-analytics).
+* To use Manta see the [Getting Started](./docs/user-guide/#getting-started)
+  section of the User Guide.
 
 * To learn about installing and operating your own Manta deployment, see the
-[Manta Operator's Guide](https://joyent.github.io/manta/).
+  [Manta Operator Guide](./docs/operator-guide.md).
 
-* To understand Manta's architecture, see
-[Bringing Arbitrary Compute to Authoritative
-Data](http://queue.acm.org/detail.cfm?id=2645649), the
-[ACM Queue](http://queue.acm.org/)
-article on its design and implementation.
+* To understand Manta's architecture, see [Bringing Arbitrary Compute to
+  Authoritative Data](http://queue.acm.org/detail.cfm?id=2645649), the [ACM
+  Queue](http://queue.acm.org/) article on its design and implementation.
 
-* To understand the
-[CAP tradeoffs](http://en.wikipedia.org/wiki/CAP_theorem) in Manta,
-see [Dave Pacheco](https://github.com/davepacheco)'s blog entry on
-[Fault Tolerence in Manta](http://dtrace.org/blogs/dap/2013/07/03/fault-tolerance-in-manta/) -- which, it must be said, received [the highest possible praise](https://twitter.com/eric_brewer/status/352804538769604609).
+* To understand the [CAP tradeoffs](http://en.wikipedia.org/wiki/CAP_theorem) in Manta,
+  see [Fault Tolerence in Manta](http://dtrace.org/blogs/dap/2013/07/03/fault-tolerance-in-manta/) --
+  which received [some notable praise](https://twitter.com/eric_brewer/status/352804538769604609).
 
 * For help with working on Manta and building and testing your changes,
   see the [developer notes](docs/dev-notes.md)
@@ -70,8 +49,6 @@ Community discussion about Manta happens in two main places:
 * In the *#manta* IRC channel on the [Freenode IRC
   network](https://freenode.net/).
 
-You can also follow [@MantaStorage](https://twitter.com/MantaStorage) on
-Twitter for updates.
 
 ## Dependencies
 
@@ -84,9 +61,7 @@ more. Manta primarily uses Triton for initial deployment, service upgrade, and
 service monitoring.
 
 Triton itself depends on [SmartOS](http://smartos.org).  Manta also directly
-depends on several SmartOS features, notably: ZFS pooled storage, ZFS rollback,
-and
-[hyprlofs](https://github.com/joyent/illumos-joyent/blob/master/usr/src/uts/common/fs/hyprlofs/hyprlofs_vfsops.c).
+depends on several SmartOS features, notably ZFS.
 
 
 ## Building and Deploying Manta
@@ -99,8 +74,7 @@ deployment](http://github.com/joyent/sdc-manta) service, which is used
 to bootstrap a Manta installation.
 
 Once you have Triton set up, follow the instructions in the
-[Manta Operator's
-Guide](https://joyent.github.io/manta/)
+[Manta Operator Guide](./docs/operator-guide.md)
 to deploy Manta.  The easiest way to play around with your own Manta
 installation is to first set up a Triton cloud-on-a-laptop (COAL) installation
 in VMware and then follow those instructions to deploy Manta on it.
@@ -112,16 +86,18 @@ own Manta Builds" below.
 ## Repositories
 
 This repository is just a wrapper containing documentation about Manta.  Manta
-is actually made up of several components stored in other repos.
+is made up of several components from many repositoies. This section highlights
+some of the more important ones.
+
+A full list of repositories relevant to Manta is maintained in a [repo manifest
+file](./tools/jr-manifest.json) in this repo. To more conveniently list those
+repos, you can use the [`jr` tool](https://github.com/joyent/joyent-repos#jr).
 
 The front door services respond to requests from the internet at large:
 
-* [muppet](https://github.com/joyent/muppet): haproxy + stud-based SSL
-  terminator and loadbalancer
-* [muskie](https://github.com/joyent/manta-muskie): Node-based API server
+* [muppet](https://github.com/joyent/muppet): haproxy-based loadbalancer
+* [muskie](https://github.com/joyent/manta-muskie): Node.js-based "webapi" server
 * [mahi](https://github.com/joyent/mahi): authentication cache
-* [medusa](https://github.com/joyent/manta-medusa): handles interactive (mlogin)
-  sessions
 
 The metadata tier stores the entire object namespace (not object data) as well
 as information about compute jobs and backend storage system capacity:
@@ -139,21 +115,8 @@ The storage tier is responsible for actually storing bits on disk:
 
 * [mako](https://github.com/joyent/manta-mako): nginx-based server that receives
   PUT/GET requests from Muskie to store object data on disk.
-
-The compute tier (also called [Marlin](https://github.com/joyent/manta-marlin))
-is responsible for the distributed execution of user jobs.  Most of it is
-contained in the Marlin repo, and it consists of:
-
-* jobsupervisor: Node-based service that stores job execution state in moray and
-  coordinates execution across the physical servers
-* marlin agent: Node-based service (a Triton agent) that runs on each physical
-  server and is responsible for executing user jobs on that server
-* lackey: a Node-based service that runs inside each compute zone under the
-  direction of the marlin agent.  The lackey is responsible for actually
-  executing individual user tasks inside compute containers.
-* [wrasse](https://github.com/joyent/manta-wrasse): job archiver and purger,
-  which removes job information from moray after the job completes and saves
-  the lists of inputs, outputs, and errors back to Manta for user reference
+* [minnow](https://github.com/joyent/manta-minnow): a Node-based service that
+  runs inside mako zones to periodically report storage capacity into Moray
 
 There are a number of services not part of the data path that are critical for
 Manta's operation:
@@ -162,33 +125,15 @@ Manta's operation:
   manatee leader election and for group membership) and a Node-based DNS server
   that keeps track of which instances of each service are online at any given
   time
-* [mola](https://github.com/joyent/manta-mola): garbage collection (removing
-  files from storage servers corresponding to objects that have been deleted
-  from the namespace) and audit (verifying that objects in the index tier
-  exist on the storage hosts)
-* [mackerel](https://github.com/joyent/manta-mackerel): metering (computing
-  per-user details about requests made, bandwidth used, storage used, and
-  compute time used)
-* [madtom](https://github.com/joyent/manta-madtom): real-time "is-it-up?"
-  dashboard, showing the status of all services deployed
-* [marlin-dashboard](https://github.com/joyent/manta-marlin-dashboard):
-  real-time dashboard showing detaild status for the compute tier
-* [minnow](https://github.com/joyent/manta-minnow): a Node-based service that
-  runs inside mako zones to periodically report storage capacity into Moray
 
-With the exception of the Marlin agent and lackey, each of the above components
-are *services*, of which there may be multiple *instances* in a single Manta
-deployment.  Except for the last category of non-data-path services, these can
-all be deployed redundantly for availability and additional instances can be
-deployed to increase capacity.
-
-Finally, scripts used to set up these component zones live in the
-[https://github.com/joyent/manta-scripts](manta-scripts) repo.
+Most of the above components are *services*, of which there may be multiple
+*instances* in a single Manta deployment. Except for the last category of
+non-data-path services, these can all be deployed redundantly for availability
+and additional instances can be deployed to increase capacity.
 
 For more details on the architecture, including how these pieces actually fit
 together, see "Architecture Basics" in the
-[Manta Operator's
-Guide](https://joyent.github.io/manta/).
+[Operator Guide](./docs/operator-guide.md).
 
 
 ## Deploying your own Manta Builds
@@ -204,15 +149,14 @@ own builds.  This will also ensure that you're starting from a known-working set
 of builds so that if something goes wrong, you know where to start looking.  To
 do this:
 
-1. Complete the Manta deployment procedure from the [Manta Operator's
-Guide](https://joyent.github.io/manta/).
-1. Build a zone image for whatever zone you want to replace.  See the
+1. Complete the Manta deployment procedure from the operator guide.
+2. Build a zone image for whatever zone you want to replace.  See the
    instructions for building [Triton](https://github.com/joyent/triton)
    zone images.  Manta zones work the same way.  The output of this process
    will be a zone **image**, identified by uuid.  The image is comprised of
    two files: an image manifest (a JSON file) and the image file itself
    (a binary blob).
-1. Import the image into the Triton DataCenter that you're using to deploy Manta.
+3. Import the image into the Triton DataCenter that you're using to deploy Manta.
    (If you've got a multi-datacenter Manta deployment, you'll need to import the
    image into each datacenter separately using this same procedure.)
     1. Copy the image and manifest files to the Triton headnode where the Manta
@@ -220,13 +164,12 @@ Guide](https://joyent.github.io/manta/).
        manifest file is "/var/tmp/my_manifest.json" and the image file is
        "/var/tmp/my_image".  You may want to use the image uuid in the filenames
        instead.
-    1. Import the image using:
+    2. Import the image using:
 
            sdc-imgadm import -m /var/tmp/my_manifest.json -f /var/tmp/my_image
 
-1. Now you can use the normal Manta zone update procedure (from the [Manta
-   Operator's Guide](https://joyent.github.io/manta/).
-   This involves saving the current configuration to a JSON
+4. Now you can use the normal Manta zone update procedure (from the operator
+   guide). This involves saving the current configuration to a JSON
    file using "manta-adm show -sj > config.json", updating the configuration
    file, and then applying the changes with "manta-adm update < config.json".
    When you modify the configuration file, you can use your image's uuid in
@@ -239,20 +182,15 @@ configuration for whatever service you want (using sdc-sapi -- see
 manta-init but before deploying anything.  Note that each subsequent
 "manta-init" will clobber this change, though the SAPI configuration is normally
 only used for the initial deployment anyway.  The other option is to apply the
-fully-manual install procedure from the
-[Manta Operator's
-Guide](https://joyent.github.io/manta/)
-(i.e., instead of
+fully-manual install procedure from the Operator Guide (i.e., instead of
 using manta-deploy-coal or manta-deploy-lab) and use a custom "manta-adm"
 configuration file in the first place.  If this is an important use case, file
 an issue and we can improve this procedure.
 
 The above procedure works to update Manta *zones*, which are most of the
 components above.  The other two kinds of components are the *platform* and
-*agents*.  Both of these procedures are documented in the
-[Manta Operator's
-Guide](https://joyent.github.io/manta/), and they work to deploy custom builds as well as the official Joyent
-builds.
+*agents*.  Both of these procedures are documented in the Operator Guide,
+and they work to deploy custom builds as well as the official Joyent builds.
 
 
 ## Contributing to Manta
@@ -276,9 +214,7 @@ Manta assumes several constraints on the data storage problem:
    to add new servers and deploy software instances to increase the system's
    capacity in terms of number of objects, total data stored, or compute
    capacity.
-1. The system should be general-purpose.  (That doesn't preclude
-   special-purpose interfaces for use-cases like log analysis or video
-   transcoding.)
+1. The system should be general-purpose.
 1. The system should be strongly consistent and highly available.  In terms of
    [CAP](http://en.wikipedia.org/wiki/CAP_theorem), Manta sacrifices
    availability in the face of network partitions.  (The reasoning here is that
@@ -293,7 +229,7 @@ Manta assumes several constraints on the data storage problem:
    attempt to provide a global namespace across regions, since that would imply
    uniformity in performance or fault characteristics.
 
-From these constraints, we define a few design principles:
+From these constraints, we define some design principles:
 
 1. Manta presents an HTTP interface (with REST-based PUT/GET/DELETE operations)
    as the primary way of reading and writing data.  Because there's only one
@@ -305,17 +241,6 @@ From these constraints, we define a few design principles:
    consistency and high availability, since only the metadata tier (i.e., the
    namespace) needs to be strongly consistent, and objects themselves can be
    easily replicated for availability.
-1. Users express computation in terms of shell scripts, which can make use of
-   any programs installed in the default compute environment, as well as any
-   objects stored in Manta.  You can store your own programs in Manta and use
-   those, or you can use tools like curl(1) to fetch a program from the internet
-   and use that.  This approach falls out of the requirement to be a
-   general-purpose system, and imposes a number of other constraints on the
-   implementation (like the use of strong OS-based containers to isolate users).
-1. Users express distributed computation in terms of map and reduce operations.
-   As with Hadoop and other MapReduce-based systems, this allows the system to
-   identify which parts can be parallelized and which parts cannot in order to
-   maximize performance.
 
 It's easy to underestimate the problem of just reliably storing bits on disk.
 It's commonly assumed that the only components that fail are disks, that they
@@ -340,14 +265,7 @@ handle these cases,
   result, when reads from one disk return data that doesn't match the expected
   checksum, it's able to read another copy and fix the original one.
 
-For a more detailed discussion, see the ACM Queue article "Bringing Arbitrary
-Compute to Authoritative Data".
-
 ## Further reading
-
-For background on the problem space and design principles, check out ["Bringing
-Arbitrary Compute to Authoritative
-Data"](http://queue.acm.org/detail.cfm?id=2645649).
 
 For background on the overall design approach, see ["There's Just No Getting
 Around It: You're Building a Distributed
@@ -361,10 +279,3 @@ For information on the latest recommended production hardware, see [Joyent
 Manufacturing Matrix](http://eng.joyent.com/manufacturing/matrix.html) and
 [Joyent Manufacturing Bill of
 Materials](http://eng.joyent.com/manufacturing/bom.html).
-
-Applications and customer stories:
-
-* [Kartlytics: Applying Big Data Analytics to Mario
-  Kart](http://www.joyent.com/blog/introducing-kartlytics-mario-kart-64-analytics)
-* [A Cost-effective Approach to Scaling Event-based Data Collection and
-  Analysis](http://building.wanelo.com/2013/06/28/a-cost-effective-approach-to-scaling-event-based-data-collection-and-analysis.html)
