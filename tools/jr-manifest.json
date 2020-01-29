@@ -366,13 +366,13 @@
             "name": "manta-physusage"
         },
         {
-            "name": "manta-picker",
+            "name": "manta-storinfo",
             "labels": {
                 "release": true,
                 "vm": true,
-                "mg": "manta-picker",
-                "mantaservice": "picker",
-                "image": "mantav2-picker"
+                "mg": "manta-storinfo",
+                "mantaservice": "storinfo",
+                "image": "mantav2-storinfo"
             }
         },
         {
