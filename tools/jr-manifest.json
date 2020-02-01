@@ -201,7 +201,7 @@
             "labels": {
                 "release": true,
                 "vm": true,
-                "mg": "manta-buckets-api",
+                "mg": "buckets-api",
                 "mantaservice": "buckets-api",
                 "image": "mantav2-buckets-api"
             }
@@ -370,7 +370,7 @@
             "labels": {
                 "release": true,
                 "vm": true,
-                "mg": "manta-storinfo",
+                "mg": "storinfo",
                 "mantaservice": "storinfo",
                 "image": "mantav2-storinfo"
             }
@@ -380,7 +380,7 @@
             "labels": {
                 "release": true,
                 "vm": true,
-                "mg": "manta-rebalancer",
+                "mg": "rebalancer",
                 "mantaservice": "rebalancer",
                 "image": "mantav2-rebalancer"
             }
