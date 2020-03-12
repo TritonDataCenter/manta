@@ -5,6 +5,15 @@
 are operating a mantav1 deployment, please see the [Mantav1 Operator
 Guide](https://github.com/joyent/manta/blob/mantav1/docs/operator-guide.md).)*
 
+This operator guide is divided into a few sections:
+
+1. an overview of the [Manta architecture](./architecture.md),
+2. a guide for [deploying a new Manta](./deployment.md), and
+3. [Manta maintenance information](./maintenance.md), such as performing
+   upgrades, using Manta's alarming, metrics and logs.
+
+* * *
+
 Manta is an internet-facing object store. The user interface to Manta is
 essentially:
 
@@ -20,12 +29,3 @@ essentially:
 Users can interact with Manta through the official Node.js CLI; the Node, or
 Java SDKs; curl(1); or any web browser. For more information, see the [Manta
 user guide](../user-guide).
-
-* * *
-
-This operator guide is divided into a few sections:
-
-1. an overview of the [Manta architecture](./architecture.md),
-2. a guide for [deploying a new Manta](./deployment.md), and
-3. [Manta maintenance information](./maintenance.md), such as performing
-   upgrades, using Manta's alarming, metrics and logs.

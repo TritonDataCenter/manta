@@ -1,7 +1,10 @@
 # Manta Operator Maintenance
 
-*([Up to the Manta Operator Guide front page.](../))*
+*([Up to the Manta Operator Guide front page.](./))*
 
+This section describes how an operator can maintain a Manta deployment:
+upgrading components; using Manta's alarming system, "madtom" dashboard, and
+service logs; and some general inspection/debugging tasks.
 
 ## Contents
 

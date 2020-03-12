@@ -1,7 +1,8 @@
 # Manta Deployment
 
-*([Up to the Manta Operator Guide front page.](../))*
+*([Up to the Manta Operator Guide front page.](./))*
 
+This section describes how to plan for and deploy a new Manta.
 
 ## Contents
 
