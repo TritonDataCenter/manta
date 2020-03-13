@@ -19,8 +19,7 @@ all: docs
 # changes those files in-place, so one should do this before commit.
 .PHONY: docs
 docs: | ./node_modules/.bin/doctoc
-	./node_modules/.bin/doctoc --notitle --maxlevel 3 docs/operator-guide.md
-
-.PHONY: docs-regenerate-examples
-docs-regenerate-examples:
-	docs/user-guide/examples/regenerate-all-examples.sh
+	./node_modules/.bin/doctoc --notitle --maxlevel 3 docs/developer-guide/README.md
+	./node_modules/.bin/doctoc --notitle --maxlevel 3 docs/operator-guide/architecture.md
+	./node_modules/.bin/doctoc --notitle --maxlevel 3 docs/operator-guide/deployment.md
+	./node_modules/.bin/doctoc --notitle --maxlevel 3 docs/operator-guide/maintenance.md

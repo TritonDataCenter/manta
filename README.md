@@ -24,7 +24,7 @@ wishes to do.
   section of the User Guide.
 
 * To learn about installing and operating your own Manta deployment, see the
-  [Manta Operator Guide](./docs/operator-guide.md).
+  [Manta Operator Guide](./docs/operator-guide/).
 
 * To understand Manta's architecture, see [Bringing Arbitrary Compute to
   Authoritative Data](http://queue.acm.org/detail.cfm?id=2645649), the [ACM
@@ -52,7 +52,7 @@ Community discussion about Manta happens in two main places:
 
 ## Dependencies
 
-Manta is deployed on top of Joyent's
+Manta is composed of a number of services that deploy on top of Joyent's
 [Triton DataCenter](https://github.com/joyent/triton) platform (just "Triton"
 for short), which is also open-source. Triton provides services for operating
 physical servers (compute nodes), deploying services in containers, monitoring
@@ -66,15 +66,9 @@ depends on several SmartOS features, notably ZFS.
 
 ## Building and Deploying Manta
 
-Manta is built and packaged with Triton DataCenter. Building the raw pieces uses
-the same mechanisms as building the services that are part of Triton. When you
-build a Triton headnode image (which is the end result of the whole Triton build
-process), one of the built-in services you get is a [Manta
-deployment](http://github.com/joyent/sdc-manta) service, which is used
-to bootstrap a Manta installation.
-
-Once you have Triton set up, follow the instructions in the
-[Manta Operator Guide](./docs/operator-guide.md)
+Manta service images are built and packaged using the same mechanisms as
+building the services that are part of Triton. Once you have Triton set up,
+follow the instructions in the [Manta Operator Guide](./docs/operator-guide/)
 to deploy Manta.  The easiest way to play around with your own Manta
 installation is to first set up a Triton cloud-on-a-laptop (COAL) installation
 in VMware and then follow those instructions to deploy Manta on it.
@@ -95,36 +89,48 @@ repos, you can use the [`jr` tool](https://github.com/joyent/joyent-repos#jr).
 
 The front door services respond to requests from the internet at large:
 
-* [muppet](https://github.com/joyent/muppet): haproxy-based loadbalancer
-* [muskie](https://github.com/joyent/manta-muskie): Node.js-based "webapi" server
-* [mahi](https://github.com/joyent/mahi): authentication cache
+* [muppet](https://github.com/joyent/muppet): the haproxy-based "loadbalancer"
+  service
+* [muskie](https://github.com/joyent/manta-muskie): the node.js-based "webapi"
+  service, this is Manta's "Directory API"
+* [buckets-api](https://github.com/joyent/manta-buckets-api): Node.js-based
+  "buckets-api" service, this is Manta's "Buckets API"
 
-The metadata tier stores the entire object namespace (not object data) as well
-as information about compute jobs and backend storage system capacity:
+The metadata tiers for the Directory and Buckets APIs store the entire object
+namespace (not object data) as well as backend storage system capacity:
 
-* [manatee](https://github.com/joyent/manatee): high-availability postgres
-  cluster using synchronous replication and automatic fail-over
+* [manatee](https://github.com/joyent/manatee): the "postgres" service, a
+  high-availability postgres cluster using synchronous replication and automatic
+  fail-over
 * [moray](https://github.com/joyent/moray): Node-based key-value store built on
   top of manatee.  Also responsible for monitoring manatee replication topology
   (i.e., which postgres instance is the master).
 * [electric-moray](https://github.com/joyent/electric-moray): Node-based service
   that provides the same interface as Moray, but which directs requests to one
   or more Moray+Manatee *shards* based on hashing the Moray key.
+* [buckets-mdapi](https://github.com/joyent/manta-buckets-mdapi): a Rust-based
+  API for managing all metadata for the Buckets API
+* [buckets-mdplacement](https://github.com/joyent/manta-buckets-mdplacement): a
+  Rust-based API for handling routing of Buckets API objects to appropriate
+  nodes in the storage tier.
 
 The storage tier is responsible for actually storing bits on disk:
 
-* [mako](https://github.com/joyent/manta-mako): nginx-based server that receives
-  PUT/GET requests from Muskie to store object data on disk.
-* [minnow](https://github.com/joyent/manta-minnow): a Node-based service that
-  runs inside mako zones to periodically report storage capacity into Moray
+* [mako](https://github.com/joyent/manta-mako): the "storage" service, a
+  nginx-based server that receives PUT/GET requests from the front door services
+  to store object data on disk
+* [minnow](https://github.com/joyent/manta-minnow): a Node-based agent that
+  runs inside storage instances to periodically report storage capacity to the
+  metadata tier
 
 There are a number of services not part of the data path that are critical for
-Manta's operation:
+Manta's operation. For example:
 
 * [binder](https://github.com/joyent/binder): hosts both ZooKeeper (used for
   manatee leader election and for group membership) and a Node-based DNS server
   that keeps track of which instances of each service are online at any given
   time
+* [mahi](https://github.com/joyent/mahi): The "authcache" service for handling authn/authz.
 
 Most of the above components are *services*, of which there may be multiple
 *instances* in a single Manta deployment. Except for the last category of
@@ -132,8 +138,8 @@ non-data-path services, these can all be deployed redundantly for availability
 and additional instances can be deployed to increase capacity.
 
 For more details on the architecture, including how these pieces actually fit
-together, see "Architecture Basics" in the
-[Operator Guide](./docs/operator-guide.md).
+together, see the [Architecture](./docs/operator-guide/architecture.md) section
+of the Operator Guide.
 
 
 ## Deploying your own Manta Builds
@@ -199,7 +205,7 @@ To report bugs or request features, you can submit issues to the Manta project
 on Github.  If you're asking for help with Joyent's production Manta service,
 you should contact Joyent support instead.
 
-See the [Contribution Guidelines](CONTRIBUTING.md) for information about
+See the [Contribution Guidelines](./CONTRIBUTING.md) for information about
 contributing changes to the project.
 
 
@@ -210,17 +216,17 @@ Manta assumes several constraints on the data storage problem:
 1. There should be one *canonical* copy of data.  You shouldn't need to copy
    data in order to analyze it, transform it, or serve it publicly over the
    internet.
-1. The system must scale horizontally in every dimension.  It should be possible
+2. The system must scale horizontally in every dimension.  It should be possible
    to add new servers and deploy software instances to increase the system's
    capacity in terms of number of objects, total data stored, or compute
    capacity.
-1. The system should be general-purpose.
-1. The system should be strongly consistent and highly available.  In terms of
+3. The system should be general-purpose.
+4. The system should be strongly consistent and highly available.  In terms of
    [CAP](http://en.wikipedia.org/wiki/CAP_theorem), Manta sacrifices
    availability in the face of network partitions.  (The reasoning here is that
    an AP cache can be built atop a CP system like Manta, but if Manta were AP,
    then it would be impossible for anyone to get CP semantics.)
-1. The system should be transparent about errors and performance.  The public
+5. The system should be transparent about errors and performance.  The public
    API only supports atomic operations, which makes error reporting and
    performance easy to reason about.  (It's hard to say anything about the
    performance of compound operations, and it's hard to report failures in
@@ -235,7 +241,7 @@ From these constraints, we define some design principles:
    as the primary way of reading and writing data.  Because there's only one
    copy of data, and some data needs to be available publicly (e.g., on the
    internet over standard protocols), HTTP is a good choice.
-1. Manta is an *object store*, meaning that it only provides PUT/GET/DELETE for
+2. Manta is an *object store*, meaning that it only provides PUT/GET/DELETE for
    *entire objects*.  You cannot write to the middle of an object or append to
    the end of one.  This constraint makes it possible to guarantee strong
    consistency and high availability, since only the metadata tier (i.e., the
