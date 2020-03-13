@@ -124,7 +124,7 @@ The storage tier is responsible for actually storing bits on disk:
   metadata tier
 
 There are a number of services not part of the data path that are critical for
-Manta's operation. For example,
+Manta's operation. For example:
 
 * [binder](https://github.com/joyent/binder): hosts both ZooKeeper (used for
   manatee leader election and for group membership) and a Node-based DNS server
