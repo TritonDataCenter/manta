@@ -35,7 +35,7 @@ wishes to do.
   which received [some notable praise](https://twitter.com/eric_brewer/status/352804538769604609).
 
 * For help with working on Manta and building and testing your changes,
-  see the [developer notes](docs/dev-notes.md)
+  see the [developer guide](docs/developer-guide)
 
 ## Community
 

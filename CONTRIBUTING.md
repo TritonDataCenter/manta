@@ -23,8 +23,8 @@ If you're making a substantial change, you probably want to contact developers
 with the contribution process, please feel free to contact developers [on the
 mailing list or IRC](README.md#community).
 
-See the (work-in-progress) [developer guide](docs/dev-notes.md) for useful
-information about building and testing the software.
+See the [developer guide](docs/developer-guide) for useful information about
+building and testing the software.
 
 Manta repositories use the same [Joyent Engineering
 Guidelines](https://github.com/joyent/eng/blob/master/docs/index.md) as
