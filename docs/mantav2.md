@@ -4,9 +4,9 @@ Starting November 2019, there will be two separate active versions of Manta:
 
 - "**mantav1**" - a long term support branch of Manta that maintains current
   Manta features.
-- "**mantav2**" - a new major version of Manta that adds (Buckets API) and
-  removes (jobs, snaplinks, MPU, etc.) some major features, and becomes the
-  focus of future Manta development.
+- "**mantav2**" - a new major version of Manta that adds (Buckets API, storage
+  "rebalancer" service) and removes (jobs, snaplinks, MPU, etc.) some major
+  features, and becomes the focus of future Manta development.
 
 At this time, mantav1 is the recommended version for production usage, but
 that is expected to change to mantav2 during 2020.
@@ -28,10 +28,12 @@ Significant changes are:
     - jobs (a.k.a. compute jobs)
     - snaplinks
     - multi-part upload (MPU)
+    - metering data under `/<account>/reports/...`
 - A new "Buckets API" (S3-like) is added. This is the API for which latency
   improvements are being made.
 - A "rebalancer" system is added for storage tier maintenance.
 - The garbage collection (GC) system is improved for larger scale.
+- Improved per-account usage data for operators.
 
 The "master" branch of Manta-related git repos is for mantav2. Mantav1
 development has moved to "mantav1" branches.
@@ -57,17 +59,53 @@ application. If `MANTAV` is `1` or empty, this is a mantav1:
     [root@headnode (mydc1) ~]# sdc-sapi /applications?name=manta | json -H 0.metadata.MANTAV
     1
 
-If `MANTA` is `2`, this is a mantav2:
+If `MANTAV` is `2`, this is a mantav2:
 
     [root@headnode (mydc2) ~]# sdc-sapi /applications?name=manta | json -H 0.metadata.MANTAV
     2
+
+
+## How do I find the Node.js and Java clients for mantav2?
+
+The Node.js and Java clients for mantav2 are still under development. They are
+currently available in a feature branch of their respective git repositories.
+
+#### Node.js client
+
+The Node.js Manta client is developed in the
+[joyent/node-manta](https://github.com/joyent/node-manta) repository.
+
+- mantav1: Currently on the ["master" branch](https://github.com/joyent/node-manta/tree/master/)
+  of joyent/node-manta, and published to npm as
+  ["manta"](https://www.npmjs.com/package/manta) -- i.e. `npm install manta`.
+- mantav2: Currently on the ["buckets" branch](https://github.com/joyent/node-manta/tree/buckets/)
+  of joyent/node-manta. It is not yet published to npm.
+
+*(The intent is to eventually move mantav2 to the "master" branch and publish it
+to npm as "mantav2". Mantav1 dev would move to the "mantav1" branch and continue
+to publish to npm as "manta".)*
+
+
+#### Java client
+
+The Java Manta client is developed in the
+[joyent/java-manta](https://github.com/joyent/java-manta) repository.
+
+- mantav1: Currently on the ["master" branch](https://github.com/joyent/java-manta/tree/master/)
+  of joyent/java-manta. Current release versions are 3.x.
+- mantav2: Currently on the ["buckets-m1" branch](https://github.com/joyent/java-manta/tree/buckets-m1/)
+  of joyent/java-manta.
+
+*(The intent is to eventually move mantav2 to the "master" branch and release it
+as a new "4.x" major version. Mantav1 dev would move to the "3.x" branch and
+continue to release as 3.x versions.)*
 
 
 ## Is mantav1 still supported?
 
 Operation of a Mantav1 per the [mantav1 Operator
 Guide](https://github.com/joyent/manta/blob/mantav1/docs/operator-guide.md)
-continues to work unchanged, other than operators should look for images named
+remains unchanged, other than that operators should look for images named
 `mantav1-$servicename` rather than `manta-$servicename`. For example:
 
 ```
