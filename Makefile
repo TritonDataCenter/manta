@@ -23,3 +23,4 @@ docs: | ./node_modules/.bin/doctoc
 	./node_modules/.bin/doctoc --notitle --maxlevel 3 docs/operator-guide/architecture.md
 	./node_modules/.bin/doctoc --notitle --maxlevel 3 docs/operator-guide/deployment.md
 	./node_modules/.bin/doctoc --notitle --maxlevel 3 docs/operator-guide/maintenance.md
+	./node_modules/.bin/doctoc --notitle --maxlevel 3 docs/operator-guide/mantav2-migration.md
