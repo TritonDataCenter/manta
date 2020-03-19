@@ -98,10 +98,12 @@ not reversible and require an interactive confirmation to proceed. The new manta
 deployment image provides a `mantav2-migrate` tool that will assist with some of
 the subsequent steps.
 
+<!--
 XXX
 ```
 mantav2-migrate status
 ```
+-->
 
 
 <a name="snaplink-cleanup" />
@@ -120,6 +122,8 @@ Snaplink cleanup involves a few stages, some of which are manual. The
 You will re-run that command multiple times, in each of the DCs that are part
 of the Manta region, and follow its instructions.
 
+The following instructions attempt to use **bold** to mark the explicit steps
+that must be run.
 
 ### Step 2.1: Update webapis to V2
 
