@@ -125,6 +125,7 @@ of the Manta region, and follow its instructions.
 The following instructions attempt to use **bold** to mark the explicit steps
 that must be run.
 
+
 ### Step 2.1: Update webapis to V2
 
 Update **every "webapi" service instance to a mantav2-webapi image**. Any image
@@ -151,6 +152,7 @@ to be created.
 
 mantav2-migrate snaplink-cleanup: error: webapi upgrades are required before snaplink-cleanup can proceed
 ```
+
 
 ### Step 2.2: Select the driver DC
 
@@ -210,10 +212,6 @@ You must **do the following for each listed shard**:
     manta-adm show -a | grep ^postgres
     manta-oneach -s postgres 'manatee-adm show'
     ```
-
-- Ensure the replication **"lag" for that async is not too long**. It is
-  imperative that the lag be less than the time since all webapis were
-  updated to V2.
 
 - Determine the datacenter and server holding that instance.
 
