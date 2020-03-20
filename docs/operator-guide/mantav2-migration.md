@@ -214,7 +214,8 @@ Mantav1 supported a feature called "snaplinks" where a new object could be
 quickly created from an existing one by linking to it. These snaplinks must be
 "delinked" -- i.e. changed from being metadata-tier references to a shared
 storage-tier object, to being fully separate objects -- before the new
-garbage-collector and rebalancer services in mantav2 can function.
+garbage-collector and rebalancer services in mantav2 can function. This section
+walks through the process of removing snaplinks.
 
 Snaplink cleanup involves a few stages, some of which are manual. The
 `mantav2-migrate snaplink-cleanup` command is used to coordinate the process.
@@ -226,9 +227,22 @@ of the Manta region, and follow its instructions.
 ### Step 3.1: Update webapis to V2
 
 Update **every "webapi" service instance to a mantav2-webapi image**. Any image
-published after 2019-12-09 will do. Then **run `mantav2-migrate
-snaplink-cleanup` from the headnode global zone of every DC in this Manta
-region**.
+published after 2019-12-09 will do:
+
+```
+# Find and import the latest webapi image.
+updates-imgadm -C $(sdcadm channel get) list name=mantav2-webapi
+latest_webapi_image=$(updates-imgadm -C $(sdcadm channel get) list name=mantav2-webapi -H -o uuid --latest)
+sdc-imgadm import -S https://updates.joyent.com $latest_webapi_image
+
+# Update webapis to that image
+manta-adm show -js >/var/tmp/config.json
+vi /var/tmp/config.json  # update webapi instances
+manta-adm update -y /var/tmp/config.json
+```
+
+Then **run `mantav2-migrate snaplink-cleanup` from the headnode global zone of
+every DC in this Manta region**.
 
 Until webapis are updated, the command will error out something like this:
 
@@ -257,6 +271,9 @@ Select the driver DC. Results from subsequent phases need to be collected
 in one place. Therefore, if this Manta region has multiple DCs, then you
 will be asked to choose one of them on which to coordinate. This is called
 the "driver DC". Any of the DCs in the Manta region will suffice.
+
+If there is only a single DC in the Manta region, then it will automatically be
+set as the "driver DC".
 
 
 <a name="snaplink-discovery"/>
@@ -292,33 +309,31 @@ Repeat the following steps for each missing shard:
     https://github.com/joyent/manta/blob/master/docs/operator-guide/mantav2-migration.md#snaplink-discovery
 
 Missing "*_sherlock.tsv.gz" for the following shards (1 of 1):
-    1.moray
+    1.moray.coalregion.joyent.us
 
 mantav2-migrate snaplink-cleanup: error: sherlock files must be generated and copied to "/var/db/snaplink-cleanup/discovery/" before snaplink cleanup can proceed
 ```
 
 You must **do the following for each listed shard**:
 
-- Find the postgres instance that is currently the async for that shard. (If
-  this is a development Manta with no async, then the sync or primary can be
-  used.) The output from the following generally can help find those
-  instances, assuming there is a postgres instance for each instance in this
-  DC:
+- Find the postgres *VM UUID* (`postgres_vm`) that is currently the async for
+  that shard, and the datacenter in which it resides. (If this is a development
+  Manta with no async, then the sync or primary can be used.) The output from
+  the following commands can help find those instances:
 
     ```
     manta-adm show -a | grep ^postgres
     manta-oneach -s postgres 'manatee-adm show'
     ```
 
-- Determine the datacenter and server holding that instance.
-
 - Copy the "snaplink-sherlock.sh" script to that server's global zone.
 
     ```
-    ssh $datacenter
+    ssh $datacenter   # the datacenter holding the postgres async VM
 
-    server_uuid=...
+    postgres_vm="<the UUID of postgres async VM>"
 
+    server_uuid=$(sdc-vmadm get $postgres_vm | json server_uuid)
     manta0_vm=$(vmadm lookup -1 tags.smartdc_role=manta)
     sdc-oneachnode -n "$server_uuid" -X -d /var/tmp \
         -g "/zones/$manta0_vm/root/opt/smartdc/manta-deployment/tools/snaplink-sherlock.sh"
@@ -333,21 +348,21 @@ You must **do the following for each listed shard**:
 
     cd /var/tmp
     screen
-    bash ./snaplink-sherlock.sh "$postgres_async_vm_uuid"
+    bash ./snaplink-sherlock.sh "$postgres_vm"
     ```
 
-- Copy the created "/var/tmp/{{region}}_{{shard}}_sherlock.tsv.gz" file
+- Copy the created "/var/tmp/{{shard}}_sherlock.tsv.gz" file
   back to **"/var/db/snaplink-cleanup/discovery/" on the driver DC**.
   If this Manta region has multiple DCs, this may be a different DC.
 
-Then **re-run `mantav2-migration snaplink-cleanup` on the driver DC** to
+Then **re-run `mantav2-migrate snaplink-cleanup` on the driver DC** to
 process the sherlock files. At any point you may re-run this command to
 list the remaining shards to work through.
 
 
 ### Step 3.4: Run delinking scripts
 
-After the previous stage, the `mantav2-migration snaplink-cleanup` command
+After the previous stage, the `mantav2-migrate snaplink-cleanup` command
 will generate a number of "delinking" scripts that must be manually run on
 the appropriate manta service instances. With a larger Manta, expect this
 to be a bit labourious.
@@ -408,7 +423,7 @@ You must do the following in order:
 
     Please report any errors in running these scripts.
 
-3.  **Re-run `mantav2-migration snaplink-cleanup` and confirm** the scripts
+3.  **Re-run `mantav2-migrate snaplink-cleanup` and confirm** the scripts
     have successfully been run.
 
 Here is an example run for this stage:
