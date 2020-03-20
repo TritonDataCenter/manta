@@ -63,7 +63,7 @@ migration procedure does not make Manta unavailable at any point.
 ## Step 1: Manta deployment zone
 
 The first step is to update the Manta deployment tooling (i.e. the manta
-deployment zone) to a mantav2 image. Run the following **on the headnode global
+deployment zone) to a mantav2 image. **Run the following on the headnode global
 zone of every datacenter in the Manta region:**
 
 ```
@@ -81,7 +81,7 @@ sdcadm self-update $sdcadm_image
 sdcadm post-setup manta -i $manta_deployment_image
 ```
 
-XXX While in development use:
+**or** (XXX) while in development use the following to get feature branch builds:
 
 ```
 # MANTA-4811 and MANTA-4874
@@ -106,9 +106,101 @@ mantav2-migrate status
 -->
 
 
+## Step 2: Disable old GC
+
+
+### Disabling old jobs-based GC
+
+The jobs-based GC (and other jobs-based tasks such as "audit" and metering)
+in the Manta "ops" zone (aka "mola") are obsolete and can/should be disabled
+if they aren't already. **Disable all "ops" service jobs via the following:**
+
+```
+sapiadm update $(sdc-sapi /services?name=ops | json -Ha uuid) metadata.DISABLE_ALL_JOBS=true
+```
+
+### Deleting obsolete "tombstone" directories
+
+The old GC system used a delayed-delete mechanism where deleted files were
+put in a daily "/manta/tombstone/YYYY-MM-DD" directory on each storage node.
+**Optionally check the disk usage of and remove the obsolete tombstone directories
+by running the following in *every datacenter* in this region:**
+
+```
+manta-oneach -s storage 'du -sh /manta/tombstone'
+
+# Optionally:
+manta-oneach -s storage 'rm -rf /manta/tombstone'
+```
+
+For example, the following shows that very little space (~2kB per storage node)
+is being used by tombstone directories in this datacenter:
+
+```
+[root@headnode (mydc-1) ~]# manta-oneach -s storage 'du -sh /manta/tombstone'
+SERVICE          ZONE     OUTPUT
+storage          ae0096a5 2.0K  /manta/tombstone
+storage          38b50a82 2.0K  /manta/tombstone
+storage          cd798768 2.0K  /manta/tombstone
+storage          ab7c6ef3 2.0K  /manta/tombstone
+storage          12042540 2.0K  /manta/tombstone
+storage          85d4b8c4 2.0K  /manta/tombstone
+```
+
+### Accelerated GC
+
+Some Mantas may have deployed a garbage collection system called
+"Accelerated GC":
+[overview](https://github.com/joyent/manta/blob/mantav1/docs/operator-guide.md#accelerated-garbage-collection),
+[deployment notes](https://github.com/joyent/manta/blob/mantav1/docs/operator-guide.md#deploy-accelerated-garbage-collection-components),
+[operating/configuration notes](https://github.com/joyent/manta/blob/mantav1/docs/operator-guide.md#accelerated-garbage-collection-1),
+[troubleshooting notes](https://github.com/joyent/manta/blob/mantav1/docs/operator-guide.md#troubleshooting-accelerated-garbage-collection)
+
+Work through the following steps to determine if you have Accelerated GC and,
+if so, to flush and disable it:
+
+
+1.  Your Manta has Accelerated GC if you have deployed "garbage-collector"
+    instances:
+
+    ```
+    [root@headnode (mydc-1a) ~]# manta-adm show -a | grep garbage-collector
+    garbage-collector  1 mydc-1a 65ad3602-959e-428d-bdee-f7915702c748
+    garbage-collector  1 mydc-1a 03dae05c-2fbf-47cc-9d39-b57a362c1534
+    garbage-collector  1 mydc-1a 655fe38c-4ec6-425e-bf0b-28166964308e
+    ...
+    ```
+
+    You can also see the accounts for which Accelerated GC is currently
+    effective via:
+
+    ```
+    [root@headnode (mydc-1a) ~]# manta-adm accel-gc accounts
+    ACCOUNT UUID                             LOGIN
+    6da4430d-1f4c-4361-93f1-418c97188de9     bob
+    110e6480-1266-4c66-9ec7-1dd279d34cc5     bigstorprod
+    f1b67c7a-cb1c-4456-9b43-ea636c97036f     martha
+    ```
+
+
+2.  XXX Get flush/disable instructions from JoshW, RobertB, or others.
+    Is this where we talk about the out-of-product "feeders" as well?
+
+3.  ...
+
+
+### XXX open Qs
+
+Qs for Josh and others:
+
+- Are there old GC instruction files we should look into? Should `mako_gc.sh`
+  on the current makos handle those? How should we check?
+- Validate the "Accelerated GC" flush & disable steps above.
+
+
 <a name="snaplink-cleanup" />
 
-## Step 2: Snaplink cleanup
+## Step 3: Snaplink cleanup
 
 Mantav1 supported a feature called "snaplinks" where a new object could be
 quickly created from an existing one by linking to it. These snaplinks must be
@@ -126,7 +218,7 @@ The following instructions attempt to use **bold** to mark the explicit steps
 that must be run.
 
 
-### Step 2.1: Update webapis to V2
+### Step 3.1: Update webapis to V2
 
 Update **every "webapi" service instance to a mantav2-webapi image**. Any image
 published after 2019-12-09 will do. Then **run `mantav2-migrate
@@ -154,7 +246,7 @@ mantav2-migrate snaplink-cleanup: error: webapi upgrades are required before sna
 ```
 
 
-### Step 2.2: Select the driver DC
+### Step 3.2: Select the driver DC
 
 Select the driver DC. Results from subsequent phases need to be collected
 in one place. Therefore, if this Manta region has multiple DCs, then you
@@ -164,7 +256,7 @@ the "driver DC". Any of the DCs in the Manta region will suffice.
 
 <a name="snaplink-discovery"/>
 
-### Step 2.3: Discover every snaplink
+### Step 3.3: Discover every snaplink
 
 Discover every snaplink. This involves working through each Manta index
 shard to find all the snaplinked objects. This is done by:
@@ -248,7 +340,7 @@ process the sherlock files. At any point you may re-run this command to
 list the remaining shards to work through.
 
 
-### Step 2.4: Run delinking scripts
+### Step 3.4: Run delinking scripts
 
 After the previous stage, the `mantav2-migration snaplink-cleanup` command
 will generate a number of "delinking" scripts that must be manually run on
@@ -257,26 +349,62 @@ to be a bit labourious.
 
 You must do the following in order:
 
-1. **Run each "/var/db/snaplink-cleanup/delink/\*\_stordelink.sh" script
-   on the appropriate Manta storage node.** I.e. in the mako zone for
-   that storage\_id. The `storage_id` is included in the filename.
+1.  **Run each "/var/db/snaplink-cleanup/delink/\*\_stordelink.sh" script
+    on the appropriate Manta storage node.** I.e. in the mako zone for
+    that storage\_id. The `storage_id` is included in the filename.
 
-   There will be *zero or one* "stordelink" scripts for each storage node.
+    There will be *zero or one* "stordelink" scripts for each storage node.
+    Each script is idempotent, so can be run again if necessary. Each script
+    will also error out if an attempt is made to run on the wrong storage node:
 
-2. Only after those are all run successfully, **run each
-   "/var/db/snaplink-cleanup/delink/\*\_moraydelink.sh" script
-   on a Manta moray instance for the appropriate shard.** The shard is
-   included in the filename.
+    ```
+    [root@94b3a1ce (storage) /var/tmp]$ bash 1.stor.coalregion.joyent.us_stordelink.sh
+    Writing xtrace output to: /var/tmp/stordelink.20200320T213234.xtrace.log
+    1.stor.coalregion.joyent.us_stordelink.sh: fatal error: this stordelink script must run on '1.stor.coalregion.joyent.us': this is '3.stor.coalregion.joyent.us'
+    ```
 
-   It is important to complete step #1 before running the "moraydelink"
-   scripts, otherwise metadata will be updated to point to object ids
-   for which no storage file exists.
+    A successful run looks like this:
 
-   There will be one "moraydelink" script for each index moray shard
-   (`INDEX_MORAY_SHARDS` in Manta metadata).
+    ```
+    [root@94b3a1ce (storage) /var/tmp]$ bash 3.stor.coalregion.joyent.us_stordelink.sh
+    Writing xtrace output to: /var/tmp/stordelink.20200320T213250.xtrace.log
+    Completed stordelink successfully.
+    ```
 
-3. **Re-run `mantav2-migration snaplink-cleanup` and confirm** the scripts
-   have successfully been run.
+    Please report any errors in running these scripts.
+
+2.  Only after those are all run successfully, **run each
+    "/var/db/snaplink-cleanup/delink/\*\_moraydelink.sh" script
+    on a Manta moray instance for the appropriate shard.** The shard is
+    included in the filename.
+
+    It is important to complete step #1 before running the "moraydelink"
+    scripts, otherwise metadata will be updated to point to object ids
+    for which no storage file exists.
+
+    There will be one "moraydelink" script for each index moray shard
+    (`INDEX_MORAY_SHARDS` in Manta metadata). Each script is idempotent, so can
+    be run again if necessary. Each script will also error out if an attempt is
+    made to run on the wrong shard node:
+
+    ```
+    [root@01f043b4 (moray) /var/tmp]$ bash 1.moray.coalregion.joyent.us_moraydelink.sh
+    Writing xtrace output to: /var/tmp/moraydelink.20200320T211337.xtrace.log
+    1.moray.coalregion.joyent.us_moraydelink.sh: fatal error: this moraydelink script must run on a moray for shard '1.moray.coalregion.joyent.us': this is '1.moray.coalregion.joyent.us'
+    ```
+
+    A successful run looks like this:
+
+    ```
+    [root@01f043b4 (moray) /var/tmp]$ bash 1.moray.coalregion.joyent.us_moraydelink.sh
+    Writing xtrace output to: /var/tmp/moraydelink.20200320T214010.xtrace.log
+    Completed moraydelink successfully.
+    ```
+
+    Please report any errors in running these scripts.
+
+3.  **Re-run `mantav2-migration snaplink-cleanup` and confirm** the scripts
+    have successfully been run.
 
 Here is an example run for this stage:
 
@@ -296,7 +424,7 @@ from the previous phase. In this phase, you must:
 1. Run each "*_stordelink.sh" script on the appropriate storage
    node to create a new object for each snaplink. There are 3 to run:
 
-        # {region}_{storage_id}_stordelink.sh
+        # {storage_id}_stordelink.sh
         ls /var/db/snaplink-cleanup/delink/*_stordelink.sh
 
    Use the following to help locate each storage node:
@@ -307,7 +435,7 @@ from the previous phase. In this phase, you must:
    script on a moray zone for the appropriate shard. There is
    one script for each Manta index shard (1):
 
-        # {region}_{shard}_moraydelink.sh
+        # {shard}_moraydelink.sh
         ls /var/db/snaplink-cleanup/delink/*_moraydelink.sh
 
    Use the following to help locate a moray for each shard:
@@ -323,109 +451,106 @@ to lose data.
 Enter "delinked" when all delink scripts have been successfully run:
 ```
 
+
 After confirming, `mantav2-migrate snaplink-cleanup` will remove the
-`SNAPLINK_CLEANUP_REQUIRED` metadatum to indicate that snaplink cleanup
-is complete!
+`SNAPLINK_CLEANUP_REQUIRED` metadatum to indicate that all snaplinks have been
+removed!
 
 ```
-XXX
+[root@headnode (mydc) ~]# mantav2-migrate snaplink-cleanup
+...
+
+Enter "delinked" when all delink scripts have been successfully run: delinked
+Removing "SNAPLINK_CLEANUP_REQUIRED" metadatum.
+All snaplinks have been removed!
 ```
 
 However, there are a couple more steps.
 
 
-### Step 2.5: Update webapi configs and restart.
+### Step 3.5: Update webapi configs and restart
 
-Update webapi configs and restart.
+Now that the `SNAPLINK_CLEANUP_REQUIRED` config var has been removed, all
+webapi instances need to be poked to get this new config. You must **ensure
+every webapi instance restarts with updated config**.
+
+A blunt process to do this is to run the following in every Manta DC in the
+region:
+
+```
+manta-oneach -s webapi 'svcadm disable -s config-agent && svcadm enable -s config-agent && svcadm restart svc:/manta/application/muskie:muskie-*'
+```
+
+However, in a larger Manta with many webapi instances, you may want to
+space those out.
+
+
+### Step 3.6: Tidy up "sherlock" leftovers from stage 3
+
+Back in stage 3, the "snaplink-sherlock.sh" script runs left some data
+(VMs and snapshots) that should be cleaned up.
+
+1.  **Run the following on the headnode global zone of every DC in this Manta
+    region** to remove the "snaplink-sherlock-*" VMs:
+
+    ```
+    # First verify what will be removed:
+    sdc-oneachnode -a 'vmadm list alias=~^snaplink-sherlock- owner_uuid=00000000-0000-0000-0000-000000000000'
+
+    # Then remove those VMs:
+    sdc-oneachnode -a 'vmadm lookup alias=~^snaplink-sherlock- owner_uuid=00000000-0000-0000-0000-000000000000 | while read uuid; do echo "removing snaplink-sherlock VM $uuid"; vmadm delete $uuid; done'
+    ```
+
+2.  **Run the following on the headnode global zone of every DC in this Manta
+    region** to remove the "manatee@sherlock-*" ZFS snapshots:
+
+    ```
+    # First verify what will be removed:
+    sdc-oneachnode -a "zfs list -t snapshot | grep manatee@sherlock- | awk '{print \$1}'"
+
+    # Then remove those snapshots:
+    sdc-oneachnode -a "zfs list -t snapshot | grep manatee@sherlock- | awk '{print \$1}' | xargs -n1 zfs destroy -v"
+    ```
+
+
+An example run looks like this:
+
+```
+[root@headnode (mydc) /var/tmp]# sdc-oneachnode -a 'vmadm lookup alias=~^snaplink-sherlock- owner_uuid=00000000-0000-0000-0000-000000000000 | while read uuid; do echo "removing snaplink-sherlock VM $uuid"; vmadm delete $uuid; done'
+=== Output from 564d4042-6b0c-8ab9-ae54-c445386f951c (headnode):
+removing snaplink-sherlock VM 19f12a13-d124-4255-9258-1f2f51138f0c
+removing snaplink-sherlock VM 3a104161-d2cc-43e6-aeb4-462154aa7406
+removing snaplink-sherlock VM 5e9e3a2a-efe6-4dbd-8c21-1bbdbf5c72d2
+removing snaplink-sherlock VM 61a455fd-68a1-4b21-9676-38b191efca86
+removing snaplink-sherlock VM 0364e94d-e831-430e-9393-96f85bd36702
+
+[root@headnode (mydc) /var/tmp]#     sdc-oneachnode -a "zfs list -t snapshot | grep manatee@sherlock- | awk '{print \$1}' | xargs -n1 zfs destroy -v"
+=== Output from 564d4042-6b0c-8ab9-ae54-c445386f951c (headnode):
+will destroy zones/f8bd09a5-769e-4dd4-b53d-ddc3a56c8ae6/data/manatee@sherlock-24879
+will reclaim 267K
+will destroy zones/f8bd09a5-769e-4dd4-b53d-ddc3a56c8ae6/data/manatee@sherlock-39245
+will reclaim 248K
+will destroy zones/f8bd09a5-769e-4dd4-b53d-ddc3a56c8ae6/data/manatee@sherlock-40255
+will reclaim 252K
+will destroy zones/f8bd09a5-769e-4dd4-b53d-ddc3a56c8ae6/data/manatee@sherlock-41606
+will reclaim 256K
+will destroy zones/f8bd09a5-769e-4dd4-b53d-ddc3a56c8ae6/data/manatee@sherlock-42555
+will reclaim 257K
+```
+
+
+## Step 4: GCv2
 
 XXX
 
-XXX what about rebal? Rebal will kill USR1 to reload config automatically.
-
-    Correct the SNAPLINK_CLEANUP_REQUIRED var name?
-    Fix this.
-```
-$ rg SNAPLINK
-manager/src/config.rs
-494:            .insert_bool("SNAPLINKS_CLEANUP_REQUIRED", true)
-613:        // Change SNAPLINKS_CLEANUP_REQUIRED to false
-616:            .insert_bool("SNAPLINKS_CLEANUP_REQUIRED", false)
-
-sapi_manifests/rebalancer/template
-3:    {{#SNAPLINKS_CLEANUP_REQUIRED}}
-5:    {{/SNAPLINKS_CLEANUP_REQUIRED}}
-```
-
-
-### Step 2.6: Tidy up "sherlock" leftovers from stage 3.
-
-
-Sherlock cleanup:
-
-```
-[root@headnode (coal) /var/tmp]# vmadm list alias=~^snaplink-sherlock- owner_uuid=00000000-0000-0000-0000-000000000000
-UUID                                  TYPE  RAM      STATE             ALIAS
-19f12a13-d124-4255-9258-1f2f51138f0c  OS    2048     stopped           snaplink-sherlock-f8bd09a5
-
-[root@headnode (coal) /var/tmp]# zfs list -t snapshot | grep manatee@sherlock
-zones/f8bd09a5-769e-4dd4-b53d-ddc3a56c8ae6/data/manatee@sherlock-83626        5.80M      -  22.1M  -
-zones/f8bd09a5-769e-4dd4-b53d-ddc3a56c8ae6/data/manatee@sherlock-84693         248K      -  22.2M  -
-zones/f8bd09a5-769e-4dd4-b53d-ddc3a56c8ae6/data/manatee@sherlock-24879         267K      -  89.5M  -
-```
-
-    XXX START HERE
-
-
-
-
-XXX trent notes
-
-```
-svcadm -z 53b4478c-2626-4ab7-9eb3-5221cd508bad disable svc:/manta/application/muskie:muskie-8081
-svcadm -z 53b4478c-2626-4ab7-9eb3-5221cd508bad enable svc:/manta/application/muskie:muskie-8081
-
-
-sdc-sapi /applications/ce061150-2f08-407d-8744-1b8996cf07c4 | json metadata.SNAPLINK_CLEANUP_PROGRESS -H | json
-sdc-sapi /applications/ce061150-2f08-407d-8744-1b8996cf07c4 | json metadata.SNAPLINK_CLEANUP_REQUIRED -H
-
-echo '{"metadata": {"SNAPLINK_CLEANUP_PROGRESS": "{\"infoFromDc\":{\"coal\":{\"webapiAtV2\":true}},\"driverDc\":\"coal\"}"}}' | sapiadm update ce061150-2f08-407d-8744-1b8996cf07c4
-
-echo '{"metadata": {"SNAPLINK_CLEANUP_PROGRESS": "{\"infoFromDc\":{\"coal\":{\"webapiAtV2\":true}},\"driverDc\":\"coal\"}"}}' | sapiadm update ce061150-2f08-407d-8744-1b8996cf07c4
-
-echo '{"action": "delete", "metadata": {"SNAPLINK_CLEANUP_PROGRESS": null}}' | sapiadm update ce061150-2f08-407d-8744-1b8996cf07c4
-
-# quick sherlock run
-cd /var/tmp
-manta0_vm=$(vmadm lookup -1 tags.smartdc_role=manta)
-bash /zones/$manta0_vm/root/opt/smartdc/manta-deployment/tools/snaplink-sherlock.sh  f8bd09a5-769e-4dd4-b53d-ddc3a56c8ae6
-
-# quick delink planner
-gzcat <dumpFile.gz> | ./snaplink-kill-planner.js <shardId>
-
-
-    [root@S12612524404885 (nightly-1) /var/tmp/joshw]# gzcat 1.moray.manta_dump.gz | ./snaplink-kill-planner.js 1.moray
-    Writing files to: ./1.moray.20191217T180922267Z/
-    Writing ./1.moray.20191217T180922267Z/1.moray.sh
-    Writing ./1.moray.20191217T180922267Z/3.stor.nightly.joyent.us.sh
-    Writing ./1.moray.20191217T180922267Z/1.stor.nightly.joyent.us.sh
-    Writing ./1.moray.20191217T180922267Z/2.stor.nightly.joyent.us.sh
-    Lines: 8, mdata Updates: 8
-    [root@S12612524404885 (nightly-1) /var/tmp/joshw]
-```
-
-
-## Step 3: GCv2
+## Step 5: Recommended service updates
 
 XXX
 
-## Step 4: Recommended service updates
+## Step 6: Optional service updates
 
 XXX
 
-## Step 5: Optional service updates
-
-XXX
-
-## Step 6: Additional clean up
+## Step 7: Additional clean up
 
 XXX
