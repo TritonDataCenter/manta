@@ -64,6 +64,9 @@ Specific steps will be provided later in this document.
 Other than the usual possible brief downtimes for service upgrades, this
 migration procedure does not make Manta unavailable at any point.
 
+The following instructions use **bold** to indicate the explicit steps that must
+be run.
+
 
 ## Step 1: Manta deployment zone
 
@@ -218,9 +221,6 @@ Snaplink cleanup involves a few stages, some of which are manual. The
 (It stores cross-DC progress in the `SNAPLINK_CLEANUP_PROGRESS` SAPI metadatum.)
 You will re-run that command multiple times, in each of the DCs that are part
 of the Manta region, and follow its instructions.
-
-The following instructions attempt to use **bold** to mark the explicit steps
-that must be run.
 
 
 ### Step 3.1: Update webapis to V2
