@@ -281,16 +281,10 @@ set as the "driver DC".
 ### Step 3.3: Discover every snaplink
 
 Discover every snaplink. This involves working through each Manta index
-shard to find all the snaplinked objects. This is done by:
-
-- manually running a "snaplink-sherlock.sh" script against the async
-  postgres for each shard,
-- copying the generated "{region}_{shard}_sherlock.tsv.gz" file back to a
-  common directory on the driver DC, then
-- re-running `mantav2-migrate snaplink-cleanup` to process those files.
-
-Until those "sherlock" files are obtained, the command will error out
-something like this:
+shard to find all the snaplinked objects. This is done by manually running a
+"snaplink-sherlock.sh" script against the postgres async VM for each shard,
+and then copying back that script's output file. Until those "sherlock" files
+are obtained, the command will error out something like this:
 
 ```
 [root@headnode (mydc) ~]# mantav2-migrate snaplink-cleanup
@@ -302,7 +296,7 @@ Driver DC: mydc (this one)
 
 In this phase, you must run the "snaplink-sherlock.sh" tool against
 the async postgres for each Manta index shard. That will generate a
-"myregion_{shard}_sherlock.tsv.gz" file that must be copied back
+"{shard}_sherlock.tsv.gz" file that must be copied back
 to "/var/db/snaplink-cleanup/discovery/" on this headnode.
 
 Repeat the following steps for each missing shard:
@@ -322,8 +316,8 @@ You must **do the following for each listed shard**:
   the following commands can help find those instances:
 
     ```
-    manta-adm show -a | grep ^postgres
-    manta-oneach -s postgres 'manatee-adm show'
+    manta-oneach -s postgres 'manatee-adm show'   # find the async
+    manta-adm show -a | grep ^postgres            # find which DC it is in
     ```
 
 - Copy the "snaplink-sherlock.sh" script to that server's global zone.
@@ -344,12 +338,16 @@ You must **do the following for each listed shard**:
   this can take a long time to run.**
 
     ```
-    ssh root@$server_ip
+    manta-login -G $postgres_vm    # or 'ssh root@$server_ip'
 
     cd /var/tmp
     screen
     bash ./snaplink-sherlock.sh "$postgres_vm"
     ```
+
+  See [this
+  gist](https://gist.github.com/trentm/05611024c0c825cb083a475e3b60aab4) for an
+  example run of snaplink-sherlock.sh.
 
 - Copy the created "/var/tmp/{{shard}}_sherlock.tsv.gz" file
   back to **"/var/db/snaplink-cleanup/discovery/" on the driver DC**.
@@ -559,9 +557,30 @@ will reclaim 257K
 ```
 
 
-## Step 4: GCv2
+## Step 4: Deploy GCv2
 
-XXX
+The new garbage-collector system should be deployed.
+
+1.  Follow [the GC deployment
+    steps](https://github.com/joyent/manta-garbage-collector/tree/master/docs#deploying-the-garbage-collector).
+
+2.  Update all "storage" service instances to a recent (2020-03-19 or later) "mantav2-storage" image.
+
+    A direct way to do this is as follows. A production Manta operator may
+    prefer to space out these storage node updates.
+
+    ```
+    # Find and import the latest storage image.
+    updates-imgadm -C $(sdcadm channel get) list name=mantav2-storage
+    latest_storage_image=$(updates-imgadm -C $(sdcadm channel get) list name=mantav2-storage -H -o uuid --latest)
+    sdc-imgadm import -S https://updates.joyent.com $latest_storage_image
+
+    # Update storages to that image
+    manta-adm show -js >/var/tmp/config.json
+    vi /var/tmp/config.json  # update storage instances
+    manta-adm update -y /var/tmp/config.json
+    ```
+
 
 ## Step 5: Recommended service updates
 
