@@ -360,7 +360,7 @@ are three common patterns:
   [bunyan](https://github.com/trentm/node-bunyan) format, though startup scripts
   tend to log with bash(1) xtrace output).
 * Services log to a service-specific log file in bunyan format (e.g.,
-  /var/log/muskie.log).
+  `/var/log/$service.log`).
 * Services log to an application-specific log file (e.g., haproxy, postgres).
 
 Most custom services use the bunyan format.  The "bunyan" tool is installed in
