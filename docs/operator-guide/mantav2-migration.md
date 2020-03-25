@@ -26,7 +26,7 @@ description of mantav2.
   - [Step 3.4: Run delinking scripts](#step-34-run-delinking-scripts)
   - [Step 3.5: Update webapi configs and restart](#step-35-update-webapi-configs-and-restart)
   - [Step 3.6: Tidy up "sherlock" leftovers from stage 3](#step-36-tidy-up-sherlock-leftovers-from-stage-3)
-- [Step 4: GCv2](#step-4-gcv2)
+- [Step 4: Deploy GCv2](#step-4-deploy-gcv2)
 - [Step 5: Recommended service updates](#step-5-recommended-service-updates)
 - [Step 6: Optional service updates](#step-6-optional-service-updates)
 - [Step 7: Additional clean up](#step-7-additional-clean-up)
