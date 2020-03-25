@@ -19,6 +19,8 @@ This section describes how to plan for and deploy a new Manta.
   - [Example three-datacenter configuration](#example-three-datacenter-configuration)
   - [Other configurations](#other-configurations)
 - [Deploying Manta](#deploying-manta)
+  - [A note on channel support](#a-note-on-channel-support)
+  - [Step by step instructions](#step-by-step-instructions)
   - [Post-Deployment Steps](#post-deployment-steps)
     - [Prerequisites](#prerequisites)
     - [Set up a Manta Account](#set-up-a-manta-account)
@@ -228,6 +230,17 @@ between all pairs of datacenters).
 Before you get started for anything other than a COAL or lab deployment, be
 sure to read and fully understand the section on "Planning a Manta deployment"
 above.
+
+## A note on channel support
+
+The two main commands used to deploy and maintain Manta, `manta-init` and
+`manta-adm` operate on software delivered as Triton images. These images are
+retrieved from `https://updates.joyent.com` by default. Both `manta-init` and
+`manta-adm` are "channel aware", taking `-C` options to override the Triton
+image channel to download images from. The default channel for a Manta
+deployment can be set using `sdcadm channel set ...` within a given datacenter.
+
+## Step by step instructions
 
 These general instructions should work for anything from COAL to a
 multi-DC, multi-compute-node deployment.  The general process is:
