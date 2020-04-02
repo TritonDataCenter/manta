@@ -173,7 +173,8 @@ if so, to flush and disable it:
     instances:
 
     ```
-    [root@headnode (mydc-1a) ~]# manta-adm show -a | grep garbage-collector
+    [root@headnode (mydc-1a) ~]# manta-adm show -a garbage-collector
+    SERVICE          SH DATACENTER ZONENAME
     garbage-collector  1 mydc-1a 65ad3602-959e-428d-bdee-f7915702c748
     garbage-collector  1 mydc-1a 03dae05c-2fbf-47cc-9d39-b57a362c1534
     garbage-collector  1 mydc-1a 655fe38c-4ec6-425e-bf0b-28166964308e
@@ -354,7 +355,7 @@ You must **do the following for each listed shard**:
 
     ```
     manta-oneach -s postgres 'manatee-adm show'   # find the async
-    manta-adm show -a | grep ^postgres            # find which DC it is in
+    manta-adm show -a ^postgres                   # find which DC it is in
     ```
 
 - Copy the "snaplink-sherlock.sh" script to that server's global zone.
@@ -484,7 +485,7 @@ from the previous phase. In this phase, you must:
 
    Use the following to help locate each storage node:
 
-        manta-adm show -a -o service,storage_id,datacenter,zonename,gz_host,gz_admin_ip | grep ^storage
+        manta-adm show -a -o service,storage_id,datacenter,zonename,gz_host,gz_admin_ip storage
 
 2. **Only after** these have all been run, run each "*_moraydelink.sh"
    script on a moray zone for the appropriate shard. There is
@@ -495,7 +496,7 @@ from the previous phase. In this phase, you must:
 
    Use the following to help locate a moray for each shard:
 
-        manta-adm show -o service,shard,zonename,gz_host,gz_admin_ip | grep ^moray
+        manta-adm show -o service,shard,zonename,gz_host,gz_admin_ip moray
 
 When you are sure you have run all these scripts, then answer
 the following to proceed. *WARNING* Be sure you have run all
