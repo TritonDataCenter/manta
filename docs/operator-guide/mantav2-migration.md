@@ -29,9 +29,10 @@ description of mantav2.
   - [Step 3.7: Tidy up "sherlock" leftovers from step 3.3](#step-37-tidy-up-sherlock-leftovers-from-step-33)
   - [Step 3.8: Archive the snaplink-cleanup files](#step-38-archive-the-snaplink-cleanup-files)
 - [Step 4: Deploy GCv2](#step-4-deploy-gcv2)
-- [Step 5: Recommended service updates](#step-5-recommended-service-updates)
-- [Step 6: Optional service updates](#step-6-optional-service-updates)
-- [Step 7: Additional clean up](#step-7-additional-clean-up)
+- [Step 5: Remove obsolete services and instances](#step-5-remove-obsolete-services-and-instances)
+- [Step 6: Recommended service updates](#step-6-recommended-service-updates)
+- [Step 7: Optional service updates](#step-7-optional-service-updates)
+- [Step 8: Additional clean up](#step-8-additional-clean-up)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -658,15 +659,52 @@ The new garbage-collector system should be deployed.
     manta-adm update /var/tmp/config.json
     ```
 
+## Step 5: Remove obsolete services and instances
 
-## Step 5: Recommended service updates
+There are a number of Manta services that are obsoleted by mantav2 and can
+(and should) be removed at this time. (Note: Remove of these services also
+works before any of the above mantav2 migration steps, if they is easier.)
 
-XXX
+They services (and their instances) to remove are:
 
-## Step 6: Optional service updates
+- jobpuller
+- jobsupervisor
+- marlin-dashboard
+- medusa
+- marlin
 
-XXX
 
-## Step 7: Additional clean up
+XXX: Does ops/sre/angela have canned details for removal of these. I'm fine
+describing for the VM services, but for marlin-agents I'm less sure.
 
-XXX
+
+## Step 6: Recommended service updates
+
+- It is recommended that all current services be updated to the latest
+  "mantav2-\*" image (the "webapi" and "storage" services have already been
+  done above).
+- The "storinfo" service should be deployed.
+  (TODO: The operator guide, or here, should provide details for sizing/scaling
+  the storinfo service.)
+
+
+## Step 7: Optional service updates
+
+At this point the services for the new "Rebalancer" system and the "Buckets API"
+can be deployed.
+
+(TODO: The operator guide and/or here should provide details for deploying
+those.)
+
+
+## Step 8: Additional clean up
+
+There remain a few things that can be cleaned out of the system.
+They are:
+
+- Clean out the old GC-related `manta_delete_log` (`MANTA_DELETE_LOG_CLEANUP_REQUIRED`).
+- Clean out obsolete reports files under `/:login/reports/' (`REPORTS_CLEANUP_REQUIRED`).
+- Clean out archived jobs files under `/:login/jobs/` (`ARCHIVED_JOBS_CLEANUP_REQUIRED`).
+
+However, details on how to clean those up are not yet ready (TODO). None of
+this data causes any harm to the operation of mantav2.
