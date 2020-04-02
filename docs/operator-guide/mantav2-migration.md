@@ -27,6 +27,7 @@ description of mantav2.
   - [Step 3.5: Remove the obsolete ACCOUNTS_SNAPLINKS_DISABLED metadatum](#step-35-remove-the-obsolete-accounts_snaplinks_disabled-metadatum)
   - [Step 3.6: Update webapi configs and restart](#step-36-update-webapi-configs-and-restart)
   - [Step 3.7: Tidy up "sherlock" leftovers from stage 3](#step-37-tidy-up-sherlock-leftovers-from-stage-3)
+  - [Step 3.8: Archive the snaplink-cleanup files](#step-38-archive-the-snaplink-cleanup-files)
 - [Step 4: Deploy GCv2](#step-4-deploy-gcv2)
 - [Step 5: Recommended service updates](#step-5-recommended-service-updates)
 - [Step 6: Optional service updates](#step-6-optional-service-updates)
@@ -276,7 +277,7 @@ sdc-imgadm import -S https://updates.joyent.com $latest_webapi_image
 # Update webapis to that image
 manta-adm show -js >/var/tmp/config.json
 vi /var/tmp/config.json  # update webapi instances
-manta-adm update -y /var/tmp/config.json
+manta-adm update /var/tmp/config.json
 ```
 
 Then **run `mantav2-migrate snaplink-cleanup` from the headnode global zone of
@@ -355,7 +356,7 @@ You must **do the following for each listed shard**:
 
     ```
     manta-oneach -s postgres 'manatee-adm show'   # find the async
-    manta-adm show -a ^postgres                   # find which DC it is in
+    manta-adm show -a postgres                    # find which DC it is in
     ```
 
 - Copy the "snaplink-sherlock.sh" script to that server's global zone.
@@ -610,6 +611,20 @@ will reclaim 257K
 ```
 
 
+### Step 3.8: Archive the snaplink-cleanup files
+
+It is probably a good idea to archive the snaplink-cleanup files for record
+keeping. For example, run this on the driver DC:
+
+```
+(cd /var/db && tar czf /var/tmp/snaplink-cleanup-$(bash /lib/sdc/config.sh -json | json region_name).tgz snaplink-cleanup)
+ls -l /var/tmp/snaplink-cleanup*.tgz
+```
+
+And then attach archive that tarball somewhere (perhaps attaching it to your
+process ticket tracking snaplink removal, if small enough).
+
+
 ## Step 4: Deploy GCv2
 
 The new garbage-collector system should be deployed.
@@ -631,7 +646,7 @@ The new garbage-collector system should be deployed.
     # Update storages to that image
     manta-adm show -js >/var/tmp/config.json
     vi /var/tmp/config.json  # update storage instances
-    manta-adm update -y /var/tmp/config.json
+    manta-adm update /var/tmp/config.json
     ```
 
 
