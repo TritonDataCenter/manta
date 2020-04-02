@@ -108,13 +108,6 @@ not reversible and require an interactive confirmation to proceed. The new manta
 deployment image provides a `mantav2-migrate` tool that will assist with some of
 the subsequent steps.
 
-<!--
-XXX
-```
-mantav2-migrate status
-```
--->
-
 
 ## Step 2: Disable old GC
 
@@ -501,9 +494,10 @@ from the previous phase. In this phase, you must:
 
 When you are sure you have run all these scripts, then answer
 the following to proceed. *WARNING* Be sure you have run all
-these scripts successfully, otherwise lingering snaplinks in the
-system can cause the garbage-collector and rebalancer systems
-to lose data.
+these scripts successfully. If not, any lingering object that
+has multiple links will have the underlying files removed
+when the first link is deleted, which is data loss for the
+remaining links.
 
 Enter "delinked" when all delink scripts have been successfully run:
 ```
