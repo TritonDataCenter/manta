@@ -26,7 +26,7 @@ description of mantav2.
   - [Step 3.4: Run delinking scripts](#step-34-run-delinking-scripts)
   - [Step 3.5: Remove the obsolete ACCOUNTS_SNAPLINKS_DISABLED metadatum](#step-35-remove-the-obsolete-accounts_snaplinks_disabled-metadatum)
   - [Step 3.6: Update webapi configs and restart](#step-36-update-webapi-configs-and-restart)
-  - [Step 3.7: Tidy up "sherlock" leftovers from stage 3](#step-37-tidy-up-sherlock-leftovers-from-stage-3)
+  - [Step 3.7: Tidy up "sherlock" leftovers from step 3.3](#step-37-tidy-up-sherlock-leftovers-from-step-33)
   - [Step 3.8: Archive the snaplink-cleanup files](#step-38-archive-the-snaplink-cleanup-files)
 - [Step 4: Deploy GCv2](#step-4-deploy-gcv2)
 - [Step 5: Recommended service updates](#step-5-recommended-service-updates)
@@ -259,22 +259,37 @@ of the Manta region, and follow its instructions.
 ### Step 3.1: Update webapis to V2
 
 Update **every "webapi" service instance to a mantav2-webapi image**. Any image
-published after 2019-12-09 will do:
+published after 2019-12-09 will do.
 
-```
-# Find and import the latest webapi image.
-updates-imgadm -C $(sdcadm channel get) list name=mantav2-webapi
-latest_webapi_image=$(updates-imgadm -C $(sdcadm channel get) list name=mantav2-webapi -H -o uuid --latest)
-sdc-imgadm import -S https://updates.joyent.com $latest_webapi_image
+- First set the "WEBAPI_USE_PICKER" metadatum on the "webapi" service to
+  have the new webapi instances not yet use the new "storinfo" service.
+  (See [MANTA-5004](https://smartos.org/bugview/MANTA-5004) for details.)
 
-# Update webapis to that image
-manta-adm show -js >/var/tmp/config.json
-vi /var/tmp/config.json  # update webapi instances
-manta-adm update /var/tmp/config.json
-```
+    ```
+    webapi_svc=$(sdc-sapi "/services?name=webapi&include_master=true" | json -H 0.uuid)
+    echo '{"metadata": {"WEBAPI_USE_PICKER": true}}' | sapiadm update "$webapi_svc"
+    ```
 
-Then **run `mantav2-migrate snaplink-cleanup` from the headnode global zone of
-every DC in this Manta region**.
+- Find and import the latest webapi image:
+
+    ```
+    # Find and import the latest webapi image.
+    updates-imgadm -C $(sdcadm channel get) list name=mantav2-webapi
+    latest_webapi_image=$(updates-imgadm -C $(sdcadm channel get) list name=mantav2-webapi -H -o uuid --latest)
+    sdc-imgadm import -S https://updates.joyent.com $latest_webapi_image
+    ```
+
+- Update webapis to that new image:
+
+    ```
+    manta-adm show -js >/var/tmp/config.json
+    vi /var/tmp/config.json  # update webapi instances
+
+    manta-adm update /var/tmp/config.json
+    ```
+
+- Then **run `mantav2-migrate snaplink-cleanup` from the headnode global zone of
+  every DC in this Manta region**.
 
 Until webapis are updated, the command will error out something like this:
 
@@ -551,9 +566,9 @@ However, in a larger Manta with many webapi instances, you may want to
 space those out.
 
 
-### Step 3.7: Tidy up "sherlock" leftovers from stage 3
+### Step 3.7: Tidy up "sherlock" leftovers from step 3.3
 
-Back in stage 3, the "snaplink-sherlock.sh" script runs left some data
+Back in step 3.3, the "snaplink-sherlock.sh" script runs left some data
 (VMs and snapshots) that should be cleaned up.
 
 1.  **Run the following on the headnode global zone of every DC in this Manta
