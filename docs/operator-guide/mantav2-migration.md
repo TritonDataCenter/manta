@@ -24,8 +24,9 @@ description of mantav2.
   - [Step 3.2: Select the driver DC](#step-32-select-the-driver-dc)
   - [Step 3.3: Discover every snaplink](#step-33-discover-every-snaplink)
   - [Step 3.4: Run delinking scripts](#step-34-run-delinking-scripts)
-  - [Step 3.5: Update webapi configs and restart](#step-35-update-webapi-configs-and-restart)
-  - [Step 3.6: Tidy up "sherlock" leftovers from stage 3](#step-36-tidy-up-sherlock-leftovers-from-stage-3)
+  - [Step 3.5: Remove the obsolete ACCOUNTS_SNAPLINKS_DISABLED metadata](#step-35-remove-the-obsolete-accounts_snaplinks_disabled-metadata)
+  - [Step 3.6: Update webapi configs and restart](#step-36-update-webapi-configs-and-restart)
+  - [Step 3.7: Tidy up "sherlock" leftovers from stage 3](#step-37-tidy-up-sherlock-leftovers-from-stage-3)
 - [Step 4: Deploy GCv2](#step-4-deploy-gcv2)
 - [Step 5: Recommended service updates](#step-5-recommended-service-updates)
 - [Step 6: Optional service updates](#step-6-optional-service-updates)
@@ -522,7 +523,19 @@ All snaplinks have been removed!
 However, there are a couple more steps.
 
 
-### Step 3.5: Update webapi configs and restart
+### Step 3.5: Remove the obsolete ACCOUNTS_SNAPLINKS_DISABLED metadata
+
+
+Now that snaplinks have been removed, the old `ACCOUNTS_SNAPLINKS_DISABLED`
+metadata is obsolete. Remove that from the SAPI metadata:
+
+```
+manta_app=$(sdc-sapi /applications?name=manta | json -H 0.uuid)
+echo '{"action": "delete", "metadata": {"ACCOUNTS_SNAPLINKS_DISABLED": null}}' | sapiadm update "$manta_app"
+```
+
+
+### Step 3.6: Update webapi configs and restart
 
 Now that the `SNAPLINK_CLEANUP_REQUIRED` config var has been removed, all
 webapi instances need to be poked to get this new config. You must **ensure
@@ -539,7 +552,7 @@ However, in a larger Manta with many webapi instances, you may want to
 space those out.
 
 
-### Step 3.6: Tidy up "sherlock" leftovers from stage 3
+### Step 3.7: Tidy up "sherlock" leftovers from stage 3
 
 Back in stage 3, the "snaplink-sherlock.sh" script runs left some data
 (VMs and snapshots) that should be cleaned up.
