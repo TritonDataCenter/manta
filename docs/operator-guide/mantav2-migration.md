@@ -24,7 +24,7 @@ description of mantav2.
   - [Step 3.2: Select the driver DC](#step-32-select-the-driver-dc)
   - [Step 3.3: Discover every snaplink](#step-33-discover-every-snaplink)
   - [Step 3.4: Run delinking scripts](#step-34-run-delinking-scripts)
-  - [Step 3.5: Remove the obsolete ACCOUNTS_SNAPLINKS_DISABLED metadata](#step-35-remove-the-obsolete-accounts_snaplinks_disabled-metadata)
+  - [Step 3.5: Remove the obsolete ACCOUNTS_SNAPLINKS_DISABLED metadatum](#step-35-remove-the-obsolete-accounts_snaplinks_disabled-metadatum)
   - [Step 3.6: Update webapi configs and restart](#step-36-update-webapi-configs-and-restart)
   - [Step 3.7: Tidy up "sherlock" leftovers from stage 3](#step-37-tidy-up-sherlock-leftovers-from-stage-3)
 - [Step 4: Deploy GCv2](#step-4-deploy-gcv2)
@@ -523,14 +523,17 @@ All snaplinks have been removed!
 However, there are a couple more steps.
 
 
-### Step 3.5: Remove the obsolete ACCOUNTS_SNAPLINKS_DISABLED metadata
-
+### Step 3.5: Remove the obsolete ACCOUNTS_SNAPLINKS_DISABLED metadatum
 
 Now that snaplinks have been removed, the old `ACCOUNTS_SNAPLINKS_DISABLED`
-metadata is obsolete. Remove that from the SAPI metadata:
+metadata is obsolete. Print the current value (for record keeping) and remove
+it from the SAPI metadata:
 
 ```
 manta_app=$(sdc-sapi /applications?name=manta | json -H 0.uuid)
+
+sapiadm get "$manta_app" | json metadata.ACCOUNTS_SNAPLINKS_DISABLED
+
 echo '{"action": "delete", "metadata": {"ACCOUNTS_SNAPLINKS_DISABLED": null}}' | sapiadm update "$manta_app"
 ```
 
