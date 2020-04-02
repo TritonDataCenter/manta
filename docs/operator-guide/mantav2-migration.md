@@ -162,7 +162,7 @@ Some Mantas may have deployed a garbage collection system called
 [overview](https://github.com/joyent/manta/blob/mantav1/docs/operator-guide.md#accelerated-garbage-collection),
 [deployment notes](https://github.com/joyent/manta/blob/mantav1/docs/operator-guide.md#deploy-accelerated-garbage-collection-components),
 [operating/configuration notes](https://github.com/joyent/manta/blob/mantav1/docs/operator-guide.md#accelerated-garbage-collection-1),
-[troubleshooting notes](https://github.com/joyent/manta/blob/mantav1/docs/operator-guide.md#troubleshooting-accelerated-garbage-collection)
+[troubleshooting notes](https://github.com/joyent/manta/blob/mantav1/docs/operator-guide.md#troubleshooting-accelerated-garbage-collection).
 
 Work through the following steps to determine if you have Accelerated GC and,
 if so, to flush and disable it:
@@ -190,11 +190,48 @@ if so, to flush and disable it:
     f1b67c7a-cb1c-4456-9b43-ea636c97036f     martha
     ```
 
+2.  Disable all garbage-collector SMF services to allow inflight instructions to
+    drain:
 
-2.  XXX Get flush/disable instructions from JoshW, RobertB, or others.
-    Is this where we talk about the out-of-product "feeders" as well?
+    ```
+    manta-oneach -s garbage-collector 'svcadm disable garbage-collector'
+    ```
 
-3.  ...
+    Wait 5 minutes and check that all instructions have drained:
+
+    ```
+    manta-oneach -s garbage-collector 'du --inodes /var/spool/manta_gc/mako/* | sort -n | tail -3'
+    ```
+
+    The file counts should all be 1 (the subdirectory itself).
+
+3.  **[For Manta deployment using "feeder" service only]** After 5 minutes,
+    check that the feeder zone also has no inflight instructions:
+
+    ```
+    du --inodes /var/spool/manta_gc/mako/* | sort -n | tail -3
+    ```
+
+    The file counts should all be 1 (the subdirectory itself).
+
+4.  Before upgrading a storage zone to the v2 image, check that its instruction
+    directory is empty:
+
+    -   **For Manta deployment using feeder service**
+
+        ```
+        du --inodes /var/spool/manta_gc/instructions
+        ```
+
+        The file count should be exactly 1 (the directory itself).
+
+    -   **For Manta deployment without feeder service**
+
+        ```
+        minfo /poseidon/stor/manta_gc/mako/$(json -f /var/tmp/metadata.json -ga MANTA_STORAGE_ID) | grep result
+        ```
+
+        The result set size should be exactly 1 (the directory itself).
 
 
 ### XXX open Qs
@@ -203,7 +240,6 @@ Qs for Josh and others:
 
 - Are there old GC instruction files we should look into? Should `mako_gc.sh`
   on the current makos handle those? How should we check?
-- Validate the "Accelerated GC" flush & disable steps above.
 
 
 <a name="snaplink-cleanup" />
