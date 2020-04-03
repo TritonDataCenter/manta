@@ -28,7 +28,7 @@ description of mantav2.
   - [Step 3.7: Tidy up "sherlock" leftovers from step 3.3](#step-37-tidy-up-sherlock-leftovers-from-step-33)
   - [Step 3.8: Archive the snaplink-cleanup files](#step-38-archive-the-snaplink-cleanup-files)
 - [Step 4: Deploy GCv2](#step-4-deploy-gcv2)
-- [Step 5: Remove obsolete services and instances](#step-5-remove-obsolete-services-and-instances)
+- [Step 5: Remove obsolete Manta jobs services and instances](#step-5-remove-obsolete-manta-jobs-services-and-instances)
 - [Step 6: Recommended service updates](#step-6-recommended-service-updates)
 - [Step 7: Optional service updates](#step-7-optional-service-updates)
 - [Step 8: Additional clean up](#step-8-additional-clean-up)
@@ -639,7 +639,7 @@ The new garbage-collector system should be deployed.
     manta-adm update /var/tmp/config.json
     ```
 
-## Step 5: Remove obsolete services and instances
+## Step 5: Remove obsolete Manta jobs services and instances
 
 There are a number of Manta services that are obsoleted by mantav2 and can
 (and should) be removed at this time. (Note: Remove of these services also
@@ -652,11 +652,83 @@ They services (and their instances) to remove are:
 - marlin-dashboard
 - medusa
 - marlin
+- marlin-agent (This is an agent on each server, rather than a SAPI service.)
+
+(Internal Joyent ops should look at the appropriate [change-mgmt
+template](https://github.com/joyent/change-mgmt/blob/master/change-plan-templates/mantav2/JPC/0-jobtier-remove.md)
+for this procedure.)
+
+A simplified procedure is as follows:
 
 
-XXX: Does ops/sre/angela have canned details for removal of these. I'm fine
-describing for the VM services, but for marlin-agents I'm less sure.
+1. **Run the following in each Manta DC** to remove all service instances:
 
+    ```bash
+    function delete_insts {
+        local svc=$1
+        if [[ -z "$svc" ]]; then
+            echo "delete_insts error: 'svc' is empty" >&2
+            return 1
+        fi
+        echo ""
+        echo "# delete service '$svc' instances"
+        manta-adm show -Ho zonename "$svc" | xargs -n1 -I% sdc-sapi /instances/% -X DELETE
+    }
+
+    if [[ ! -f /var/tmp/manta-config-before-jobs-infra-cleanup.json ]]; then
+        manta-adm show -js >/var/tmp/manta-config-before-jobs-infra-cleanup.json
+    fi
+
+    JOBS_SERVICES="jobpuller jobsupervisor marlin-dashboard medusa marlin"
+    for svc in $JOBS_SERVICES; do
+        delete_insts "$svc"
+    done
+    ```
+
+1. **Run the following in each Manta DC** to remove the marlin agent on every server:
+
+    ```
+    sdc-oneachnode -a "apm uninstall marlin"
+    ```
+
+    Notes:
+    - This can be re-run to catch missing servers. If the marlin agent
+      is already removed, this will still run successfully on a server.
+    - Until [MANTA-4798](https://smartos.org/bugview/MANTA-4798) is complete
+      the marlin agent is still a part of the Triton "agentsshar", and hence
+      will be *re-installed* when Triton agents are updated. This causes no
+      harm. The above command can be re-run to re-remove the marlin agents.
+
+2. **Run the following in one Manta DC** to clear out SAPI service entries:
+
+    ```bash
+    function delete_svc {
+        local svc=$1
+        if [[ -z "$svc" ]]; then
+            echo "delete_svc error: 'svc' is empty" >&2
+            return 1
+        fi
+
+        echo ""
+        echo "# delete manta SAPI service '$svc'"
+        local manta_app=$(sdc-sapi "/applications?name=manta&include_master=true" | json -H 0.uuid)
+        if [[ -z "$manta_app" ]]; then
+            echo "delete_svc error: could not find 'manta' app" >&2
+            return 1
+        fi
+        local service_uuid=$(sdc-sapi "/services?name=$svc&application_uuid=$manta_app&include_master=true" | json -H 0.uuid)
+        if [[ -z "$service_uuid" ]]; then
+            echo "delete_svc error: could not find manta service '$svc'" >&2
+            return 1
+        fi
+        sdc-sapi "/services/$service_uuid" -X DELETE
+    }
+
+    JOBS_SERVICES="jobpuller jobsupervisor marlin-dashboard medusa marlin"
+    for svc in $JOBS_SERVICES; do
+        delete_svc "$svc"
+    done
+    ```
 
 ## Step 6: Recommended service updates
 
