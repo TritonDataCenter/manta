@@ -673,7 +673,7 @@ A simplified procedure is as follows:
     done
     ```
 
-1. **Run the following in each Manta DC** to remove the marlin agent on every server:
+2. **Run the following in each Manta DC** to remove the marlin agent on every server:
 
     ```
     sdc-oneachnode -a "apm uninstall marlin"
@@ -687,7 +687,7 @@ A simplified procedure is as follows:
       will be *re-installed* when Triton agents are updated. This causes no
       harm. The above command can be re-run to re-remove the marlin agents.
 
-2. **Run the following in one Manta DC** to clear out SAPI service entries:
+3. **Run the following in one Manta DC** to clear out SAPI service entries:
 
     ```bash
     function delete_svc {
