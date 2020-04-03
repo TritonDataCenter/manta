@@ -599,7 +599,7 @@ keeping. For example, run this on the driver DC:
 ls -l /var/tmp/snaplink-cleanup*.tgz
 ```
 
-And then attach archive that tarball somewhere (perhaps attaching it to your
+And then attach or archive that tarball somewhere (perhaps attaching it to your
 process ticket tracking snaplink removal, if small enough).
 
 
@@ -743,7 +743,7 @@ There remain a few things that can be cleaned out of the system.
 They are:
 
 - Clean out the old GC-related `manta_delete_log` (`MANTA_DELETE_LOG_CLEANUP_REQUIRED`).
-- Clean out obsolete reports files under `/:login/reports/' (`REPORTS_CLEANUP_REQUIRED`).
+- Clean out obsolete reports files under `/:login/reports/` (`REPORTS_CLEANUP_REQUIRED`).
 - Clean out archived jobs files under `/:login/jobs/` (`ARCHIVED_JOBS_CLEANUP_REQUIRED`).
 
 However, details on how to clean those up are not yet ready (TODO). None of
