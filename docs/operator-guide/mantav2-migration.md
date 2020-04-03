@@ -18,7 +18,6 @@ description of mantav2.
   - [Disabling old jobs-based GC](#disabling-old-jobs-based-gc)
   - [Deleting obsolete "tombstone" directories](#deleting-obsolete-tombstone-directories)
   - [Accelerated GC](#accelerated-gc)
-  - [XXX open Qs](#xxx-open-qs)
 - [Step 3: Snaplink cleanup](#step-3-snaplink-cleanup)
   - [Step 3.1: Update webapis to V2](#step-31-update-webapis-to-v2)
   - [Step 3.2: Select the driver DC](#step-32-select-the-driver-dc)
@@ -229,14 +228,6 @@ if so, to flush and disable it:
         ```
 
         The result set size should be exactly 1 (the directory itself).
-
-
-### XXX open Qs
-
-Qs for Josh and others:
-
-- Are there old GC instruction files we should look into? Should `mako_gc.sh`
-  on the current makos handle those? How should we check?
 
 
 <a name="snaplink-cleanup" />
