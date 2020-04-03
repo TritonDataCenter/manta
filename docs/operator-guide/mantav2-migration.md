@@ -630,10 +630,10 @@ The new garbage-collector system should be deployed.
 ## Step 5: Remove obsolete Manta jobs services and instances
 
 There are a number of Manta services that are obsoleted by mantav2 and can
-(and should) be removed at this time. (Note: Remove of these services also
-works before any of the above mantav2 migration steps, if they is easier.)
+(and should) be removed at this time. (Note: Removal of these services also
+works before any of the above mantav2 migration steps, if that is easier.)
 
-They services (and their instances) to remove are:
+The services (and their instances) to remove are:
 
 - jobpuller
 - jobsupervisor
