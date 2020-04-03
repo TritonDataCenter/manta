@@ -91,18 +91,6 @@ sdcadm self-update $sdcadm_image
 sdcadm post-setup manta -i $manta_deployment_image
 ```
 
-**or** (XXX) while in development use the following to get feature branch builds:
-
-```
-# MANTA-4811 and MANTA-4874
-sdcadm_image=$(updates-imgadm -C experimental list name=sdcadm -j | json -c '~this.tags.buildstamp.indexOf("PR-60-")' -a uuid | tail -1)
-manta_deployment_image=$(updates-imgadm list -C experimental name=mantav2-deployment version=~PR-60- --latest -H -o uuid)
-
-sdcadm self-update -C experimental $sdcadm_image
-sdcadm post-setup manta -C experimental -i $manta_deployment_image
-```
-
-
 The `sdcadm post-setup manta` command will warn that the migration process is
 not reversible and require an interactive confirmation to proceed. The new manta
 deployment image provides a `mantav2-migrate` tool that will assist with some of
