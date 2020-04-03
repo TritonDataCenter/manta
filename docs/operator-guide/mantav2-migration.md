@@ -175,17 +175,6 @@ if so, to flush and disable it:
     ...
     ```
 
-    You can also see the accounts for which Accelerated GC is currently
-    effective via:
-
-    ```
-    [root@headnode (mydc-1a) ~]# manta-adm accel-gc accounts
-    ACCOUNT UUID                             LOGIN
-    6da4430d-1f4c-4361-93f1-418c97188de9     bob
-    110e6480-1266-4c66-9ec7-1dd279d34cc5     bigstorprod
-    f1b67c7a-cb1c-4456-9b43-ea636c97036f     martha
-    ```
-
 2.  Disable all garbage-collector SMF services to allow inflight instructions to
     drain:
 
