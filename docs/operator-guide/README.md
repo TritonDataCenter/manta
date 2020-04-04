@@ -5,12 +5,13 @@
 are operating a mantav1 deployment, please see the [Mantav1 Operator
 Guide](https://github.com/joyent/manta/blob/mantav1/docs/operator-guide.md).)*
 
-This operator guide is divided into a few sections:
+This operator guide is divided into sections:
 
-1. an overview of the [Manta architecture](./architecture.md),
-2. a guide for [deploying a new Manta](./deployment.md), and
-3. [Manta maintenance information](./maintenance.md), such as performing
-   upgrades, using Manta's alarming, metrics and logs.
+1. [Manta Architecture](./architecture.md)
+2. [Deploying Manta](./deployment.md) - setting up a new Manta
+3. [Operating and Maintaining Manta](./maintenance.md): performing
+   upgrades, using Manta's alarming, metrics, and logs
+4. [Migrating from Mantav1 to Mantav2](./mantav2-migration.md)
 
 * * *
 
