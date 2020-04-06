@@ -5,7 +5,7 @@ Starting November 2019, there will be two separate active versions of Manta:
 - "**mantav1**" - a long term support branch of Manta that maintains current
   Manta features.
 - "**mantav2**" - a new major version of Manta that adds (Buckets API, storage
-  "rebalancer" service) and removes (jobs, snaplinks, MPU, etc.) some major
+  "rebalancer" service) and removes (jobs, snaplinks, etc.) some major
   features, and becomes the focus of future Manta development.
 
 At this time, mantav1 is the recommended version for production usage, but
@@ -24,11 +24,11 @@ It is a backward incompatible change, because it drops some API features.
 Significant changes are:
 
 - The following features of the current API (now called the "Directory API")
-  are being removed. Otherwise the Directory API remains a part of Manta.
+  are being removed.
     - jobs (a.k.a. compute jobs)
     - snaplinks
-    - multi-part upload (MPU)
     - metering data under `/<account>/reports/...`
+  Otherwise the Directory API remains a part of Manta.
 - A new "Buckets API" (S3-like) is added. This is the API for which latency
   improvements are being made.
 - A "rebalancer" system is added for storage tier maintenance.
