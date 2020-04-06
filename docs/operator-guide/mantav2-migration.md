@@ -504,17 +504,17 @@ scripts. Run these on every DC in the Manta region:
     check for success.
 
     ```bash
-    manta-oneach -s storage 'cat /var/tmp/*_stordelink.success'
+    manta-oneach -s storage 'storage_id=$(json -f /opt/smartdc/mako/etc/gc_config.json manta_storage_id); if [[ -f /var/tmp/${storage_id}_stordelink.sh ]]; then cat /var/tmp/${storage_id}_stordelink.success; else echo "(no stordelink script for ${storage_id})"; fi'
     ```
 
     For example:
 
     ```
-    [root@headnode (nightly-1) ~]# manta-oneach -s storage 'cat /var/tmp/*_stordelink.success'
+    [root@headnode (nightly-1) ~]# manta-oneach -s storage 'storage_id=$(json -f /opt/smartdc/mako/etc/gc_config.json manta_storage_id); if [[ -f /var/tmp/${storage_id}_stordelink.sh ]]; then cat /var/tmp/${storage_id}_stordelink.success; else echo "(no stordelink script for ${storage_id})"; fi'
     SERVICE          ZONE     OUTPUT
     storage          81df545a [20200406T192654Z] Completed stordelink successfully.
     storage          a811b282 [20200406T192654Z] Completed stordelink successfully.
-    storage          f7aeb86d [20200406T192654Z] Completed stordelink successfully.
+    storage          f7aeb86d (no stordelink script for 2.stor.nightly.joyent.us)
     ```
 
     If a ".success" file is not found for a given storage node, then one
