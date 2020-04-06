@@ -464,7 +464,7 @@ Please report any errors in running these scripts.
 You can use the following steps to mostly automate running all the stordelink
 scripts. Run these on every DC in the Manta region:
 
--   Copy the delink scripts to a working "/var/tmp/delink/" dir on each DC.
+1.  Copy the delink scripts to a working "/var/tmp/delink/" dir on each DC.
     On the driver DC that is:
 
     ```bash
@@ -478,7 +478,7 @@ scripts. Run these on every DC in the Manta region:
     rsync -av /var/db/snaplink-cleanup/delink/ myregion-2:/var/tmp/delink/
     ```
 
--   Copy the stordelink scripts to the appropriate storage nodes in this DC:
+2.  Copy the stordelink scripts to the appropriate storage nodes in this DC:
 
     ```bash
     manta-adm show storage -Ho zonename,storage_id | while read zonename storage_id; do
@@ -493,13 +493,13 @@ scripts. Run these on every DC in the Manta region:
     done
     ```
 
--   Start the stordelink scripts on each storage node.
+3.  Start the stordelink scripts on each storage node.
 
     ```bash
     manta-oneach -s storage 'storage_id=$(json -f /opt/smartdc/mako/etc/gc_config.json manta_storage_id); nohup bash /var/tmp/${storage_id}_stordelink.sh &'
     ```
 
--   Check that each stordelink script ran successfully. The delink scripts
+4.  Check that each stordelink script ran successfully. The delink scripts
     generate a "$name.success" file on successful completion. We use that to
     check for success.
 
@@ -564,7 +564,7 @@ You can use the following steps to mostly automate running all the
 "moray" instance for every shard. This means that all the "moraydelink" can be
 run in the driver DC. The steps below assume that.
 
-- Copy the moraydelink scripts to a moray instance for the appropriate shard.
+1.  Copy the moraydelink scripts to a moray instance for the appropriate shard.
 
     ```bash
     region_name=$(bash /lib/sdc/config.sh -json | json region_name)
@@ -592,14 +592,14 @@ run in the driver DC. The steps below assume that.
     done
     ```
 
--   Start the moraydelink scripts on each shard. The following will run them
+2.  Start the moraydelink scripts on each shard. The following will run them
     all in parallel:
 
     ```bash
     manta-oneach -z "$moray_selected_insts" 'service_name=$(json -f /opt/smartdc/moray/etc/config.json service_name); nohup bash /var/tmp/${service_name}_moraydelink.sh &'
     ```
 
--   Check that each moraydelink script ran successfully. The delink scripts
+3.  Check that each moraydelink script ran successfully. The delink scripts
     generate a "$name.success" file on successful completion. We use that to
     check for success.
 
