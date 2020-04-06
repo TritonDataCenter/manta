@@ -22,11 +22,13 @@ description of mantav2.
   - [Step 3.1: Update webapis to V2](#step-31-update-webapis-to-v2)
   - [Step 3.2: Select the driver DC](#step-32-select-the-driver-dc)
   - [Step 3.3: Discover every snaplink](#step-33-discover-every-snaplink)
-  - [Step 3.4: Run delinking scripts](#step-34-run-delinking-scripts)
-  - [Step 3.5: Remove the obsolete ACCOUNTS_SNAPLINKS_DISABLED metadatum](#step-35-remove-the-obsolete-accounts_snaplinks_disabled-metadatum)
-  - [Step 3.6: Update webapi configs and restart](#step-36-update-webapi-configs-and-restart)
-  - [Step 3.7: Tidy up "sherlock" leftovers from step 3.3](#step-37-tidy-up-sherlock-leftovers-from-step-33)
-  - [Step 3.8: Archive the snaplink-cleanup files](#step-38-archive-the-snaplink-cleanup-files)
+  - [Step 3.4: Run "stordelink" scripts](#step-34-run-stordelink-scripts)
+  - [Step 3.5: Run "moraydelink" scripts](#step-35-run-moraydelink-scripts)
+  - [Step 3.6: Confirm delink scripts have been run](#step-36-confirm-delink-scripts-have-been-run)
+  - [Step 3.7: Remove the obsolete ACCOUNTS_SNAPLINKS_DISABLED metadatum](#step-37-remove-the-obsolete-accounts_snaplinks_disabled-metadatum)
+  - [Step 3.8: Update webapi configs and restart](#step-38-update-webapi-configs-and-restart)
+  - [Step 3.9: Tidy up "sherlock" leftovers from step 3.3](#step-39-tidy-up-sherlock-leftovers-from-step-33)
+  - [Step 3.10: Archive the snaplink-cleanup files](#step-310-archive-the-snaplink-cleanup-files)
 - [Step 4: Deploy GCv2](#step-4-deploy-gcv2)
 - [Step 5: Remove obsolete Manta jobs services and instances](#step-5-remove-obsolete-manta-jobs-services-and-instances)
 - [Step 6: Recommended service updates](#step-6-recommended-service-updates)
@@ -374,118 +376,171 @@ process the sherlock files. At any point you may re-run this command to
 list the remaining shards to work through.
 
 
-### Step 3.4: Run delinking scripts
+### Step 3.4: Run "stordelink" scripts
 
 After the previous stage, the `mantav2-migrate snaplink-cleanup` command
 will generate a number of "delinking" scripts that must be manually run on
-the appropriate manta service instances. With a larger Manta, expect this
-to be a bit labourious.
+the appropriate manta service instances. There are two sets of delink scripts:
+(a) "stordelink" scripts to be run on most/all storage instances; and (b)
+"moraydelink" scripts to be run on a "moray" instance in each index shard.
 
-You must do the following in order:
+The "stordelink" scripts must be handled first. You must **run each
+"/var/db/snaplink-cleanup/delink/\*\_stordelink.sh" script on the appropriate
+Manta storage node.** I.e. in the mako zone for that storage\_id. The
+`storage_id` is included in the filename.
 
-1.  **Run each "/var/db/snaplink-cleanup/delink/\*\_stordelink.sh" script
-    on the appropriate Manta storage node.** I.e. in the mako zone for
-    that storage\_id. The `storage_id` is included in the filename.
-
-    There will be *zero or one* "stordelink" scripts for each storage node.
-    Each script is idempotent, so can be run again if necessary. Each script
-    will also error out if an attempt is made to run on the wrong storage node:
-
-    ```
-    [root@94b3a1ce (storage) /var/tmp]$ bash 1.stor.coalregion.joyent.us_stordelink.sh
-    Writing xtrace output to: /var/tmp/stordelink.20200320T213234.xtrace.log
-    1.stor.coalregion.joyent.us_stordelink.sh: fatal error: this stordelink script must run on '1.stor.coalregion.joyent.us': this is '3.stor.coalregion.joyent.us'
-    ```
-
-    A successful run looks like this:
-
-    ```
-    [root@94b3a1ce (storage) /var/tmp]$ bash 3.stor.coalregion.joyent.us_stordelink.sh
-    Writing xtrace output to: /var/tmp/stordelink.20200320T213250.xtrace.log
-    Completed stordelink successfully.
-    ```
-
-    Please report any errors in running these scripts.
-
-2.  Only after those are all run successfully, **run each
-    "/var/db/snaplink-cleanup/delink/\*\_moraydelink.sh" script
-    on a Manta moray instance for the appropriate shard.** The shard is
-    included in the filename.
-
-    It is important to complete step #1 before running the "moraydelink"
-    scripts, otherwise metadata will be updated to point to object ids
-    for which no storage file exists.
-
-    There will be one "moraydelink" script for each index moray shard
-    (`INDEX_MORAY_SHARDS` in Manta metadata). Each script is idempotent, so can
-    be run again if necessary. Each script will also error out if an attempt is
-    made to run on the wrong shard node:
-
-    ```
-    [root@01f043b4 (moray) /var/tmp]$ bash 1.moray.coalregion.joyent.us_moraydelink.sh
-    Writing xtrace output to: /var/tmp/moraydelink.20200320T211337.xtrace.log
-    1.moray.coalregion.joyent.us_moraydelink.sh: fatal error: this moraydelink script must run on a moray for shard '1.moray.coalregion.joyent.us': this is '1.moray.coalregion.joyent.us'
-    ```
-
-    A successful run looks like this:
-
-    ```
-    [root@01f043b4 (moray) /var/tmp]$ bash 1.moray.coalregion.joyent.us_moraydelink.sh
-    Writing xtrace output to: /var/tmp/moraydelink.20200320T214010.xtrace.log
-    Completed moraydelink successfully.
-    ```
-
-    Please report any errors in running these scripts.
-
-3.  **Re-run `mantav2-migrate snaplink-cleanup` and confirm** the scripts
-    have successfully been run.
-
-Here is an example run for this stage:
+There will be *zero or one* "stordelink" scripts for each storage node.
+Each script is idempotent, so can be run again if necessary. Each script
+will also error out if an attempt is made to run on the wrong storage node:
 
 ```
-[root@headnode (mydc) ~]# mantav2-migrate snaplink-cleanup
-Phase 1: All webapi instances are running V2.
-Phase 2: Driver DC is "mydc" (this one)
-Phase 3: Have snaplink listings for all (1) Manta index shards.
-Created delink scripts in /var/db/snaplink-cleanup/delink.
-
-
-# Phase 4: Running delink scripts
-
-"Delink" scripts have been generated from the snaplink listings
-from the previous phase. In this phase, you must:
-
-1. Run each "*_stordelink.sh" script on the appropriate storage
-   node to create a new object for each snaplink. There are 3 to run:
-
-        # {storage_id}_stordelink.sh
-        ls /var/db/snaplink-cleanup/delink/*_stordelink.sh
-
-   Use the following to help locate each storage node:
-
-        manta-adm show -a -o service,storage_id,datacenter,zonename,gz_host,gz_admin_ip storage
-
-2. **Only after** these have all been run, run each "*_moraydelink.sh"
-   script on a moray zone for the appropriate shard. There is
-   one script for each Manta index shard (1):
-
-        # {shard}_moraydelink.sh
-        ls /var/db/snaplink-cleanup/delink/*_moraydelink.sh
-
-   Use the following to help locate a moray for each shard:
-
-        manta-adm show -o service,shard,zonename,gz_host,gz_admin_ip moray
-
-When you are sure you have run all these scripts, then answer
-the following to proceed. *WARNING* Be sure you have run all
-these scripts successfully. If not, any lingering object that
-has multiple links will have the underlying files removed
-when the first link is deleted, which is data loss for the
-remaining links.
-
-Enter "delinked" when all delink scripts have been successfully run:
+[root@94b3a1ce (storage) /var/tmp]$ bash 1.stor.coalregion.joyent.us_stordelink.sh
+Writing xtrace output to: /var/tmp/stordelink.20200320T213234.xtrace.log
+1.stor.coalregion.joyent.us_stordelink.sh: fatal error: this stordelink script must run on '1.stor.coalregion.joyent.us': this is '3.stor.coalregion.joyent.us'
 ```
 
+A successful run looks like this:
+XXX
+
+```
+[root@94b3a1ce (storage) /var/tmp]$ bash 3.stor.coalregion.joyent.us_stordelink.sh
+Writing xtrace output to: /var/tmp/stordelink.20200320T213250.xtrace.log
+Completed stordelink successfully.
+```
+
+Please report any errors in running these scripts.
+
+
+#### Steps to run all stordelink scripts
+
+You can use the following steps to mostly automate running all the stordelink
+scripts. Run these on every DC in the Manta region:
+
+-   Copy the delink scripts to a working "/var/tmp/delink/" dir on each DC.
+    On the driver DC that is:
+
+    ```bash
+    rsync -av /var/db/snaplink-cleanup/delink/ /var/tmp/delink/
+    ```
+
+    On non-driver DCs, run something like this from the driver DC (depending on
+    SSH access between the DCs):
+
+    ```bash
+    rsync -av /var/db/snaplink-cleanup/delink/ myregion-2:/var/tmp/delink/
+    ```
+
+-   Copy the stordelink scripts to the appropriate storage nodes in this DC:
+
+    ```bash
+    manta-adm show storage -Ho zonename,storage_id | while read zonename storage_id; do
+        delink_script=/var/tmp/delink/${storage_id}_stordelink.sh
+        if [[ ! -f "$delink_script" ]]; then
+            echo "$storage_id: no stordelink script, skipping"
+            continue
+        fi
+        echo ""
+        manta-oneach -z $zonename -X -d /var/tmp -g $delink_script
+        echo "$storage_id: copied script to '/var/tmp/${storage_id}_stordelink.sh' on zone '$zonename'"
+    done
+    ```
+
+-   Start the stordelink scripts on each storage node.
+
+    ```bash
+    manta-oneach -s storage 'storage_id=$(json -f /opt/smartdc/mako/etc/gc_config.json manta_storage_id); nohup bash /var/tmp/${storage_id}_stordelink.sh &'
+    ```
+
+-   Check that each stordelink script ran successfully.
+
+    ```bash
+    manta-oneach -s storage 'cat /var/tmp/*_stordelink.success'
+    ```
+
+    If a ".success" file is not found for a given storage node, then one
+    of the following is why:
+    - The stordelink script is still running.
+    - The stordelink script failed. Look at the
+      "/var/tmp/stordelink.$timestamp.xtrace.log" file on the storage node for
+      details.
+    - There is no stordelink file for this storage node -- possible if no
+      snaplinked file ever landed on that storage node.
+
+
+
+### Step 3.5: Run "moraydelink" scripts
+
+Note: It is important to successfully run all "stordelink" scripts before
+running the "moraydelink" scripts, otherwise metadata will be updated to point
+to object ids for which no storage file exists.
+
+To run the moraydelink scripts you must **run each
+"/var/db/snaplink-cleanup/delink/\*\_moraydelink.sh" script on a Manta moray
+instance for the appropriate shard.** The shard is included in the filename.
+
+There will be one "moraydelink" script for each index moray shard
+(`INDEX_MORAY_SHARDS` in Manta metadata). Each script is idempotent, so can be
+run again if necessary. Each script will also error out if an attempt is made to
+run on the wrong shard node:
+
+```
+[root@01f043b4 (moray) /var/tmp]$ bash 1.moray.coalregion.joyent.us_moraydelink.sh
+Writing xtrace output to: /var/tmp/moraydelink.20200320T211337.xtrace.log
+1.moray.coalregion.joyent.us_moraydelink.sh: fatal error: this moraydelink script must run on a moray for shard '1.moray.coalregion.joyent.us': this is '1.moray.coalregion.joyent.us'
+```
+
+A successful run looks like this:
+XXX
+
+```
+[root@01f043b4 (moray) /var/tmp]$ bash 1.moray.coalregion.joyent.us_moraydelink.sh
+Writing xtrace output to: /var/tmp/moraydelink.20200320T214010.xtrace.log
+Completed moraydelink successfully.
+```
+
+Please report any errors in running these scripts.
+
+#### Steps to run all moraydelink scripts
+
+You can use the following steps to mostly automate running all the
+**moraydelink** scripts. In a typical Manta deployment every DC will have a
+"moray" instance for every shard. This means that all the "moraydelink" can be
+run in the driver DC. The steps below assume that.
+
+- Copy the moraydelink scripts to a moray instance for the appropriate shard.
+
+    ```bash
+    region_name=$(bash /lib/sdc/config.sh -json | json region_name)
+    dns_domain=$(bash /lib/sdc/config.sh -json | json dns_domain)
+    moray_insts=$(manta-adm show moray -Ho shard,zonename | sed 's/^ *//g' | sort)
+    index_shards=$(sdc-sapi /applications?name=manta | json -H 0.metadata.INDEX_MORAY_SHARDS | json -e 'this.sh = this.host.split(".")[0]' -a sh)
+    for shard in $index_shards; do
+        shard_host=$shard.moray.$region_name.$dns_domain
+        delink_script=/var/db/snaplink-cleanup/delink/${shard_host}_moraydelink.sh
+        if [[ ! -f "$delink_script" ]]; then
+            echo "error: $shard_host: moraydelink script missing: $delink_script"
+            continue
+        fi
+        echo ""
+        # Pick the first moray instance for this shard.
+        zonename=$(echo "$moray_insts" | awk "/^$shard /{print \$2}" | head -1)
+        if [[ -z "$zonename" ]]; then
+            echo "error: $shard_host: could not find a moray instance for shard $shard in this DC"
+            continue
+        fi
+        manta-oneach -z $zonename -X -d /var/tmp -g $delink_script
+        echo "$shard_host: copied script to '/var/tmp/${shard_host}_moraydelink.sh' on zone '$zonename'"
+    done
+    ```
+
+- XXX
+
+
+### Step 3.6: Confirm delink scripts have been run
+
+
+**Re-run `mantav2-migrate snaplink-cleanup` and confirm** the scripts
+have successfully been run by entering "delinked".
 
 After confirming, `mantav2-migrate snaplink-cleanup` will remove the
 `SNAPLINK_CLEANUP_REQUIRED` metadatum to indicate that all snaplinks have been
@@ -500,10 +555,10 @@ Removing "SNAPLINK_CLEANUP_REQUIRED" metadatum.
 All snaplinks have been removed!
 ```
 
-However, there are a couple more steps.
+However, there are a few more steps.
 
 
-### Step 3.5: Remove the obsolete ACCOUNTS_SNAPLINKS_DISABLED metadatum
+### Step 3.7: Remove the obsolete ACCOUNTS_SNAPLINKS_DISABLED metadatum
 
 Now that snaplinks have been removed, the old `ACCOUNTS_SNAPLINKS_DISABLED`
 metadata is obsolete. Print the current value (for record keeping) and remove
@@ -518,7 +573,7 @@ echo '{"action": "delete", "metadata": {"ACCOUNTS_SNAPLINKS_DISABLED": null}}' |
 ```
 
 
-### Step 3.6: Update webapi configs and restart
+### Step 3.8: Update webapi configs and restart
 
 Now that the `SNAPLINK_CLEANUP_REQUIRED` config var has been removed, all
 webapi instances need to be poked to get this new config. You must **ensure
@@ -535,7 +590,7 @@ However, in a larger Manta with many webapi instances, you may want to
 space those out.
 
 
-### Step 3.7: Tidy up "sherlock" leftovers from step 3.3
+### Step 3.9: Tidy up "sherlock" leftovers from step 3.3
 
 Back in step 3.3, the "snaplink-sherlock.sh" script runs left some data
 (VMs and snapshots) that should be cleaned up.
@@ -589,7 +644,7 @@ will reclaim 257K
 ```
 
 
-### Step 3.8: Archive the snaplink-cleanup files
+### Step 3.10: Archive the snaplink-cleanup files
 
 It is probably a good idea to archive the snaplink-cleanup files for record
 keeping. For example, run this on the driver DC:
