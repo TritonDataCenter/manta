@@ -380,18 +380,70 @@ list the remaining shards to work through.
 
 After the previous stage, the `mantav2-migrate snaplink-cleanup` command
 will generate a number of "delinking" scripts that must be manually run on
-the appropriate manta service instances. There are two sets of delink scripts:
-(a) "stordelink" scripts to be run on most/all storage instances; and (b)
-"moraydelink" scripts to be run on a "moray" instance in each index shard.
+the appropriate manta service instances:
 
-The "stordelink" scripts must be handled first. You must **run each
-"/var/db/snaplink-cleanup/delink/\*\_stordelink.sh" script on the appropriate
-Manta storage node.** I.e. in the mako zone for that storage\_id. The
-`storage_id` is included in the filename.
+    [root@headnode (nightly-1) ~]# mantav2-migrate snaplink-cleanup
+    Phase 1: All webapi instances are running V2.
+    Phase 2: Driver DC is "nightly-1" (this one)
+    Phase 3: Have snaplink listings for all (1) Manta index shards.
+    Created delink scripts in /var/db/snaplink-cleanup/delink/
+      stordelink scripts:
+        3.stor.nightly.joyent.us_stordelink.sh
+        2.stor.nightly.joyent.us_stordelink.sh
+        1.stor.nightly.joyent.us_stordelink.sh
+      moraydelink scripts:
+        1.moray.nightly.joyent.us_moraydelink.sh
 
-There will be *zero or one* "stordelink" scripts for each storage node.
-Each script is idempotent, so can be run again if necessary. Each script
-will also error out if an attempt is made to run on the wrong storage node:
+
+    # Phase 4: Running delink scripts
+
+    "Delink" scripts have been generated from the snaplink listings
+    from the previous phase. In this phase, you must:
+
+    1. Copy each "*_stordelink.sh" script to the appropriate storage
+       node and run it there. There are 3 to run:
+
+            # {storage_id}_stordelink.sh
+            ls /var/db/snaplink-cleanup/delink/*_stordelink.sh
+
+       Use the following to help locate each storage node:
+
+            manta-adm show -a -o service,storage_id,datacenter,zonename,gz_host,gz_admin_ip storage
+
+    2. **Only after** all stordelink scripts have been run, copy
+       each "*_moraydelink.sh" script to a moray zone for the
+       appropriate shard and run it there. There is one script
+       script for each Manta index shard (1):
+
+            # {shard}_moraydelink.sh
+            ls /var/db/snaplink-cleanup/delink/*_moraydelink.sh
+
+       Use the following to help locate a moray for each shard:
+
+            manta-adm show -o service,shard,zonename,gz_host,gz_admin_ip moray
+
+    When you are sure you have run all these scripts, then answer
+    the following to proceed. *WARNING* Be sure you have run all
+    these scripts successfully. If not, any lingering object that
+    has multiple links will have the underlying files removed
+    when the first link is deleted, which is data loss for the
+    remaining links.
+
+    Enter "delinked" when all delink scripts have been successfully run: ^C
+    Aborting. Re-run this command when all delink scripts have been run.
+    mantav2-migrate snaplink-cleanup: error: delink scripts must be run before snaplink cleanup can proceed
+
+
+There are two sets of delink scripts: (a) "stordelink" scripts to be run on
+most/all storage instances; and (b) "moraydelink" scripts to be run on a "moray"
+instance in each index shard. The "stordelink" scripts must be handled first.
+
+You must **run each "/var/db/snaplink-cleanup/delink/\*\_stordelink.sh" script
+on the appropriate Manta storage node.** I.e. in the mako zone for that
+storage\_id. The `storage_id` is included in the filename. There will be *zero
+or one* "stordelink" scripts for each storage node. Each script is idempotent,
+so can be run again if necessary. Each script will also error out if an attempt
+is made to run on the wrong storage node:
 
 ```
 [root@94b3a1ce (storage) /var/tmp]$ bash 1.stor.coalregion.joyent.us_stordelink.sh
