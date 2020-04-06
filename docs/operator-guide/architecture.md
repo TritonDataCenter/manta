@@ -27,6 +27,7 @@ This section discusses the basics of the Manta architecture.
   - [Electric-moray](#electric-moray)
 - [The front door](#the-front-door)
   - [Objects and directories](#objects-and-directories)
+- [Multipart uploads](#multipart-uploads)
 - [Garbage collection, auditing, and metering](#garbage-collection-auditing-and-metering)
 - [Manta Scalability](#manta-scalability)
 
@@ -313,6 +314,8 @@ handles PUT/GET/DELETE requests to the front door, including requests to:
 
 * create and delete objects
 * create, list, and delete directories
+* create multipart uploads, upload parts, fetch multipart upload state, commit
+  multipart uploads, and abort multipart uploads
 
 <!-- TODO: buckets-api -->
 
@@ -349,6 +352,38 @@ For write requests on objects, muskie then:
 For read requests on objects, muskie instead contacts each of the storage nodes
 hosting the data and streams data from whichever one responds first to the
 client.
+
+
+## Multipart uploads
+
+Multipart uploads, a.k.a. MPU, provide an alternate way for users to upload
+Manta objects (only for the Directory API). The user creates the multipart
+upload, uploads the object in parts, and exposes the object in Manta by
+committing the multipart upload. Generally, these operations are implemented
+using existing Manta constructs:
+
+* Parts are normal Manta objects, with a few key differences.  Users cannot use
+  the GET, POST or DELETE HTTP methods on parts.  Additionally, all parts are
+  co-located on the same set of storage nodes, which are selected when the
+  multipart upload is created.
+* All parts for a given multipart upload are stored in a parts directory, which
+  is a normal Manta directory.
+* Part directories are stored in the top-level `/$MANTA_USER/uploads` directory
+  tree.
+
+Most of the logic for multipart uploads is performed by Muskie, but there are
+some additional features of the system only used for multipart uploads:
+
+* the **manta_uploads** bucket in Moray stores **finalizing records** for a
+  given shard.  A finalizing record is inserted atomically with the target
+  object record when a multipart upload is committed.
+* the mako zones have a custom **mako-finalize** operation invoked by muskie
+  when a multipart upload is committed. This operation creates the target object
+  from the parts and subsequently deletes the parts from disk.  This operation
+  is invoked on all storage nodes that will contain the target object when the
+  multipart upload is committed.
+
+
 
 ## Garbage collection, auditing, and metering
 
