@@ -203,10 +203,27 @@ if so, to flush and disable it:
     -   **For Manta deployment without feeder service**
 
         ```
-        minfo /poseidon/stor/manta_gc/mako/$(json -f /var/tmp/metadata.json -ga MANTA_STORAGE_ID) | grep result
+        manta-login ops
+        mls /poseidon/stor/manta_gc/mako |  while read stor; do minfo /poseidon/stor/manta_gc/mako/$stor | grep result-set-size; done
         ```
 
-        The result set size should be exactly 1 (the directory itself).
+        The result-set-size should be 0 for all storage IDs, e.g.:
+
+        ```
+        [root@7df71573 (ops) ~]$ mls /poseidon/stor/manta_gc/mako |  while read stor; do minfo /poseidon/stor/manta_gc/mako/$stor | grep result; done
+        result-set-size: 0
+        result-set-size: 0
+        result-set-size: 0
+        ```
+
+        If there are non-zero GC instructions in those results, then run the
+        accelerated GC script manually to hasten up garbage collection:
+
+        ```
+        manta-oneach -s storage 'nohup bash /opt/smartdc/mako/bin/mako_gc.sh >>/var/log/mako-gc.log 2>&1 &'
+        ```
+
+        Repeat the check above until you get `result-set-size: 0` for all.
 
 
 <a name="snaplink-cleanup" />
