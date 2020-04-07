@@ -287,7 +287,6 @@
             "name": "manta-marlin",
             "labels": {
                 "vm": true,
-                "release": true,
                 "mantav1": true,
                 "mantav1branch": true,
                 "mantav1only": true
