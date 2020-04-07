@@ -1092,6 +1092,10 @@ multi-DC, multi-compute-node deployment.  The general process is:
     sdc-oneachnode -a 'svcs -H marlin-agent'
     ```
 
+    **Note:** If new servers are added to be storage nodes, the above steps
+    must be run for each new server to install the "marlin" agent. Otherwise
+    compute jobs will not use that server.
+
 10. In each datacenter's manta deployment zone, deploy Manta components.
 
     a. In COAL, just run `manta-deploy-coal`.  This step is idempotent.
@@ -3844,6 +3848,23 @@ few days.
 
 
 # Debugging Marlin: anticipated frequent issues
+
+## Jobs are not using a newly added storage node
+
+When new servers in a DC are setup to be used as a manta storage and compute
+node, for jobs to work on that storage node, the following steps are required:
+
+- A "storage" service instance (aka "mako") must be deployed to that server.
+- A number of "marlin" service instances must be deployed to that server.
+- The "marlin-agent" global zone agent must be deployed to that server (see
+  step 9 in the "Deploying Manta" section above) and must be configured
+  (via the `manta-marlin` tool in the Manta deployment zone).
+
+Ensure that the "marlin-agent" is running via:
+
+```
+svcs marlin-agent
+```
 
 ## Users want more information about job progress
 
