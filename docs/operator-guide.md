@@ -1067,7 +1067,32 @@ multi-DC, multi-compute-node deployment.  The general process is:
    multi-GB image that is used for zones in which Manta compute jobs run.
    See the "Workaround for manta-marlin image import failure" section below.
 
-9. In each datacenter's manta deployment zone, deploy Manta components.
+9.  In each datacenter, run the following from the headnode global zone to
+    install the "marlin" agent to each server. The marlin agent is a part
+    of the Manta compute jobs system.
+
+    ```bash
+    # Download the latest marlin agent image.
+    channel=$(sdcadm channel get)
+    marlin_agent_image=$(updates-imgadm -C $channel list name=marlin --latest -H -o uuid)
+    marlin_agent_file=/var/tmp/marlin-agent-$marlin_agent_image.tgz
+    if [[ -f $marlin_agent_file ]]; then
+        echo "Already have $marlin_agent_file"
+    else
+        updates-imgadm -C $channel get-file $marlin_agent_image -o $marlin_agent_file
+    fi
+
+    # Copy to all other servers.
+    sdc-oneachnode -c -X -d /var/tmp -g $marlin_agent_file
+
+    # Install the agent on all servers.
+    sdc-oneachnode -a "apm install $marlin_agent_file >>/var/log/marlin-agent-install.log 2>&1 && echo success || echo 'fail (see /var/log/marlin-agent-install.log)'"
+
+    # Sanity check to ensure marlin agent is running on all storage servers.
+    sdc-oneachnode -a 'svcs -H marlin-agent'
+    ```
+
+10. In each datacenter's manta deployment zone, deploy Manta components.
 
     a. In COAL, just run `manta-deploy-coal`.  This step is idempotent.
 
@@ -1085,10 +1110,10 @@ multi-DC, multi-compute-node deployment.  The general process is:
        "manta-adm update".  Each of these steps is idempotent, but the shard and
        hash ring must be set up before deploying any zones.
 
-10. If desired, set up connectivity to the "ops", "marlin-dashboard", and
+11. If desired, set up connectivity to the "ops", "marlin-dashboard", and
     "madtom" zones.  See "Overview of Operating Manta" below for details.
 
-11. For multi-datacenter deployments, set the MUSKIE\_MULTI\_DC SAPI property.
+12. For multi-datacenter deployments, set the MUSKIE\_MULTI\_DC SAPI property.
     This is required to enforce that object writes are distributed to multiple
     datacenters.  In the SAPI master datacenter:
 
@@ -1100,7 +1125,7 @@ multi-DC, multi-compute-node deployment.  The general process is:
 
         headnode $ manta-oneach -s webapi 'svcadm restart "*muskie*"'
 
-12. If you wish to enable basic monitoring, run the following in each
+13. If you wish to enable basic monitoring, run the following in each
     datacenter:
 
         manta-adm alarm config update
@@ -1112,7 +1137,7 @@ multi-DC, multi-compute-node deployment.  The general process is:
     configured the Amon service for sending email.)  If you want to be notified
     about alarm events via XMPP, see "Changing alarm contact methods" below.
 
-13. **In development environments with more than one storage zone on a single
+14. **In development environments with more than one storage zone on a single
     system, it may be useful to apply quotas to storage zones so that if the
     system fills up, there remains space in the storage pool to address the
     problem.**  You can do this by finding the total size of the storage pool
