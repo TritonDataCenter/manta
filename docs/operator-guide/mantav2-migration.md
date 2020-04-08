@@ -513,7 +513,7 @@ following steps on each DC in the region.
 
     ```
     ssh DRIVER_DC
-    rsync -av OTHER_DC:/var/tmp/sherlock-files/ /var/db/snaplink-cleanup-discovery/
+    rsync -av OTHER_DC:/var/tmp/sherlock-files/ /var/db/snaplink-cleanup/discovery/
     ```
 
 
