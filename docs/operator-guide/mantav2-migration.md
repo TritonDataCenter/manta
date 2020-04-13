@@ -439,14 +439,7 @@ following steps on each DC in the region.
     echo "The postgres asyncs in this DC are: '$inst_csv'"
     ```
 
-3. Freeze the postgres clusters for the duration.
-   (This isn't strictly necessary for proper operation.)
-
-    ```
-    manta-oneach -z $inst_csv 'manatee-adm freeze -r "mantav2 migration"'
-    ```
-
-4. Copy the snaplink-sherlock.sh script to the server global zone hosting each
+3. Copy the snaplink-sherlock.sh script to the server global zone hosting each
    postgres async.
 
     ```
@@ -455,7 +448,7 @@ following steps on each DC in the region.
         -g "/zones/$manta0_vm/root/opt/smartdc/manta-deployment/tools/snaplink-sherlock.sh"
     ```
 
-5. Start the long-running snaplink-sherlock.sh script for each async:
+4. Start the long-running snaplink-sherlock.sh script for each async:
 
     ```
     for inst in "${inst_array[@]}"; do manta-oneach -z $inst -G "cd /var/tmp; nohup bash snaplink-sherlock.sh $inst &"; done
@@ -464,7 +457,7 @@ following steps on each DC in the region.
     Each execution will create a "/var/tmp/${shard}_sherlock.tsv.gz" file on
     completion.
 
-6. Poll for completion of the sherlock scripts via:
+5. Poll for completion of the sherlock scripts via:
 
     ```
     manta-oneach -z $inst_csv -G "ls -l /var/tmp/*_sherlock.tsv.gz"
@@ -479,13 +472,7 @@ following steps on each DC in the region.
     -rw-r--r--   1 root     staff         20 Apr  7 05:27 /var/tmp/2.moray.qaserver3.scloud.host_sherlock.tsv.gz
     ```
 
-7. Unfreeze the postgres shards:
-
-    ```
-    manta-oneach -z $inst_csv 'manatee-adm unfreeze'
-    ```
-
-8. Copy the `*_sherlock.tsv.gz` files back to the headnode:
+6. Copy the `*_sherlock.tsv.gz` files back to the headnode:
 
     ```
     function copy_sherlock_files_to_headnode {
@@ -508,7 +495,7 @@ following steps on each DC in the region.
     copy_sherlock_files_to_headnode
     ```
 
-9. Copy these files to "/var/db/snaplink-cleanup/discovery/"
+7. Copy these files to "/var/db/snaplink-cleanup/discovery/"
    **on the driver DC** (i.e. this might be in a different DC).
 
     ```
