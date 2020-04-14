@@ -400,13 +400,18 @@ region. They assume every postgres index shard has one *async*.  Run the
 following steps on each DC in the region.
 
 
-1. Warn if it looks like a postgres index shard has no async member:
+1. Print "error: ..." messages if the state of this Manta's postgres
+   shards looks like the given commands here won't work. E.g. if a postgres
+   shard has no async, if shard "1" is an index shard.
 
     ```
     function warn_missing_index_shard_asyncs {
         local postgres_insts=$(manta-adm show postgres -Ho shard,zonename | sed 's/^ *//g' | sort)
         local index_shards=$(sdc-sapi '/applications?name=manta&include_master=true' | json -H 0.metadata.INDEX_MORAY_SHARDS | json -e 'this.sh = this.host.split(".")[0]' -a sh)
         for shard in $index_shards; do
+            if [[ "$shard" == "1" ]]; then
+                echo "error: shard '1' is in 'INDEX_MORAY_SHARDS' (the commands below assume shard 1 is NOT an index shard)"
+            fi
             local an_inst=$(echo "$postgres_insts" | grep "^$shard " | head -1 | awk '{print $2}')
             if [[ -z "$an_inst" ]]; then
                 echo "error: no postgres instance found for shard $shard in this DC"
@@ -414,7 +419,7 @@ following steps on each DC in the region.
             fi
             local async_inst=$(manta-oneach -J -z "$an_inst" 'curl -s http://localhost:5433/state | json zkstate.async.-1.zoneId' | json result.stdout)
             if [[ -z "$async_inst" ]]; then
-                echo "error: postgres shard $shard does not have an async member"
+                echo "error: postgres shard $shard does not have an async member (the commands below assume there is one)"
                 continue
             fi
             echo "postgres shard $shard async: $async_inst"
@@ -429,10 +434,10 @@ following steps on each DC in the region.
     avoid adding some CPU load on the primary or sync databases during the
     script run.
 
-2. Identify the postgres asyncs in this DC on which the script will be run:
+2. Identify the postgres asyncs in this DC (excluding shard 1, which is assumed to *not* be an *index* shard) on which the script will be run:
 
     ```
-    declare inst_array=(); readarray -t inst_array <<<"$(manta-oneach -s postgres 'if [[ "$(curl -s http://localhost:5433/state | json role)" == "async" ]]; then echo "target $(hostname)"; fi' | grep target | awk '{print $4}')"
+    declare inst_array=(); readarray -t inst_array <<<"$(manta-oneach -s postgres 'if [[ "$(curl -s http://localhost:5433/state | json role)" == "async" && $(json -f /opt/smartdc/manatee/etc/sitter.json shardPath | cut -d/ -f3 | cut -d. -f1) != "1" ]]; then echo "target $(hostname)"; fi' | grep target | awk '{print $4}')"
     inst_csv=$(echo ${inst_array[@]} | tr ' ' ',')
 
     # sanity check
