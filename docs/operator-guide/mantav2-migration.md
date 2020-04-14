@@ -203,10 +203,27 @@ if so, to flush and disable it:
     -   **For Manta deployment without feeder service**
 
         ```
-        minfo /poseidon/stor/manta_gc/mako/$(json -f /var/tmp/metadata.json -ga MANTA_STORAGE_ID) | grep result
+        manta-login ops
+        mls /poseidon/stor/manta_gc/mako |  while read stor; do minfo /poseidon/stor/manta_gc/mako/$stor | grep result-set-size; done
         ```
 
-        The result set size should be exactly 1 (the directory itself).
+        The result-set-size should be 0 for all storage IDs, e.g.:
+
+        ```
+        [root@7df71573 (ops) ~]$ mls /poseidon/stor/manta_gc/mako |  while read stor; do minfo /poseidon/stor/manta_gc/mako/$stor | grep result; done
+        result-set-size: 0
+        result-set-size: 0
+        result-set-size: 0
+        ```
+
+        If there are non-zero GC instructions in those results, then run the
+        accelerated GC script manually to hasten up garbage collection:
+
+        ```
+        manta-oneach -s storage 'nohup bash /opt/smartdc/mako/bin/mako_gc.sh >>/var/log/mako-gc.log 2>&1 &'
+        ```
+
+        Repeat the check above until you get `result-set-size: 0` for all.
 
 
 <a name="snaplink-cleanup" />
@@ -352,7 +369,7 @@ You must **do the following for each listed shard**:
     ```
 
 - SSH to that server's global zone, and run that script with the postgres
-  VM UUID as an argument. **Run this in screen or equivalent because
+  VM UUID as an argument. **Run this in screen, via nohup, or equivalent because
   this can take a long time to run.**
 
     ```
@@ -374,6 +391,127 @@ You must **do the following for each listed shard**:
 Then **re-run `mantav2-migrate snaplink-cleanup` on the driver DC** to
 process the sherlock files. At any point you may re-run this command to
 list the remaining shards to work through.
+
+
+#### Opinionated steps for running snaplink-sherlock on all manatee asyncs
+
+The following commands should automate the tedium of step 3.3 on a larger Manta
+region. They assume every postgres index shard has one *async*.  Run the
+following steps on each DC in the region.
+
+
+1. Print "error: ..." messages if the state of this Manta's postgres
+   shards looks like the given commands here won't work. E.g. if a postgres
+   shard has no async, if shard "1" is an index shard.
+
+    ```
+    function warn_missing_index_shard_asyncs {
+        local postgres_insts=$(manta-adm show postgres -Ho shard,zonename | sed 's/^ *//g' | sort)
+        local index_shards=$(sdc-sapi '/applications?name=manta&include_master=true' | json -H 0.metadata.INDEX_MORAY_SHARDS | json -e 'this.sh = this.host.split(".")[0]' -a sh)
+        for shard in $index_shards; do
+            if [[ "$shard" == "1" ]]; then
+                echo "error: shard '1' is in 'INDEX_MORAY_SHARDS' (the commands below assume shard 1 is NOT an index shard)"
+            fi
+            local an_inst=$(echo "$postgres_insts" | grep "^$shard " | head -1 | awk '{print $2}')
+            if [[ -z "$an_inst" ]]; then
+                echo "error: no postgres instance found for shard $shard in this DC"
+                continue
+            fi
+            local async_inst=$(manta-oneach -J -z "$an_inst" 'curl -s http://localhost:5433/state | json zkstate.async.-1.zoneId' | json result.stdout)
+            if [[ -z "$async_inst" ]]; then
+                echo "error: postgres shard $shard does not have an async member (the commands below assume there is one)"
+                continue
+            fi
+            echo "postgres shard $shard async: $async_inst"
+        done
+    }
+
+    warn_missing_index_shard_asyncs
+    ```
+
+    If there is no async for a given postgres shard, the snaplink-sherlock.sh
+    can be run against a *sync*. The only reason for using an async is to
+    avoid adding some CPU load on the primary or sync databases during the
+    script run.
+
+2. Identify the postgres asyncs in this DC (excluding shard 1, which is assumed to *not* be an *index* shard) on which the script will be run:
+
+    ```
+    declare inst_array=(); readarray -t inst_array <<<"$(manta-oneach -s postgres 'if [[ "$(curl -s http://localhost:5433/state | json role)" == "async" && $(json -f /opt/smartdc/manatee/etc/sitter.json shardPath | cut -d/ -f3 | cut -d. -f1) != "1" ]]; then echo "target $(hostname)"; fi' | grep target | awk '{print $4}')"
+    inst_csv=$(echo ${inst_array[@]} | tr ' ' ',')
+
+    # sanity check
+    echo "The postgres asyncs in this DC are: '$inst_csv'"
+    ```
+
+3. Copy the snaplink-sherlock.sh script to the server global zone hosting each
+   postgres async.
+
+    ```
+    manta0_vm=$(vmadm lookup -1 tags.smartdc_role=manta)
+    manta-oneach -G -z $inst_csv -X -d /var/tmp \
+        -g "/zones/$manta0_vm/root/opt/smartdc/manta-deployment/tools/snaplink-sherlock.sh"
+    ```
+
+4. Start the long-running snaplink-sherlock.sh script for each async:
+
+    ```
+    for inst in "${inst_array[@]}"; do manta-oneach -z "$inst" -G "cd /var/tmp; nohup bash snaplink-sherlock.sh $inst >/var/tmp/snaplink-sherlock.$(date -u +%Y%m%dT%H%M%S).output.log 2>&1 &"; done
+    ```
+
+    Each execution will create a "/var/tmp/${shard}_sherlock.tsv.gz" file on
+    completion.
+
+5. Poll for completion of the sherlock scripts via:
+
+    ```
+    manta-oneach -z "$inst_csv" -G "grep SnapLinks: /var/tmp/snaplink-sherlock.*.output.log"
+
+    manta-oneach -z "$inst_csv" -G "ls -l /var/tmp/*_sherlock.tsv.gz"
+    ```
+
+    For example:
+
+    ```
+    [root@headnode (coal) /var/tmp]#     manta-oneach -z "$inst_csv" -G "grep SnapLinks: /var/tmp/snaplink-sherlock.*.output.log"
+    HOSTNAME              OUTPUT
+    headnode              Lines: 1226, SnapLinks: 42, Objects: 234
+
+    [root@headnode (coal) /var/tmp]#     manta-oneach -z "$inst_csv" -G "ls -l /var/tmp/*_sherlock.tsv.gz"
+    HOSTNAME              OUTPUT
+    headnode              -rw-r--r--   1 root     staff       1008 Apr 14 18:26 /var/tmp/1.moray.coalregion.joyent.us_sherlock.tsv.gz
+    ```
+
+6. Copy the `*_sherlock.tsv.gz` files back to the headnode:
+
+    ```
+    function copy_sherlock_files_to_headnode {
+        local basedir=/var/tmp/sherlock-files
+        mkdir -p $basedir/tmp
+        for inst in "${inst_array[@]}"; do
+            sherlock_files=$(manta-oneach -G -z "$inst" -J 'ls /var/tmp/*_sherlock.tsv.gz' | json -ga result.stdout | grep sherlock)
+            for f in $sherlock_files; do
+                echo "Copy '$f' (postgres async $inst) to $basedir"
+                manta-oneach -G -z "$inst" -X -d $basedir/tmp -p "$f"
+                # Move from "tmp/$server_uuid" path used by 'manta-oneach -p'.
+                mv $basedir/tmp/* $basedir/$(basename $f)
+            done
+        done
+        rm -rf $basedir/tmp
+        echo ""
+        echo "$basedir:"
+        ls -l1 $basedir
+    }
+    copy_sherlock_files_to_headnode
+    ```
+
+7. Copy these files to "/var/db/snaplink-cleanup/discovery/"
+   **on the driver DC** (i.e. this might be in a different DC).
+
+    ```
+    ssh DRIVER_DC
+    rsync -av OTHER_DC:/var/tmp/sherlock-files/ /var/db/snaplink-cleanup/discovery/
+    ```
 
 
 ### Step 3.4: Run "stordelink" scripts
@@ -570,7 +708,7 @@ run in the driver DC. The steps below assume that.
     region_name=$(bash /lib/sdc/config.sh -json | json region_name)
     dns_domain=$(bash /lib/sdc/config.sh -json | json dns_domain)
     moray_insts=$(manta-adm show moray -Ho shard,zonename | sed 's/^ *//g' | sort)
-    index_shards=$(sdc-sapi /applications?name=manta | json -H 0.metadata.INDEX_MORAY_SHARDS | json -e 'this.sh = this.host.split(".")[0]' -a sh)
+    index_shards=$(sdc-sapi '/applications?name=manta&include_master=true' | json -H 0.metadata.INDEX_MORAY_SHARDS | json -e 'this.sh = this.host.split(".")[0]' -a sh)
     moray_selected_insts=""
     for shard in $index_shards; do
         shard_host=$shard.moray.$region_name.$dns_domain
@@ -651,7 +789,7 @@ metadata is obsolete. Print the current value (for record keeping) and remove
 it from the SAPI metadata:
 
 ```
-manta_app=$(sdc-sapi /applications?name=manta | json -H 0.uuid)
+manta_app=$(sdc-sapi '/applications?name=manta&include_master=true' | json -H 0.uuid)
 
 sapiadm get "$manta_app" | json metadata.ACCOUNTS_SNAPLINKS_DISABLED
 
