@@ -456,7 +456,7 @@ following steps on each DC in the region.
 4. Start the long-running snaplink-sherlock.sh script for each async:
 
     ```
-    for inst in "${inst_array[@]}"; do manta-oneach -z $inst -G "cd /var/tmp; nohup bash snaplink-sherlock.sh $inst &"; done
+    for inst in "${inst_array[@]}"; do manta-oneach -z $inst -G "cd /var/tmp; nohup bash snaplink-sherlock.sh $inst >/var/tmp/snaplink-sherlock.$(date -u +%Y%m%dT%H%M%S).output.log 2>&1 &"; done
     ```
 
     Each execution will create a "/var/tmp/${shard}_sherlock.tsv.gz" file on
