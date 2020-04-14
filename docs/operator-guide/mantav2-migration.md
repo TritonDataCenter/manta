@@ -456,7 +456,7 @@ following steps on each DC in the region.
 4. Start the long-running snaplink-sherlock.sh script for each async:
 
     ```
-    for inst in "${inst_array[@]}"; do manta-oneach -z $inst -G "cd /var/tmp; nohup bash snaplink-sherlock.sh $inst >/var/tmp/snaplink-sherlock.$(date -u +%Y%m%dT%H%M%S).output.log 2>&1 &"; done
+    for inst in "${inst_array[@]}"; do manta-oneach -z "$inst" -G "cd /var/tmp; nohup bash snaplink-sherlock.sh $inst >/var/tmp/snaplink-sherlock.$(date -u +%Y%m%dT%H%M%S).output.log 2>&1 &"; done
     ```
 
     Each execution will create a "/var/tmp/${shard}_sherlock.tsv.gz" file on
@@ -465,16 +465,21 @@ following steps on each DC in the region.
 5. Poll for completion of the sherlock scripts via:
 
     ```
-    manta-oneach -z $inst_csv -G "ls -l /var/tmp/*_sherlock.tsv.gz"
+    manta-oneach -z "$inst_csv" -G "grep SnapLinks: /var/tmp/snaplink-sherlock.*.output.log"
+
+    manta-oneach -z "$inst_csv" -G "ls -l /var/tmp/*_sherlock.tsv.gz"
     ```
 
     For example:
 
     ```
-    [root@headnode (qamantav1) /var/tmp]# manta-oneach -z $inst_csv -G "ls -l /var/tmp/*_sherlock.tsv.gz"
-    === Output from 242d0ef9-baa4-cc4e-b6a4-d77be5d61aa7 (headnode):
-    -rw-r--r--   1 root     staff       1008 Apr  7 05:26 /var/tmp/1.moray.qaserver3.scloud.host_sherlock.tsv.gz
-    -rw-r--r--   1 root     staff         20 Apr  7 05:27 /var/tmp/2.moray.qaserver3.scloud.host_sherlock.tsv.gz
+    [root@headnode (coal) /var/tmp]#     manta-oneach -z "$inst_csv" -G "grep SnapLinks: /var/tmp/snaplink-sherlock.*.output.log"
+    HOSTNAME              OUTPUT
+    headnode              Lines: 1226, SnapLinks: 42, Objects: 234
+
+    [root@headnode (coal) /var/tmp]#     manta-oneach -z "$inst_csv" -G "ls -l /var/tmp/*_sherlock.tsv.gz"
+    HOSTNAME              OUTPUT
+    headnode              -rw-r--r--   1 root     staff       1008 Apr 14 18:26 /var/tmp/1.moray.coalregion.joyent.us_sherlock.tsv.gz
     ```
 
 6. Copy the `*_sherlock.tsv.gz` files back to the headnode:
