@@ -405,7 +405,7 @@ following steps on each DC in the region.
     ```
     function warn_missing_index_shard_asyncs {
         local postgres_insts=$(manta-adm show postgres -Ho shard,zonename | sed 's/^ *//g' | sort)
-        local index_shards=$(sdc-sapi /applications?name=manta | json -H 0.metadata.INDEX_MORAY_SHARDS | json -e 'this.sh = this.host.split(".")[0]' -a sh)
+        local index_shards=$(sdc-sapi '/applications?name=manta&include_master=true' | json -H 0.metadata.INDEX_MORAY_SHARDS | json -e 'this.sh = this.host.split(".")[0]' -a sh)
         for shard in $index_shards; do
             local an_inst=$(echo "$postgres_insts" | grep "^$shard " | head -1 | awk '{print $2}')
             if [[ -z "$an_inst" ]]; then
@@ -698,7 +698,7 @@ run in the driver DC. The steps below assume that.
     region_name=$(bash /lib/sdc/config.sh -json | json region_name)
     dns_domain=$(bash /lib/sdc/config.sh -json | json dns_domain)
     moray_insts=$(manta-adm show moray -Ho shard,zonename | sed 's/^ *//g' | sort)
-    index_shards=$(sdc-sapi /applications?name=manta | json -H 0.metadata.INDEX_MORAY_SHARDS | json -e 'this.sh = this.host.split(".")[0]' -a sh)
+    index_shards=$(sdc-sapi '/applications?name=manta&include_master=true' | json -H 0.metadata.INDEX_MORAY_SHARDS | json -e 'this.sh = this.host.split(".")[0]' -a sh)
     moray_selected_insts=""
     for shard in $index_shards; do
         shard_host=$shard.moray.$region_name.$dns_domain
@@ -779,7 +779,7 @@ metadata is obsolete. Print the current value (for record keeping) and remove
 it from the SAPI metadata:
 
 ```
-manta_app=$(sdc-sapi /applications?name=manta | json -H 0.uuid)
+manta_app=$(sdc-sapi '/applications?name=manta&include_master=true' | json -H 0.uuid)
 
 sapiadm get "$manta_app" | json metadata.ACCOUNTS_SNAPLINKS_DISABLED
 
