@@ -886,10 +886,15 @@ process ticket tracking snaplink removal, if small enough).
 
 The new garbage-collector system should be deployed.
 
-1.  Follow [the GC deployment
-    steps](https://github.com/joyent/manta-garbage-collector/tree/master/docs#deploying-the-garbage-collector).
+1.  As a prerequisite, update all "moray" service instances to a "mantav2-moray"
+    image after 20200413 (to include the fix for MANTA-5155).
 
-2.  Update all "storage" service instances to a recent (2020-03-19 or later) "mantav2-storage" image.
+2.  As a prerequisite, update all "electric-moray" service instances to a
+    "mantav2-electric-moray" image after 20200130 (to include the MANTA-4992
+    fix).
+
+3.  Update all "storage" service instances to a recent (2020-03-19 or later)
+    "mantav2-storage" image.
 
     A direct way to do this is as follows. A production Manta operator may
     prefer to space out these storage node updates.
@@ -905,6 +910,10 @@ The new garbage-collector system should be deployed.
     vi /var/tmp/config.json  # update storage instances
     manta-adm update /var/tmp/config.json
     ```
+
+4.  Follow [the GC deployment
+    steps](https://github.com/joyent/manta-garbage-collector/tree/master/docs#deploying-the-garbage-collector).
+
 
 ## Step 5: Remove obsolete Manta jobs services and instances
 
