@@ -256,7 +256,7 @@ multi-DC, multi-compute-node deployment.  The general process is:
    using:
 
         sdcadm post-setup common-external-nics  # enable downloading service images
-        sdcadm post-setup manta --mantav1
+        sdcadm post-setup manta
 
 3. In each datacenter, generate a Manta networking configuration file.
 
