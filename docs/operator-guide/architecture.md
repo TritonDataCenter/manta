@@ -126,23 +126,23 @@ services.
 
 ### Manta components at a glance
 
-| Kind    | Major subsystem    | Service                  | Purpose                               | Components                                                                                             |
-| ------- | ------------------ | ------------------------ | ------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Service | Consensus          | nameservice              | Service discovery                     | ZooKeeper, [binder](https://github.com/joyent/binder) (DNS)                                            |
-| Service | Front door         | loadbalancer             | SSL termination and load balancing    | stud, haproxy/[muppet](https://github.com/joyent/muppet)                                               |
-| Service | Front door         | webapi                   | Manta HTTP API server                 | [muskie](https://github.com/joyent/manta-muskie)                                                       |
-| Service | Front door         | authcache                | Authentication cache                  | [mahi](https://github.com/joyent/mahi) (redis)                                                         |
-| Service | Garbage Collection | garbage-buckets-consumer | Buckets-style garbage collection      | [garbage-buckets-consumer (bin)](https://github.com/joyent/manta-garbage-collector/blob/master/bin/garbage-buckets-consumer.js), [garbage-buckets-consumer (lib)](https://github.com/joyent/manta-garbage-collector/blob/master/lib/garbage-buckets-consumer.js) |
-| Service | Garbage Collection | garbage-deleter          | Deleting storage for objects          | [garbage-deleter (bin)](https://github.com/joyent/manta-mako/blob/master/bin/garbage-deleter.js), [garbage-deleter (lib)](https://github.com/joyent/manta-mako/blob/master/lib/garbage-deleter.js) |
-| Service | Garbage Collection | garbage-dir-consumer     | Dir-style garbage collection          | [garbage-dir-consumer (bin)](https://github.com/joyent/manta-garbage-collector/blob/master/bin/garbage-dir-consumer.js), [garbage-dir-consumer (lib)](https://github.com/joyent/manta-garbage-collector/blob/master/lib/garbage-dir-consumer.js) |
-| Service | Garbage Collection | garbage-mpu-cleaner      | MPU garbage collection                | [garbage-mpu-cleaner (bin)](https://github.com/joyent/manta-garbage-collector/blob/master/bin/garbage-mpu-cleaner.js), [garbage-mpu-cleaner (lib)](https://github.com/joyent/manta-garbage-collector/blob/master/lib/garbage-mpu-cleaner.js) |
-| Service | Garbage Collection | garbage-uploader         | Send GC instructions to storage zones | [garbage-uploader (bin)](https://github.com/joyent/manta-garbage-collector/blob/master/bin/garbage-uploader.js), [garbage-uploader (lib)](https://github.com/joyent/manta-garbage-collector/blob/master/lib/garbage-uploader.js) |
-| Service | Metadata           | postgres                 | Metadata storage and replication      | postgres, [manatee](https://github.com/joyent/manta-manatee)                                           |
-| Service | Metadata           | moray                    | Key-value store                       | [moray](https://github.com/joyent/moray)                                                               |
-| Service | Metadata           | electric-moray           | Consistent hashing (sharding)         | [electric-moray](https://github.com/joyent/electric-moray)                                             |
-| Service | Storage            | storage                  | Object storage and capacity reporting | [mako](https://github.com/joyent/manta-mako) (nginx), [minnow](https://github.com/joyent/manta-minnow) |
-| Service | Operations         | ops                      | ...                                   | [mola](https://github.com/joyent/manta-mola), [mackerel](https://github.com/joyent/manta-mackerel)     |
-| Service | Operations         | madtom                   | Web-based Manta monitoring            | [madtom](https://github.com/joyent/manta-madtom)                                                       |
+| Kind    | Major subsystem    | Service                  | Purpose                                | Components                                                                                             |
+| ------- | ------------------ | ------------------------ | -------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Service | Consensus          | nameservice              | Service discovery                      | ZooKeeper, [binder](https://github.com/joyent/binder) (DNS)                                            |
+| Service | Front door         | loadbalancer             | SSL termination and load balancing     | stud, haproxy/[muppet](https://github.com/joyent/muppet)                                               |
+| Service | Front door         | webapi                   | Manta HTTP API server                  | [muskie](https://github.com/joyent/manta-muskie)                                                       |
+| Service | Front door         | authcache                | Authentication cache                   | [mahi](https://github.com/joyent/mahi) (redis)                                                         |
+| Service | Garbage Collection | garbage-buckets-consumer | Manta Buckets API garbage collection   | [garbage-buckets-consumer (bin)](https://github.com/joyent/manta-garbage-collector/blob/master/bin/garbage-buckets-consumer.js), [garbage-buckets-consumer (lib)](https://github.com/joyent/manta-garbage-collector/blob/master/lib/garbage-buckets-consumer.js) |
+| Service | Garbage Collection | garbage-deleter          | Deleting storage for objects           | [garbage-deleter (bin)](https://github.com/joyent/manta-mako/blob/master/bin/garbage-deleter.js), [garbage-deleter (lib)](https://github.com/joyent/manta-mako/blob/master/lib/garbage-deleter.js) |
+| Service | Garbage Collection | garbage-dir-consumer     | Manta Directory API garbage collection | [garbage-dir-consumer (bin)](https://github.com/joyent/manta-garbage-collector/blob/master/bin/garbage-dir-consumer.js), [garbage-dir-consumer (lib)](https://github.com/joyent/manta-garbage-collector/blob/master/lib/garbage-dir-consumer.js) |
+| Service | Garbage Collection | garbage-mpu-cleaner      | MPU garbage collection                 | [garbage-mpu-cleaner (bin)](https://github.com/joyent/manta-garbage-collector/blob/master/bin/garbage-mpu-cleaner.js), [garbage-mpu-cleaner (lib)](https://github.com/joyent/manta-garbage-collector/blob/master/lib/garbage-mpu-cleaner.js) |
+| Service | Garbage Collection | garbage-uploader         | Send GC instructions to storage zones  | [garbage-uploader (bin)](https://github.com/joyent/manta-garbage-collector/blob/master/bin/garbage-uploader.js), [garbage-uploader (lib)](https://github.com/joyent/manta-garbage-collector/blob/master/lib/garbage-uploader.js) |
+| Service | Metadata           | postgres                 | Metadata storage and replication       | postgres, [manatee](https://github.com/joyent/manta-manatee)                                           |
+| Service | Metadata           | moray                    | Key-value store                        | [moray](https://github.com/joyent/moray)                                                               |
+| Service | Metadata           | electric-moray           | Consistent hashing (sharding)          | [electric-moray](https://github.com/joyent/electric-moray)                                             |
+| Service | Storage            | storage                  | Object storage and capacity reporting  | [mako](https://github.com/joyent/manta-mako) (nginx), [minnow](https://github.com/joyent/manta-minnow) |
+| Service | Operations         | ops                      | ...                                    | [mola](https://github.com/joyent/manta-mola), [mackerel](https://github.com/joyent/manta-mackerel)     |
+| Service | Operations         | madtom                   | Web-based Manta monitoring             | [madtom](https://github.com/joyent/manta-madtom)                                                       |
 
 
 <!-- TODO: add storinfo, rebalancer, gc, and buckets services -->
@@ -398,8 +398,8 @@ and `storage` zones and is responsible for removing the storage used by objects
 which have been removed from the metadata tier. It is also responsible for
 removing metadata for finalized MPU uploads.
 
-When an object is deleted from the metadata tier in either dir-style or
-buckets-style Manta, the objects on disk are not immediately removed, nor are
+When an object is deleted from the metadata tier in either the Manta Directory
+API or Manta Buckets API, the objects on disk are not immediately removed, nor are
 all references in the metadata tier itself. The original record is moved into a
 new deletion record which includes the information required to delete the
 storage backing the now-deleted object. The garbage collection system is
@@ -408,21 +408,21 @@ responsible for actually performing the cleanup.
 Processes in the `garbage-collector` zone include:
 
  * `garbage-buckets-consumer` -- consumes deletion records from `buckets-mdapi`
-   (created when an object is deleted by buckets-style Manta). The records found
+   (created when an object is deleted by Manta Buckets API). The records found
    are written to local `instructions` files in the `garbage-collector` zone.
 
  * `garbage-dir-consumer` -- consumes deletion records from the
-   `manta_fastdelete_queue` bucket (created when an object is deleted by
-   dir-style Manta). The records found are written to local `instructions`
-   files in the `garbage-collector` zone.
+   `manta_fastdelete_queue` bucket (created when an object is deleted through
+   the Manta Directory API). The records found are written to local
+   `instructions` files in the `garbage-collector` zone.
 
  * `garbage-uploader` -- consumes the locally queued `instructions` and uploads
    them to the appropriate `storage` zone for processing.
 
- * `garbage-mpu-cleaner` -- consumes "finalized" MPU uploads (dir-style only)
-   and deletes the upload parts, upload directory and the finalize record
-   itself after the upload has been finalized for some period of time (default:
-   5 minutes).
+ * `garbage-mpu-cleaner` -- consumes "finalized" MPU uploads (Manta Directory
+   API only) and deletes the upload parts, upload directory and the finalize
+   record itself after the upload has been finalized for some period of time
+   (default: 5 minutes).
 
 On the `storage` zones, there's an additional component of garbage collection:
 
