@@ -427,9 +427,9 @@ Processes in the `garbage-collector` zone include:
 On the `storage` zones, there's an additional component of garbage collection:
 
  * `garbage-deleter` -- consumes `instructions` that were uploaded by
-   `garbage-uploader` and actually performs the deletes from `/manta` of the
-   no-longer-needed object files. Once the storage is deleted, the instructions
-   files are also deleted.
+   `garbage-uploader` and actually deletes the no-longer-needed object files in
+   `/manta` of the storage zone.  Once the storage is deleted, the completed
+   instructions files are also deleted.
 
 Each of these services in both zones, run as their own SMF service and has their
 own log file in `/var/svc/log`.
