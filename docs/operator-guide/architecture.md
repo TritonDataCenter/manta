@@ -28,7 +28,8 @@ This section discusses the basics of the Manta architecture.
 - [The front door](#the-front-door)
   - [Objects and directories](#objects-and-directories)
 - [Multipart uploads](#multipart-uploads)
-- [Garbage collection, auditing, and metering](#garbage-collection-auditing-and-metering)
+- [Garbage Collection](#garbage-collection)
+- [Auditing and Metering](#auditing-and-metering)
 - [Manta Scalability](#manta-scalability)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -125,18 +126,24 @@ services.
 
 ### Manta components at a glance
 
-| Kind    | Major subsystem | Service          | Purpose                               | Components                                                                                             |
-| ------- | --------------- | ---------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Service | Consensus       | nameservice      | Service discovery                     | ZooKeeper, [binder](https://github.com/joyent/binder) (DNS)                                            |
-| Service | Front door      | loadbalancer     | SSL termination and load balancing    | stud, haproxy/[muppet](https://github.com/joyent/muppet)                                               |
-| Service | Front door      | webapi           | Manta HTTP API server                 | [muskie](https://github.com/joyent/manta-muskie)                                                       |
-| Service | Front door      | authcache        | Authentication cache                  | [mahi](https://github.com/joyent/mahi) (redis)                                                         |
-| Service | Metadata        | postgres         | Metadata storage and replication      | postgres, [manatee](https://github.com/joyent/manta-manatee)                                           |
-| Service | Metadata        | moray            | Key-value store                       | [moray](https://github.com/joyent/moray)                                                               |
-| Service | Metadata        | electric-moray   | Consistent hashing (sharding)         | [electric-moray](https://github.com/joyent/electric-moray)                                             |
-| Service | Storage         | storage          | Object storage and capacity reporting | [mako](https://github.com/joyent/manta-mako) (nginx), [minnow](https://github.com/joyent/manta-minnow) |
-| Service | Operations      | ops              | ...                                   | [mola](https://github.com/joyent/manta-mola), [mackerel](https://github.com/joyent/manta-mackerel)     |
-| Service | Operations      | madtom           | Web-based Manta monitoring            | [madtom](https://github.com/joyent/manta-madtom)                                                       |
+| Kind    | Major subsystem    | Service                  | Purpose                                | Components                                                                                             |
+| ------- | ------------------ | ------------------------ | -------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Service | Consensus          | nameservice              | Service discovery                      | ZooKeeper, [binder](https://github.com/joyent/binder) (DNS)                                            |
+| Service | Front door         | loadbalancer             | SSL termination and load balancing     | stud, haproxy/[muppet](https://github.com/joyent/muppet)                                               |
+| Service | Front door         | webapi                   | Manta HTTP API server                  | [muskie](https://github.com/joyent/manta-muskie)                                                       |
+| Service | Front door         | authcache                | Authentication cache                   | [mahi](https://github.com/joyent/mahi) (redis)                                                         |
+| Service | Garbage Collection | garbage-buckets-consumer | Manta Buckets API garbage collection   | [garbage-buckets-consumer (bin)](https://github.com/joyent/manta-garbage-collector/blob/master/bin/garbage-buckets-consumer.js), [garbage-buckets-consumer (lib)](https://github.com/joyent/manta-garbage-collector/blob/master/lib/garbage-buckets-consumer.js) |
+| Service | Garbage Collection | garbage-deleter          | Deleting storage for objects           | [garbage-deleter (bin)](https://github.com/joyent/manta-mako/blob/master/bin/garbage-deleter.js), [garbage-deleter (lib)](https://github.com/joyent/manta-mako/blob/master/lib/garbage-deleter.js) |
+| Service | Garbage Collection | garbage-dir-consumer     | Manta Directory API garbage collection | [garbage-dir-consumer (bin)](https://github.com/joyent/manta-garbage-collector/blob/master/bin/garbage-dir-consumer.js), [garbage-dir-consumer (lib)](https://github.com/joyent/manta-garbage-collector/blob/master/lib/garbage-dir-consumer.js) |
+| Service | Garbage Collection | garbage-mpu-cleaner      | MPU garbage collection                 | [garbage-mpu-cleaner (bin)](https://github.com/joyent/manta-garbage-collector/blob/master/bin/garbage-mpu-cleaner.js), [garbage-mpu-cleaner (lib)](https://github.com/joyent/manta-garbage-collector/blob/master/lib/garbage-mpu-cleaner.js) |
+| Service | Garbage Collection | garbage-uploader         | Send GC instructions to storage zones  | [garbage-uploader (bin)](https://github.com/joyent/manta-garbage-collector/blob/master/bin/garbage-uploader.js), [garbage-uploader (lib)](https://github.com/joyent/manta-garbage-collector/blob/master/lib/garbage-uploader.js) |
+| Service | Metadata           | postgres                 | Metadata storage and replication       | postgres, [manatee](https://github.com/joyent/manta-manatee)                                           |
+| Service | Metadata           | moray                    | Key-value store                        | [moray](https://github.com/joyent/moray)                                                               |
+| Service | Metadata           | electric-moray           | Consistent hashing (sharding)          | [electric-moray](https://github.com/joyent/electric-moray)                                             |
+| Service | Storage            | storage                  | Object storage and capacity reporting  | [mako](https://github.com/joyent/manta-mako) (nginx), [minnow](https://github.com/joyent/manta-minnow) |
+| Service | Operations         | ops                      | ...                                    | [mola](https://github.com/joyent/manta-mola), [mackerel](https://github.com/joyent/manta-mackerel)     |
+| Service | Operations         | madtom                   | Web-based Manta monitoring             | [madtom](https://github.com/joyent/manta-madtom)                                                       |
+
 
 <!-- TODO: add storinfo, rebalancer, gc, and buckets services -->
 
@@ -384,30 +391,62 @@ some additional features of the system only used for multipart uploads:
   multipart upload is committed.
 
 
+## Garbage Collection
 
-## Garbage collection, auditing, and metering
+**Garbage collection** consists of several components in the `garbage-collector`
+and `storage` zones and is responsible for removing the storage used by objects
+which have been removed from the metadata tier. It is also responsible for
+removing metadata for finalized MPU uploads.
 
-<!-- TODO: update for mantav2 -->
+When an object is deleted from the metadata tier in either the Manta Directory
+API or Manta Buckets API, the objects on disk are not immediately removed, nor are
+all references in the metadata tier itself. The original record is moved into a
+new deletion record which includes the information required to delete the
+storage backing the now-deleted object. The garbage collection system is
+responsible for actually performing the cleanup.
 
-Garbage collection, auditing, and metering all run as cron jobs out of the "ops"
-zone.
+Processes in the `garbage-collector` zone include:
 
-**Garbage collection** is the process of freeing up storage used for objects
-which no longer exist.  When an object is deleted, muskie records that event in
-a log and removes the metadata from Moray, but does not actually remove the
-object from storage servers because there may have been other links to it.  The
-garbage collection job (called "mola") processes these logs, along with dumps of
-the metadata tier (taken periodically and stored into Manta), and determines
-which objects can safely be deleted.  These delete requests are batched and sent
-to each storage node, which moves the objects to a "tombstone" area.  Objects in
-the tombstone area are deleted after a fixed interval.
+ * `garbage-buckets-consumer` -- consumes deletion records from `buckets-mdapi`
+   (created when an object is deleted by Manta Buckets API). The records found
+   are written to local `instructions` files in the `garbage-collector` zone.
+
+ * `garbage-dir-consumer` -- consumes deletion records from the
+   `manta_fastdelete_queue` bucket (created when an object is deleted through
+   the Manta Directory API). The records found are written to local
+   `instructions` files in the `garbage-collector` zone.
+
+ * `garbage-uploader` -- consumes the locally queued `instructions` and uploads
+   them to the appropriate `storage` zone for processing.
+
+ * `garbage-mpu-cleaner` -- consumes "finalized" MPU uploads (Manta Directory
+   API only) and deletes the upload parts, upload directory and the finalize
+   record itself after the upload has been finalized for some period of time
+   (default: 5 minutes).
+
+On the `storage` zones, there's an additional component of garbage collection:
+
+ * `garbage-deleter` -- consumes `instructions` that were uploaded by
+   `garbage-uploader` and actually deletes the no-longer-needed object files in
+   `/manta` of the storage zone.  Once the storage is deleted, the completed
+   instructions files are also deleted.
+
+Each of these services in both zones, run as their own SMF service and has their
+own log file in `/var/svc/log`.
+
+
+## Auditing and Metering
+<!-- TODO: update below for mantav2 -->
+
+Auditing, and metering run as cron jobs out of the "ops" zone.
 
 **Auditing** is the process of ensuring that each object is replicated as
-expected.  This is a similar job run over the contents of the metadata tier and
+expected.  This is a job run over the contents of the metadata tier and
 manifests reported by the storage nodes.
 
 **Metering** is the process of measuring how much resource each user used, both
 for reporting and billing.
+
 
 ## Manta Scalability
 
@@ -416,7 +455,7 @@ There are many dimensions to scalability.
 In the metadata tier:
 
 * number of objects (scalable with additional shards)
-* number of objects in a directory (fixed, currently at a few million objects)
+* number of objects in a directory (fixed, currently at a million objects)
 
 In the storage tier:
 
@@ -430,10 +469,6 @@ In terms of performance:
 * total bytes in or out per second (depends on network configuration)
 * count of concurrent requests (scalable with additional metadata shards or API
   servers)
-* count of compute tasks executed per second (scalable with additional storage
-  nodes)
-* count of concurrent compute tasks (could be measured in tasks, CPU cores
-  available, or DRAM availability; scaled with additional storage node hardware)
 
 As described above, for most of these dimensions, Manta can be scaled
 horizontally by deploying more software instances (often on more hardware).  For
