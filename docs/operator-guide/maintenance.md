@@ -376,8 +376,8 @@ the service's that *don't* use the SMF log file:
 
 | Service                                     | Path                             | Format             |
 | ------------------------------------------- | -------------------------------- | ------------------ |
-| muskie                                      | /var/log/muskie.log              | bunyan             |
-| moray                                       | /var/log/muskie.log              | bunyan             |
+| muskie                                      | /var/svc/log/\*muskie\*.log      | bunyan             |
+| moray                                       | /var/log/moray.log               | bunyan             |
 | mbackup<br />(the log file uploader itself) | /var/log/mbackup.log             | bash xtrace        |
 | haproxy                                     | /var/log/haproxy.log             | haproxy-specific   |
 | mackerel (metering)                         | /var/log/mackerel.log            | bunyan             |
@@ -528,6 +528,24 @@ to a deployment with a prefix length of 1, which has a maximum of 256 prefix
 directories and allows for about 256 million multipart uploads, but only up to
 256 directory listings are required to list all multipart uploads under an
 account.
+
+
+## Picker/Storinfo toggle
+
+There are two options for webapi to obtain storage node information - `picker`
+and `storinfo`. Both of them query the moray shard that maintains the storage
+node `statvfs` data, keep a local cache and periodically refresh it, and
+select storage nodes for object write requests.
+
+`Storinfo` is an optional service which is separate from webapi. To use it
+as opposed to the local `picker` function, set the `WEBAPI_USE_PICKER` SAPI
+variable to `false` under the "webapi" service:
+
+    $ sdc-sapi /services/$(sdc-sapi /services?name=webapi | json -Ha uuid) \
+        -X PUT -d '{"action": "update", "metadata": {"WEBAPI_USE_PICKER": false}}'
+
+If `storinfo` is not deployed (because rebalancer or buckets API components are
+not in use), the SAPI variable should still be configured and set to `true`.
 
 
 # Debugging: general tasks
