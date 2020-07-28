@@ -90,10 +90,9 @@ nodes and Mantis Shrimps for storage nodes.
 
 Since there are so many different Manta components, and they're all deployed
 redundantly, there are a lot of different pieces to think about.  (The
-production deployment in us-east has 21 zones in *each* of the three
-datacenters, not including the Marlin compute zones.)  So when setting up a
-Manta deployment, it's very important to think ahead of time about which
-components will run where!
+production deployment in us-east has 20+ zones in *each* of the three
+datacenters.)  So when setting up a Manta deployment, it's very important to
+think ahead of time about which components will run where!
 
 **The `manta-adm genconfig` tool (when used with the --from-file option) can be
 very helpful in laying out zones for Manta.  See the `manta-adm` manual page for
@@ -695,7 +694,7 @@ idea of what this looks like:
     }
 
 This file effectively specifies all of the Manta components except for the
-platforms and Marlin agents.
+platforms.
 
 You can generate a configuration file that describes your current deployment
 with `manta-adm show -s -j`.

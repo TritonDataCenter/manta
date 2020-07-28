@@ -35,7 +35,7 @@ service logs; and some general inspection/debugging tasks.
     - [Prefix length tradeoffs](#prefix-length-tradeoffs)
 - [Debugging: general tasks](#debugging-general-tasks)
   - [Locating servers](#locating-servers)
-  - [Locating storage IDs and compute IDs](#locating-storage-ids-and-compute-ids)
+  - [Locating storage IDs](#locating-storage-ids)
   - [Locating Manta component zones](#locating-manta-component-zones)
   - [Accessing systems](#accessing-systems)
   - [Locating Object Data](#locating-object-data)
@@ -69,7 +69,7 @@ method to avoid discarding their data. This update moves the service offline for
 the instance can be reprovisioned back to its original image.
 
 This procedure uses "manta-adm" to do the upgrade, which uses the reprovisioning
-method for all zones other than the "marlin" zones.
+method for all zones.
 
 ### Prerequisites
 
@@ -157,10 +157,6 @@ This command is idempotent.
 ## Triton zone and agent upgrades
 
 Triton zones and agents are upgraded exactly as they are in non-Manta installs.
-
-Note that the Triton agents include the Marlin agent.  If you don't want to
-update the Marlin agent with the Triton agents, you'll need to manually exclude
-it.
 
 
 ## Platform upgrades
@@ -380,8 +376,6 @@ the service's that *don't* use the SMF log file:
 | moray                                       | /var/log/moray.log               | bunyan             |
 | mbackup<br />(the log file uploader itself) | /var/log/mbackup.log             | bash xtrace        |
 | haproxy                                     | /var/log/haproxy.log             | haproxy-specific   |
-| mackerel (metering)                         | /var/log/mackerel.log            | bunyan             |
-| mola                                        | /var/log/mola\*.log              | bunyan             |
 | zookeeper                                   | /var/log/zookeeper/zookeeper.log | zookeeper-specific |
 | redis                                       | /var/log/redis/redis.log         | redis-specific     |
 
@@ -532,19 +526,19 @@ account.
 
 ## Picker/Storinfo toggle
 
-There are two options for webapi to obtain storage node information - `picker`
-and `storinfo`. Both of them query the moray shard that maintains the storage
+There are two options for webapi to obtain storage node information - "picker"
+and "storinfo". Both of them query the moray shard that maintains the storage
 node `statvfs` data, keep a local cache and periodically refresh it, and
 select storage nodes for object write requests.
 
-`Storinfo` is an optional service which is separate from webapi. To use it
-as opposed to the local `picker` function, set the `WEBAPI_USE_PICKER` SAPI
+Storinfo is an optional service which is separate from webapi. To use it
+as opposed to the local picker function, set the `WEBAPI_USE_PICKER` SAPI
 variable to `false` under the "webapi" service:
 
     $ sdc-sapi /services/$(sdc-sapi /services?name=webapi | json -Ha uuid) \
         -X PUT -d '{"action": "update", "metadata": {"WEBAPI_USE_PICKER": false}}'
 
-If `storinfo` is not deployed (because rebalancer or buckets API components are
+If storinfo is not deployed (because rebalancer or buckets API components are
 not in use), the SAPI variable should still be configured and set to `true`.
 
 
@@ -570,25 +564,23 @@ fetch the server uuid and global zone IP for RM08218, use:
 See the `manta-adm(1)` manual page for details.
 
 
-## Locating storage IDs and compute IDs
+## Locating storage IDs
 
-Manta Storage CNs have additional identifiers:
+Manta Storage CNs have additional identifiers known as storage IDs. The one or
+more manta storage IDs are used for object metadata.  There's one storage
+ID per storage zone deployed on a server, so there can be more than one
+storage ID per CN, although this is usually only the case in development
+environments.
 
-- a manta compute ID, used by the jobs subsystem.
-- one or more manta storage IDs, used for object metadata.  There's one storage
-  ID per storage zone deployed on a server, so there can be more than one
-  storage ID per CN, although this is usually only the case in development
-  environments.
-
-You can generate a table that maps hostnames to compute ID and storage IDs for
+You can generate a table that maps hostnames to storage IDs for
 the current datacenter:
 
-    # manta-adm cn -o host,compute_id,storage_ids storage
-    HOST     COMPUTE ID               STORAGE IDS
-    RM08213  12.cn.us-east.joyent.us  2.stor.us-east.joyent.us
-    RM08211  20.cn.us-east.joyent.us  1.stor.us-east.joyent.us
-    RM08216  19.cn.us-east.joyent.us  3.stor.us-east.joyent.us
-    RM08219  11.cn.us-east.joyent.us  4.stor.us-east.joyent.us
+    # manta-adm cn -o host,storage_ids storage
+    HOST     STORAGE IDS
+    RM08213  2.stor.us-east.joyent.us
+    RM08211  1.stor.us-east.joyent.us
+    RM08216  3.stor.us-east.joyent.us
+    RM08219  4.stor.us-east.joyent.us
 
 Note that the column name is "storage\_ids" (with a trailing "s") since there
 may be more than one.
