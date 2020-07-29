@@ -33,9 +33,10 @@ service logs; and some general inspection/debugging tasks.
   - [Multipart uploads prefix length](#multipart-uploads-prefix-length)
     - [Changing the prefix length](#changing-the-prefix-length)
     - [Prefix length tradeoffs](#prefix-length-tradeoffs)
+  - [Picker/Storinfo toggle](#pickerstorinfo-toggle)
 - [Debugging: general tasks](#debugging-general-tasks)
   - [Locating servers](#locating-servers)
-  - [Locating storage IDs and compute IDs](#locating-storage-ids-and-compute-ids)
+  - [Locating storage IDs](#locating-storage-ids)
   - [Locating Manta component zones](#locating-manta-component-zones)
   - [Accessing systems](#accessing-systems)
   - [Locating Object Data](#locating-object-data)
@@ -69,7 +70,7 @@ method to avoid discarding their data. This update moves the service offline for
 the instance can be reprovisioned back to its original image.
 
 This procedure uses "manta-adm" to do the upgrade, which uses the reprovisioning
-method for all zones other than the "marlin" zones.
+method for all zones.
 
 ### Prerequisites
 
@@ -158,10 +159,6 @@ This command is idempotent.
 
 Triton zones and agents are upgraded exactly as they are in non-Manta installs.
 
-Note that the Triton agents include the Marlin agent.  If you don't want to
-update the Marlin agent with the Triton agents, you'll need to manually exclude
-it.
-
 
 ## Platform upgrades
 
@@ -234,27 +231,14 @@ The certificates used for the front door TLS terminators can be updated.
         manta$ /opt/smartdc/manta-deployment/cmd/manta-replace-cert.js \
             /var/tmp/ssl_cert.pem
 
-5. Restart your loadbalancers:
+5. HAProxy should automatically pick up the new certificate.  To confirm:
 
         # Verify your new certificate is in place
         headnode$ manta-oneach -s loadbalancer 'cat /opt/smartdc/muppet/etc/ssl.pem`
 
-        # Restart stud
-        headnode$ manta-oneach -s loadbalancer 'svcadm restart stud'
-
-        # Verify no errors in the log
-        headnode$ manta-oneach -s loadbalancer 'cat `svcs -L stud`'
-
         # Verify the loadbalancer is serving the new certificate
         headnode$ manta-oneach -s loadbalancer \
             'echo QUIT | openssl s_client -host 127.0.0.1 -port 443 -showcerts'
-
-   An invalid certificate will result in an error like this in the stud logs:
-
-        [ Jun 20 18:01:18 Executing start method ("/opt/local/bin/stud --config=/opt/local/etc/stud.conf"). ]
-        92728:error:0906D06C:PEM routines:PEM_read_bio:no start line:pem_lib.c:648:Expecting: TRUSTED CERTIFICATE
-        92728:error:140DC009:SSL routines:SSL_CTX_use_certificate_chain_file:PEM lib:ssl_rsa.c:729:
-        [ Jun 20 18:01:18 Method "start" exited with status 1. ]
 
 
 ## Changing alarm contact methods
@@ -376,12 +360,10 @@ the service's that *don't* use the SMF log file:
 
 | Service                                     | Path                             | Format             |
 | ------------------------------------------- | -------------------------------- | ------------------ |
-| muskie                                      | /var/log/muskie.log              | bunyan             |
-| moray                                       | /var/log/muskie.log              | bunyan             |
+| muskie                                      | /var/svc/log/\*muskie\*.log      | bunyan             |
+| moray                                       | /var/log/moray.log               | bunyan             |
 | mbackup<br />(the log file uploader itself) | /var/log/mbackup.log             | bash xtrace        |
 | haproxy                                     | /var/log/haproxy.log             | haproxy-specific   |
-| mackerel (metering)                         | /var/log/mackerel.log            | bunyan             |
-| mola                                        | /var/log/mola\*.log              | bunyan             |
 | zookeeper                                   | /var/log/zookeeper/zookeeper.log | zookeeper-specific |
 | redis                                       | /var/log/redis/redis.log         | redis-specific     |
 
@@ -393,7 +375,7 @@ Most of the remaining components log in bunyan format to their service log file
 ## Request Throttling
 
 Manta provides a coarse request throttle intended to be used when the system is
-under extreme load and is sufferring availability problems that cannot be
+under extreme load and is suffering availability problems that cannot be
 isolated to a single Manta component. When the throttle is enabled and muskie
 has reached its configured capacity, the throttle will cause muskie to drop new
 requests and notify clients their requests have been throttled by sending a
@@ -530,6 +512,22 @@ directories and allows for about 256 million multipart uploads, but only up to
 account.
 
 
+## Picker/Storinfo toggle
+
+There are two options for webapi to obtain storage node information - "picker"
+and "storinfo". Both of them query the moray shard that maintains the storage
+node `statvfs` data, keep a local cache and periodically refresh it, and
+select storage nodes for object write requests.
+
+Storinfo is an optional service which is separate from webapi. If storinfo is
+not deployed (because rebalancer and buckets API components are not in use),
+you should configure webapi to use the local picker function by setting the
+`WEBAPI_USE_PICKER` SAPI variable to `true` under the "webapi" service:
+
+    $ sdc-sapi /services/$(sdc-sapi /services?name=webapi | json -Ha uuid) \
+        -X PUT -d '{"action": "update", "metadata": {"WEBAPI_USE_PICKER": true}}'
+
+
 # Debugging: general tasks
 
 ## Locating servers
@@ -552,25 +550,23 @@ fetch the server uuid and global zone IP for RM08218, use:
 See the `manta-adm(1)` manual page for details.
 
 
-## Locating storage IDs and compute IDs
+## Locating storage IDs
 
-Manta Storage CNs have additional identifiers:
+Manta Storage CNs have additional identifiers known as storage IDs. The one or
+more manta storage IDs are used for object metadata.  There's one storage
+ID per storage zone deployed on a server, so there can be more than one
+storage ID per CN, although this is usually only the case in development
+environments.
 
-- a manta compute ID, used by the jobs subsystem.
-- one or more manta storage IDs, used for object metadata.  There's one storage
-  ID per storage zone deployed on a server, so there can be more than one
-  storage ID per CN, although this is usually only the case in development
-  environments.
-
-You can generate a table that maps hostnames to compute ID and storage IDs for
+You can generate a table that maps hostnames to storage IDs for
 the current datacenter:
 
-    # manta-adm cn -o host,compute_id,storage_ids storage
-    HOST     COMPUTE ID               STORAGE IDS
-    RM08213  12.cn.us-east.joyent.us  2.stor.us-east.joyent.us
-    RM08211  20.cn.us-east.joyent.us  1.stor.us-east.joyent.us
-    RM08216  19.cn.us-east.joyent.us  3.stor.us-east.joyent.us
-    RM08219  11.cn.us-east.joyent.us  4.stor.us-east.joyent.us
+    # manta-adm cn -o host,storage_ids storage
+    HOST     STORAGE IDS
+    RM08213  2.stor.us-east.joyent.us
+    RM08211  1.stor.us-east.joyent.us
+    RM08216  3.stor.us-east.joyent.us
+    RM08219  4.stor.us-east.joyent.us
 
 Note that the column name is "storage\_ids" (with a trailing "s") since there
 may be more than one.

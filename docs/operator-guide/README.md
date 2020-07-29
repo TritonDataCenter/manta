@@ -18,9 +18,10 @@ This operator guide is divided into sections:
 Manta is an internet-facing object store. The user interface to Manta is
 essentially:
 
-* A *Buckets API* (similar to S3) with objects, accessible over HTTP.
 * A separate filesystem-like namespace *Directory API*, with directories and
   objects, accessible over HTTP.
+* A *Buckets API* (an experimental feature similar to S3) with objects,
+  accessible over HTTP.
 * *Objects* are arbitrary-size blobs of data
 * Users can use standard HTTP `PUT`/`GET`/`DELETE` verbs to create, list, and
   remove buckets, directories, and objects.

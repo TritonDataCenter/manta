@@ -90,10 +90,9 @@ nodes and Mantis Shrimps for storage nodes.
 
 Since there are so many different Manta components, and they're all deployed
 redundantly, there are a lot of different pieces to think about.  (The
-production deployment in us-east has 21 zones in *each* of the three
-datacenters, not including the Marlin compute zones.)  So when setting up a
-Manta deployment, it's very important to think ahead of time about which
-components will run where!
+production deployment in us-east has 20+ zones in *each* of the three
+datacenters.)  So when setting up a Manta deployment, it's very important to
+think ahead of time about which components will run where!
 
 **The `manta-adm genconfig` tool (when used with the --from-file option) can be
 very helpful in laying out zones for Manta.  See the `manta-adm` manual page for
@@ -106,10 +105,9 @@ constructing the input for `manta-adm genconfig`.
 The most important production configurations are described below,
 but for reference, here are the principles to keep in mind:
 
-* **Storage** zones should only be co-located with **marlin** zones, and only on
-  storage nodes.  Neither makes sense without the other, and we do not recommend
-  combining them with other zones.  All other zones should be deployed onto
-  non-storage compute nodes.
+* **Storage** zones should only be located in dedicated storage nodes.  We do
+  not recommend co-locating them with other services.  All other zones should be
+  deployed onto non-storage compute nodes.
 * **Nameservice**: There must be an odd number of "nameservice" zones in order
   to achieve consensus, and there should be at least three of them to avoid a
   single point of failure.  There must be at least one in each DC to survive
@@ -147,8 +145,7 @@ example configurations.
 
 ## Example single-datacenter, multi-server configuration
 
-On each storage node, you should deploy one "storage" zone.  We recommend
-deploying 128 "marlin" zones for systems with 256GB of DRAM.
+On each storage node, you should deploy one "storage" zone.
 
 If you have N metadata shards, and assuming you'll be deploying 3 postgres
 instances in each shard, you'd ideally want to spread these over 3N compute
@@ -162,14 +159,13 @@ compute nodes.  The remaining services can be spread over the compute nodes
 in whatever way, as long as you avoid putting two of the same thing onto the
 same compute node.  Here's an example with two shards using six compute nodes:
 
-| CN1           | CN2           | CN3            | CN4          | CN5          | CN6            |
-| ------------- | ------------- | -------------- | ------------ | ------------ | -------------- |
-| postgres 1    | postgres 1    | postgres 1     | postgres 2   | postgres 2   | postgres 2     |
-| moray 1       | moray 1       | electric-moray | moray 2      | moray 2      | electric-moray |
-| jobsupervisor | jobsupervisor | medusa         | medusa       | authcache    | authcache      |
-| nameservice   | nameservice   | nameservice    | webapi       | webapi       | webapi         |
-| ops           | marlin-dash   | madtom         | loadbalancer | loadbalancer | loadbalancer   |
-| jobpuller     | jobpuller     |                |              |              |                |
+| CN1           | CN2            | CN3               | CN4               | CN5          | CN6            |
+| ------------- | -------------- | ----------------- | ----------------- | ------------ | -------------- |
+| postgres 1    | postgres 1     | postgres 1        | postgres 2        | postgres 2   | postgres 2     |
+| moray 1       | moray 1        | electric-moray    | moray 2           | moray 2      | electric-moray |
+| nameservice   | webapi         | nameservice       | webapi            | nameservice  | webapi         |
+| ops           | madtom         | garbage-collector | loadbalancer      | loadbalancer | loadbalancer   |
+| storinfo      | authcache      | storinfo          |                   |              | authcache      |
 
 In this notation, "postgres 1" and "moray 1" refer to an instance of "postgres"
 or "moray" for shard 1.
@@ -180,22 +176,20 @@ or "moray" for shard 1.
 All three datacenters should be in the same region, meaning that they share a
 reliable, low-latency, high-bandwidth network connection.
 
-On each storage node, you should deploy one "storage" zone.  We recommend
-deploying 128 "marlin" zones for systems with 256GB of DRAM.
+On each storage node, you should deploy one "storage" zone.
 
 As with the single-datacenter configuration, you'll want to spread the postgres
 instances for N shards across 3N compute nodes, but you'll also want to deploy
 at least one postgres instance in each datacenter.  For four shards, we
 recommend the following in each datacenter:
 
-| CN1              | CN2           | CN3            | CN4          |
-| ---------------- | ------------- | -------------- | ------------ |
-| postgres 1       | postgres 2    | postgres 3     | postgres 4   |
-| moray    1       | moray    2    | moray    3     | moray    4   |
-| nameservice      | nameservice   | electric-moray | authcache    |
-| ops              | jobsupervisor | jobsupervisor  | webapi       |
-| webapi           | jobpuller     | loadbalancer   | loadbalancer |
-| marlin-dashboard | madtom        |                |              |
+| CN1              | CN2               | CN3            | CN4          |
+| ---------------- | ----------------- | -------------- | ------------ |
+| postgres 1       | postgres 2        | postgres 3     | postgres 4   |
+| moray    1       | moray    2        | moray    3     | moray    4   |
+| nameservice      | nameservice       | electric-moray | authcache    |
+| webapi           | webapi            | loadbalancer   | loadbalancer |
+| ops              | garbage-collector | madtom         | storinfo     |
 
 In this notation, "postgres 1" and "moray 1" refer to an instance of "postgres"
 or "moray" for shard 1.
@@ -314,11 +308,6 @@ multi-DC, multi-compute-node deployment.  The general process is:
    the zone images required to deploy Manta.  This can take a while the first
    time you run it, so you may want to run it in a screen session.  It's
    idempotent.
-
-   A common failure mode for those without quite fast internet links is a
-   failure to import the "manta-marlin" image. The manta-marlin image is the
-   multi-GB image that is used for zones in which Manta compute jobs run.
-   See the "Workaround for manta-marlin image import failure" section below.
 
 9. In each datacenter's manta deployment zone, deploy Manta components.
 
@@ -505,24 +494,17 @@ properties:
 | `azs`             | array&nbsp;of&nbsp;strings | list of all availability zones (datacenters) participating in Manta in this region                                                                                                                        |
 | `this_az`         | string                     | string (in `azs`) denoting this availability zone                                                                                                                                                          |
 | `manta_nodes`     | array&nbsp;of&nbsp;strings | list of server uuid's for *all* servers participating in Manta in this AZ                                                                                                                                  |
-| `marlin_nodes`    | array&nbsp;of&nbsp;strings | list of server uuid's (subset of `manta_nodes`) that are storage nodes                                                                                                                                     |
 | `admin`           | object                     | describes the "admin" network in this datacenter (see below)                                                                                                                                               |
 | `manta`           | object                     | describes the "manta" network in this datacenter (see below)                                                                                                                                               |
-| `marlin`          | object                     | describes the "marlin" network in this datacenter (see below)                                                                                                                                              |
-| `nic_mappings`    | object                     | maps each server in `manta_nodes` to an object mapping each network name ("manta" and "marlin") to the network interface on the server that should be tagged                                               |
-| `mac_mappings`    | object                     | (deprecated) maps each server uuid from `manta_nodes` to an object mapping each network name ("admin", "manta", and "marlin") to the MAC address on that server over which that network should be created. |
+| `nic_mappings`    | object                     | maps each server in `manta_nodes` to an object mapping each network name to the network interface on the server that should be tagged                                               |
+| `mac_mappings`    | object                     | (deprecated) maps each server uuid from `manta_nodes` to an object mapping each network name ("admin", "manta") to the MAC address on that server over which that network should be created. |
 | `distribute_svcs` | boolean                    | control switch over boot-time networking detection performed by `manta-net.sh` (see below)                                                                                                                 |
 
-"admin", "manta", and "marlin" all describe these networks that are built into
-Manta:
+"admin" and "manta" describe the networks that are built into Manta:
 
 * `admin`: the Triton administrative network
 * `manta`: the Manta administrative network, used for high-volume communication
   between all Manta services.
-* `marlin`: the network used for compute zones.  This is usually a network that
-  gives out private IPs that are NAT'd to the internet so that users can
-  contact the internet from Marlin jobs, but without needing their own public
-  IP for each zone.
 
 Each of these is an object with several properties:
 
@@ -565,9 +547,6 @@ node (aac3c402-3047-11e3-b451-002590c57864) and one storage node
 
       "manta_nodes": [
         "aac3c402-3047-11e3-b451-002590c57864",
-        "445aab6c-3048-11e3-9816-002590c3f3bc"
-      ],
-      "marlin_nodes": [
         "445aab6c-3048-11e3-9816-002590c3f3bc"
       ],
       "azs": [
@@ -619,32 +598,6 @@ node (aac3c402-3047-11e3-b451-002590c57864) and one storage node
         }
       },
 
-      "marlin": {
-        "nic_tag": "mantanat",
-        "network": "mantanat",
-        "staging-1": {
-          "vlan_id": 3903,
-          "subnet": "172.28.64.0/19",
-          "start": "172.28.64.4",
-          "end": "172.28.95.254",
-          "gateway": "172.28.64.1"
-        },
-        "staging-2": {
-          "vlan_id": 3904,
-          "subnet": "172.28.96.0/19",
-          "start": "172.28.96.4",
-          "end": "172.28.127.254",
-          "gateway": "172.28.96.1"
-        },
-        "staging-3": {
-          "vlan_id": 3905,
-          "subnet": "172.28.128.0/19",
-          "start": "172.28.128.4",
-          "end": "172.28.159.254",
-          "gateway": "172.28.128.1"
-        }
-      },
-
       "nic_mappings": {
         "aac3c402-3047-11e3-b451-002590c57864": {
           "manta": {
@@ -660,6 +613,7 @@ node (aac3c402-3047-11e3-b451-002590c57864) and one storage node
           }
         }
       }
+    }
 
 The deprecated `mac_mappings` can also be used in place of `nic_mappings`. Only
 one of `nic_mappings` or `mac_mappings` is supported per network configuration
@@ -728,32 +682,23 @@ idea of what this looks like:
             "authcache": {
                 "5dff63a4-d15c-11e3-a312-5f3ea4981729": 1
             },
+            "storinfo": {
+                "2ef81a09-ad04-445f-b4fe-1aa87ce4e54c": 1
+            },
             "webapi": {
                 "319afbfa-d15e-11e3-9aa9-33ebf012af8f": 1
             },
             "loadbalancer": {
                 "7aac4c88-d15c-11e3-9ea6-dff0b07f5db1": 1
             },
-            "jobsupervisor": {
-                "7cf43bb2-d16c-11e3-b157-cb0adb200998": 1
-            },
-            "jobpuller": {
-                "1b0f00e4-ca9b-11e3-ba7f-8723c9cd3ce7": 1
-            },
-            "medusa": {
-                "bb6e5424-d0bb-11e3-8527-676eccc2a50a": 1
-            },
             "ops": {
                 "ab253aae-d15d-11e3-8f58-3fb986ce12b3": 1
-            },
-            "marlin": {
-                "1c18ae6e-cf70-473a-a22c-f3536d6ea789": 2
             }
         }
     }
 
 This file effectively specifies all of the Manta components except for the
-platforms and Marlin agents.
+platforms.
 
 You can generate a configuration file that describes your current deployment
 with `manta-adm show -s -j`.
