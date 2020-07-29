@@ -165,7 +165,7 @@ same compute node.  Here's an example with two shards using six compute nodes:
 | moray 1       | moray 1        | electric-moray    | moray 2           | moray 2      | electric-moray |
 | nameservice   | webapi         | nameservice       | webapi            | nameservice  | webapi         |
 | ops           | madtom         | garbage-collector | loadbalancer      | loadbalancer | loadbalancer   |
-|               | authcache      |                   |                   |              | authcache      |
+| storinfo      | authcache      | storinfo          |                   |              | authcache      |
 
 In this notation, "postgres 1" and "moray 1" refer to an instance of "postgres"
 or "moray" for shard 1.
@@ -189,7 +189,7 @@ recommend the following in each datacenter:
 | moray    1       | moray    2        | moray    3     | moray    4   |
 | nameservice      | nameservice       | electric-moray | authcache    |
 | webapi           | webapi            | loadbalancer   | loadbalancer |
-| ops              | garbage-collector | madtom         |              |
+| ops              | garbage-collector | madtom         | storinfo     |
 
 In this notation, "postgres 1" and "moray 1" refer to an instance of "postgres"
 or "moray" for shard 1.
@@ -680,6 +680,9 @@ idea of what this looks like:
             },
             "authcache": {
                 "5dff63a4-d15c-11e3-a312-5f3ea4981729": 1
+            },
+            "storinfo": {
+                "2ef81a09-ad04-445f-b4fe-1aa87ce4e54c": 1
             },
             "webapi": {
                 "319afbfa-d15e-11e3-9aa9-33ebf012af8f": 1

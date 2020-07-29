@@ -422,6 +422,5 @@ but are separate entities altogether. They are also maanged with
 `manta-shardadm` which generates the `BUCKETS_MORAY_SHARDS` and
 `BUCKETS_HASH_RING_IMAGE` configurations in SAPI metadata.
 
-As a side note, the "buckets" that Buckets API manages are not to be confused
-with moray "buckets" which stand for logical object namespaces stored in the
-Postgres database.
+Note: The "buckets" that Buckets API manages are not to be confused with moray
+"buckets" which represent the object namespaces for the data stored in Postgres.
