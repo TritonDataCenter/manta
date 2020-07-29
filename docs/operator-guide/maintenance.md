@@ -33,6 +33,7 @@ service logs; and some general inspection/debugging tasks.
   - [Multipart uploads prefix length](#multipart-uploads-prefix-length)
     - [Changing the prefix length](#changing-the-prefix-length)
     - [Prefix length tradeoffs](#prefix-length-tradeoffs)
+  - [Picker/Storinfo toggle](#pickerstorinfo-toggle)
 - [Debugging: general tasks](#debugging-general-tasks)
   - [Locating servers](#locating-servers)
   - [Locating storage IDs](#locating-storage-ids)
@@ -230,27 +231,14 @@ The certificates used for the front door TLS terminators can be updated.
         manta$ /opt/smartdc/manta-deployment/cmd/manta-replace-cert.js \
             /var/tmp/ssl_cert.pem
 
-5. Restart your loadbalancers:
+5. HAProxy should automatically pick up the new certificate.  To confirm:
 
         # Verify your new certificate is in place
         headnode$ manta-oneach -s loadbalancer 'cat /opt/smartdc/muppet/etc/ssl.pem`
 
-        # Restart stud
-        headnode$ manta-oneach -s loadbalancer 'svcadm restart stud'
-
-        # Verify no errors in the log
-        headnode$ manta-oneach -s loadbalancer 'cat `svcs -L stud`'
-
         # Verify the loadbalancer is serving the new certificate
         headnode$ manta-oneach -s loadbalancer \
             'echo QUIT | openssl s_client -host 127.0.0.1 -port 443 -showcerts'
-
-   An invalid certificate will result in an error like this in the stud logs:
-
-        [ Jun 20 18:01:18 Executing start method ("/opt/local/bin/stud --config=/opt/local/etc/stud.conf"). ]
-        92728:error:0906D06C:PEM routines:PEM_read_bio:no start line:pem_lib.c:648:Expecting: TRUSTED CERTIFICATE
-        92728:error:140DC009:SSL routines:SSL_CTX_use_certificate_chain_file:PEM lib:ssl_rsa.c:729:
-        [ Jun 20 18:01:18 Method "start" exited with status 1. ]
 
 
 ## Changing alarm contact methods
@@ -387,7 +375,7 @@ Most of the remaining components log in bunyan format to their service log file
 ## Request Throttling
 
 Manta provides a coarse request throttle intended to be used when the system is
-under extreme load and is sufferring availability problems that cannot be
+under extreme load and is suffering availability problems that cannot be
 isolated to a single Manta component. When the throttle is enabled and muskie
 has reached its configured capacity, the throttle will cause muskie to drop new
 requests and notify clients their requests have been throttled by sending a
@@ -531,15 +519,13 @@ and "storinfo". Both of them query the moray shard that maintains the storage
 node `statvfs` data, keep a local cache and periodically refresh it, and
 select storage nodes for object write requests.
 
-Storinfo is an optional service which is separate from webapi. To use it
-as opposed to the local picker function, set the `WEBAPI_USE_PICKER` SAPI
-variable to `false` under the "webapi" service:
+Storinfo is an optional service which is separate from webapi. If storinfo is
+not deployed (because rebalancer and buckets API components are not in use),
+you should configure webapi to use the local picker function by setting the
+`WEBAPI_USE_PICKER` SAPI variable to `true` under the "webapi" service:
 
     $ sdc-sapi /services/$(sdc-sapi /services?name=webapi | json -Ha uuid) \
-        -X PUT -d '{"action": "update", "metadata": {"WEBAPI_USE_PICKER": false}}'
-
-If storinfo is not deployed (because rebalancer or buckets API components are
-not in use), the SAPI variable should still be configured and set to `true`.
+        -X PUT -d '{"action": "update", "metadata": {"WEBAPI_USE_PICKER": true}}'
 
 
 # Debugging: general tasks

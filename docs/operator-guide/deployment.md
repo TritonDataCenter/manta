@@ -613,6 +613,7 @@ node (aac3c402-3047-11e3-b451-002590c57864) and one storage node
           }
         }
       }
+    }
 
 The deprecated `mac_mappings` can also be used in place of `nic_mappings`. Only
 one of `nic_mappings` or `mac_mappings` is supported per network configuration

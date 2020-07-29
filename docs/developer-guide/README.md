@@ -31,6 +31,7 @@ nitty-gritty content than makes sense for the README.
   - [Configuration](#configuration)
     - [Configuration Updates](#configuration-updates)
   - [Directory API Shard Management](#directory-api-shard-management)
+  - [Buckets API Shard Management](#buckets-api-shard-management)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -418,7 +419,7 @@ when the objects in the same bucket are loosely related and do not need a
 finer categorization.
 
 Buckets shards are defined and stored in the same way as directory shards
-but are separate entities altogether. They are also maanged with
+but are separate entities altogether. They are also managed with
 `manta-shardadm` which generates the `BUCKETS_MORAY_SHARDS` and
 `BUCKETS_HASH_RING_IMAGE` configurations in SAPI metadata.
 
