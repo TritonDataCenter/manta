@@ -4,9 +4,9 @@ Since November 2019, there have been two separate active versions of Manta:
 
 - "**mantav1**" - a long term support branch of Manta that maintains current
   Manta features.
-- "**mantav2**" - a new major version of Manta that removes some problematic
-  features (jobs, snaplinks, MPU, etc.) and makes some major improvements to
-  things like garbage collection.
+- "**mantav2**" - a new major version of Manta that removes some features (jobs,
+  snaplinks, MPU, etc.) and makes some major improvements to things like garbage
+  collection.
 
 As of 2021H1, mantav2 is the recommended version for new installations.
 
