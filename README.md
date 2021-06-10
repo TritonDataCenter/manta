@@ -5,7 +5,7 @@
 -->
 
 <!--
-    Copyright 2020 Joyent, Inc.
+    Copyright 2021 Joyent, Inc.
 -->
 
 # Manta: a scalable, distributed object store
@@ -93,11 +93,9 @@ The front door services respond to requests from the internet at large:
   service
 * [muskie](https://github.com/joyent/manta-muskie): the node.js-based "webapi"
   service, this is Manta's "Directory API"
-* [buckets-api](https://github.com/joyent/manta-buckets-api): Node.js-based
-  "buckets-api" service, this is Manta's "Buckets API"
 
-The metadata tiers for the Directory and Buckets APIs store the entire object
-namespace (not object data) as well as backend storage system capacity:
+The metadata tier APIs store the entire object namespace (not object data) as
+well as backend storage system capacity:
 
 * [manatee](https://github.com/joyent/manatee): the "postgres" service, a
   high-availability postgres cluster using synchronous replication and automatic
@@ -108,11 +106,6 @@ namespace (not object data) as well as backend storage system capacity:
 * [electric-moray](https://github.com/joyent/electric-moray): Node-based service
   that provides the same interface as Moray, but which directs requests to one
   or more Moray+Manatee *shards* based on hashing the Moray key.
-* [buckets-mdapi](https://github.com/joyent/manta-buckets-mdapi): a Rust-based
-  API for managing all metadata for the Buckets API
-* [buckets-mdplacement](https://github.com/joyent/manta-buckets-mdplacement): a
-  Rust-based API for handling routing of Buckets API objects to appropriate
-  nodes in the storage tier.
 
 The storage tier is responsible for actually storing bits on disk:
 

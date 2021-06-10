@@ -31,7 +31,6 @@ nitty-gritty content than makes sense for the README.
   - [Configuration](#configuration)
     - [Configuration Updates](#configuration-updates)
   - [Directory API Shard Management](#directory-api-shard-management)
-  - [Buckets API Shard Management](#buckets-api-shard-management)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -405,23 +404,3 @@ find yourself adding additional capacity, deploy the new shard first, coordinate
 with all existing shards, then use manta-shardadm to add the shard to list of
 shards for the indexing tier.
 
-
-## Buckets API Shard Management
-
-Buckets API is an experimental feature that serves similar functions as the
-Directory API but has a different paradigm for object organization. As opposed
-to the hierarchical object support provided by Directory API that comes with
-a limit on the maximum number of objects per directory, Buckets API offers a
-simpler structure for storing an unlimited number of objects in groups. The
-two-level object structure incurs a much smaller overhead in request processing
-and is more cost-efficient from a metadata perspective. It is a better option
-when the objects in the same bucket are loosely related and do not need a
-finer categorization.
-
-Buckets shards are defined and stored in the same way as directory shards
-but are separate entities altogether. They are also managed with
-`manta-shardadm` which generates the `BUCKETS_MORAY_SHARDS` and
-`BUCKETS_HASH_RING_IMAGE` configurations in SAPI metadata.
-
-Note: The "buckets" that Buckets API manages are not to be confused with moray
-"buckets" which represent the object namespaces for the data stored in Postgres.

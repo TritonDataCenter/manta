@@ -24,12 +24,9 @@ This section discusses the basics of the Manta architecture.
   - [Postgres, replication, and sharding](#postgres-replication-and-sharding)
   - [Other shards](#other-shards)
   - [Moray](#moray)
-  - [Buckets-mdapi](#buckets-mdapi)
   - [Electric-moray](#electric-moray)
-  - [Buckets-mdplacement](#buckets-mdplacement)
 - [The front door](#the-front-door)
   - [Objects and directories](#objects-and-directories)
-- [Multipart uploads](#multipart-uploads)
 - [Garbage Collection](#garbage-collection)
 - [Metering](#metering)
 - [Manta Scalability](#manta-scalability)
@@ -133,23 +130,15 @@ services.
 | Service | Consensus          | nameservice              | Service discovery                      | ZooKeeper, [binder](https://github.com/joyent/binder) (DNS)                                            |
 | Service | Front door         | loadbalancer             | SSL termination and load balancing     | haproxy, [muppet](https://github.com/joyent/muppet)                                                    |
 | Service | Front door         | webapi                   | Manta HTTP Directory API server        | [muskie](https://github.com/joyent/manta-muskie)                                                       |
-| Service | Front door         | buckets-api\*            | Manta HTTP Buckets API server          | [buckets-api](https://github.com/joyent/manta-buckets-api)                                             |
 | Service | Front door         | authcache                | Authentication cache                   | [mahi](https://github.com/joyent/mahi) (redis)                                                         |
-| Service | Garbage Collection | garbage-buckets-consumer | Manta Buckets API garbage collection   | [garbage-buckets-consumer (bin)](https://github.com/joyent/manta-garbage-collector/blob/master/bin/garbage-buckets-consumer.js), [garbage-buckets-consumer (lib)](https://github.com/joyent/manta-garbage-collector/blob/master/lib/garbage-buckets-consumer.js) |
 | Service | Garbage Collection | garbage-deleter          | Deleting storage for objects           | [garbage-deleter (bin)](https://github.com/joyent/manta-mako/blob/master/bin/garbage-deleter.js), [garbage-deleter (lib)](https://github.com/joyent/manta-mako/blob/master/lib/garbage-deleter.js) |
 | Service | Garbage Collection | garbage-dir-consumer     | Manta Directory API garbage collection | [garbage-dir-consumer (bin)](https://github.com/joyent/manta-garbage-collector/blob/master/bin/garbage-dir-consumer.js), [garbage-dir-consumer (lib)](https://github.com/joyent/manta-garbage-collector/blob/master/lib/garbage-dir-consumer.js) |
-| Service | Garbage Collection | garbage-mpu-cleaner      | MPU garbage collection                 | [garbage-mpu-cleaner (bin)](https://github.com/joyent/manta-garbage-collector/blob/master/bin/garbage-mpu-cleaner.js), [garbage-mpu-cleaner (lib)](https://github.com/joyent/manta-garbage-collector/blob/master/lib/garbage-mpu-cleaner.js) |
 | Service | Garbage Collection | garbage-uploader         | Send GC instructions to storage zones  | [garbage-uploader (bin)](https://github.com/joyent/manta-garbage-collector/blob/master/bin/garbage-uploader.js), [garbage-uploader (lib)](https://github.com/joyent/manta-garbage-collector/blob/master/lib/garbage-uploader.js) |
 | Service | Metadata           | postgres                 | Directory metadata storage             | postgres, [manatee](https://github.com/joyent/manta-manatee)                                           |
-| Service | Metadata           | buckets-postgres\*       | Buckets metadata storage               | postgres, [manatee](https://github.com/joyent/manta-manatee)                                           |
 | Service | Metadata           | moray                    | Directory key-value store              | [moray](https://github.com/joyent/moray)                                                               |
-| Service | Metadata           | buckets-mdapi\*          | Buckets key-value store                | [buckets-mdapi](https://github.com/joyent/manta-buckets-mdapi)                                         |
 | Service | Metadata           | electric-moray           | Directory consistent hashing (sharding)| [electric-moray](https://github.com/joyent/electric-moray)                                             |
-| Service | Metadata           | buckets-mdplacement\*    | Buckets consistent hashing (sharding)  | [buckets-mdplacement](https://github.com/joyent/manta-buckets-mdplacement)                             |
-| Service | Metadata           | reshard\*                | Metadata reshard tool                  | [reshard](https://github.com/joyent/manta-reshard)                                                     |
 | Service | Metadata           | storinfo                 | Storage metadata cache and picker      | [storinfo](https://github.com/joyent/manta-storinfo)                                                   |
-| Service | Storage            | storage                  | Object storage and capacity reporting  | [mako](https://github.com/joyent/manta-mako) (nginx), [minnow](https://github.com/joyent/manta-minnow), [rebalancer-agent](https://github.com/joyent/manta-rebalancer/tree/master/agent) |
-| Service | Storage            | rebalancer               | Storage zone evacuation/rebalancing    | [rebalancer](https://github.com/joyent/manta-rebalancer)                                               |
+| Service | Storage            | storage                  | Object storage and capacity reporting  | [mako](https://github.com/joyent/manta-mako) (nginx), [minnow](https://github.com/joyent/manta-minnow) |
 | Service | Operations         | madtom                   | Web-based Manta monitoring             | [madtom](https://github.com/joyent/manta-madtom)                                                       |
 | Service | Operations         | ops                      | Operator workspace                     |                                                                                                        |
 
@@ -209,25 +198,15 @@ runs:
 * **minnow**: a small Node service that periodically reports storage capacity
   data into the metadata tier so that the front door knows how much capacity
   each storage node has.
-* **rebalancer-agent**: a small Rust service that processes object copy
-  requests coming from the rebalancer.
-
-The **rebalancer** or **rebalancer manager** is a separate service running
-outside of the storage zones which orchestrates the migration of objects
-between storage zones. The service allows an operator to evacuate an entire
-storage zone in the event of hardware outage or planned replacement.
 
 
 ## Metadata tier
 
 The metadata tier is itself made up of three levels:
 
-* "postgres" and "buckets-postgres" zones, which run instances of the
-  postgresql database
-* "moray" and "buckets-mdapi" zones, which run key-value stores on top of
-  postgres
-* "electric-moray" and "buckets-mdplacement" zones, which handle sharding of
-  metadata requests
+* "postgres" zones, which run instances of the postgresql database
+* "moray" zones, which run key-value stores on top of postgres
+* "electric-moray" zones, which handle sharding of metadata requests
 
 ### Postgres, replication, and sharding
 
@@ -292,12 +271,6 @@ There are actually two kinds of metadata in Manta:
   above) and all lives on one shard.  This is extremely low-volume: a couple of
   writes per storage node per minute.
 
-Manta supports the **resharding** of directory object metadata, a process which
-would typically be  used to add additional shards (for horizontal scaling of
-metadata capacity).  This operation is handled by the reshard service which
-currently supports only the doubling of shards and incurs object write downtime
-during the hash ring update step in the process.
-
 ### Moray
 
 For each metadata shard (which we said above consists of three PostgreSQL
@@ -312,11 +285,6 @@ This way, clients don't need to know about the replication topology.
 Like Postgres, each Moray instance is tied to a particular shard.  These are
 typically referred to as "1.moray", "2.moray", and so on.
 
-### Buckets-mdapi
-
-Whereas moray handles the metadata requests for directory objects, buckets-mdapi
-performs the same function for buckets objects.
-
 ### Electric-moray
 
 The electric-moray service sits in front of the sharded Moray instances and
@@ -325,34 +293,20 @@ metadata for `/mark/stor/foo`, electric-moray will hash `/mark/stor` to find the
 right shard and then proxy the request to one of the Moray instances operating
 that shard.
 
-### Buckets-mdplacement
-
-Buckets-mdplacement performs the same sharding function as electric-moray for
-buckets objects. But unlike electric-moray, it is not on the data path of
-service requests. The hash ring information is cached in buckets-api upon
-service startup.
-
 ## The front door
 
-The front door consists of "loadbalancer", "webapi" and "buckets-api" zones.
+The front door consists of "loadbalancer" and "webapi" zones.
 
 "loadbalancer" zones run haproxy for both SSL termination and load balancing
-across the available "webapi" and "buckets-api" instances.  "haproxy" is
-managed by a component called "muppet" that uses the DNS-based service discovery
-mechanism to keep haproxy's list of backends up-to-date.
+across the available "webapi" instances.  "haproxy" is managed by a component
+called "muppet" that uses the DNS-based service discovery mechanism to keep
+haproxy's list of backends up-to-date.
 
 "webapi" zones run the Manta-specific API server, called **muskie**.  Muskie
 handles PUT/GET/DELETE requests to the front door, including requests to:
 
 * create and delete objects
 * create, list, and delete directories
-* create multipart uploads, upload parts, fetch multipart upload state, commit
-  multipart uploads, and abort multipart uploads
-
-"buckets-api" zones run an alternative API server which handles S3-like
-PUT/GET/DELETE requests for objects with a different organization paradigm.
-The feature is still considered experimental, with limited support and
-unpublished API clients at this time.
 
 
 ### Objects and directories
@@ -361,14 +315,13 @@ Requests for objects and directories involve:
 
 * validating the request
 * authenticating the user (via mahi, the auth cache)
-* looking up the requested object's metadata (via electric-moray or buckets-
-  mdplacement)
+* looking up the requested object's metadata (via electric-moray)
 * authorizing the user for access to the specified resource
 
 For requests on directories and zero-byte objects, the last step is to update or
 return the right metadata.
 
-For write requests on objects, muskie or buckets-api then:
+For write requests on objects, muskie then:
 
 * Constructs a set of candidate storage nodes that will be used to store the
   object's data, where each storage node is located in a different datacenter
@@ -382,65 +335,28 @@ For write requests on objects, muskie or buckets-api then:
   streamed to all nodes.  Upon completion, there should be a 204 response from
   each storage node.
 * Once the data is safely written to all nodes, the metadata tier is updated
-  (using a PUT to electric-moray or to buckets-mdapi), and a 204 is returned to
-  the client.  At this point, the object's data is recorded persistently on the
-  requested number of storage nodes, and the metadata is replicated on at least
-  two index nodes.
+  (using a PUT to electric-moray), and a 204 is returned to the client.  At this
+  point, the object's data is recorded persistently on the requested number of
+  storage nodes, and the metadata is replicated on at least two index nodes.
 
-For read requests on objects, muskie or buckets-api instead contacts each of
-the storage nodes hosting the data and streams data from whichever one responds
-first to the client.
-
-
-## Multipart uploads
-
-Multipart uploads, a.k.a. MPU, provide an alternate way for users to upload
-Manta objects (only for the Directory API). The user creates the multipart
-upload, uploads the object in parts, and exposes the object in Manta by
-committing the multipart upload. Generally, these operations are implemented
-using existing Manta constructs:
-
-* Parts are normal Manta objects, with a few key differences.  Users cannot use
-  the GET, POST or DELETE HTTP methods on parts.  Additionally, all parts are
-  co-located on the same set of storage nodes, which are selected when the
-  multipart upload is created.
-* All parts for a given multipart upload are stored in a parts directory, which
-  is a normal Manta directory.
-* Part directories are stored in the top-level `/$MANTA_USER/uploads` directory
-  tree.
-
-Most of the logic for multipart uploads is performed by Muskie, but there are
-some additional features of the system only used for multipart uploads:
-
-* the **manta_uploads** bucket in Moray stores **finalizing records** for a
-  given shard.  A finalizing record is inserted atomically with the target
-  object record when a multipart upload is committed.
-* the mako zones have a custom **mako-finalize** operation invoked by muskie
-  when a multipart upload is committed. This operation creates the target object
-  from the parts and subsequently deletes the parts from disk.  This operation
-  is invoked on all storage nodes that will contain the target object when the
-  multipart upload is committed.
+For read requests on objects, muskie instead contacts each of the storage nodes
+hosting the data and streams data from whichever one responds first to the
+client.
 
 
 ## Garbage Collection
 
 **Garbage collection** consists of several components in the `garbage-collector`
 and `storage` zones and is responsible for removing the storage used by objects
-which have been removed from the metadata tier. It is also responsible for
-removing metadata for finalized MPU uploads.
+which have been removed from the metadata tier.
 
-When an object is deleted from the metadata tier in either the Manta Directory
-API or Manta Buckets API, the objects on disk are not immediately removed, nor are
-all references in the metadata tier itself. The original record is moved into a
-new deletion record which includes the information required to delete the
-storage backing the now-deleted object. The garbage collection system is
-responsible for actually performing the cleanup.
+When an object is deleted from the metadata tier, the objects on disk are not
+immediately removed, nor are all references in the metadata tier itself. The
+original record is moved into a new deletion record which includes the
+information required to delete the storage backing the now-deleted object. The
+garbage collection system is responsible for actually performing the cleanup.
 
 Processes in the `garbage-collector` zone include:
-
- * `garbage-buckets-consumer` -- consumes deletion records from `buckets-mdapi`
-   (created when an object is deleted by Manta Buckets API). The records found
-   are written to local `instructions` files in the `garbage-collector` zone.
 
  * `garbage-dir-consumer` -- consumes deletion records from the
    `manta_fastdelete_queue` bucket (created when an object is deleted through
@@ -449,11 +365,6 @@ Processes in the `garbage-collector` zone include:
 
  * `garbage-uploader` -- consumes the locally queued `instructions` and uploads
    them to the appropriate `storage` zone for processing.
-
- * `garbage-mpu-cleaner` -- consumes "finalized" MPU uploads (Manta Directory
-   API only) and deletes the upload parts, upload directory and the finalize
-   record itself after the upload has been finalized for some period of time
-   (default: 5 minutes).
 
 On the `storage` zones, there's an additional component of garbage collection:
 
