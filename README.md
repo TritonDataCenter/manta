@@ -46,8 +46,8 @@ Community discussion about Manta happens in two main places:
   If you wish to send mail to the list you'll need to join, but you can view
   and search the archives online without being a member.
 
-* In the *#manta* IRC channel on the [Freenode IRC
-  network](https://freenode.net/).
+* In the *#manta* IRC channel on the
+  [Libera.chat IRC network](https://freenode.net/).
 
 
 ## Dependencies
