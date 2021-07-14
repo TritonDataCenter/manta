@@ -47,7 +47,7 @@ Community discussion about Manta happens in two main places:
   and search the archives online without being a member.
 
 * In the *#manta* IRC channel on the
-  [Libera.chat IRC network](https://freenode.net/).
+  [Libera.chat IRC network](https://libera.chat/).
 
 
 ## Dependencies
