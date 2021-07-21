@@ -30,9 +30,6 @@ service logs; and some general inspection/debugging tasks.
     - [Real-time logs and log formats](#real-time-logs-and-log-formats)
   - [Request Throttling](#request-throttling)
     - [Throttle Parameter Trade-offs](#throttle-parameter-trade-offs)
-  - [Multipart uploads prefix length](#multipart-uploads-prefix-length)
-    - [Changing the prefix length](#changing-the-prefix-length)
-    - [Prefix length tradeoffs](#prefix-length-tradeoffs)
   - [Picker/Storinfo toggle](#pickerstorinfo-toggle)
 - [Debugging: general tasks](#debugging-general-tasks)
   - [Locating servers](#locating-servers)
@@ -453,65 +450,6 @@ latency is not acceptable and the application is likely to retry on receipt of
 a 503. Low queue tolerance values are also desirable if the zone is under memory
 pressure.
 
-## Multipart uploads prefix length
-
-The Manta multipart upload API (MPU) stores the part directories of an account's
-ongoing multipart uploads under the directory tree `/$MANTA_USER/uploads`.
-Within the top-level directory, part directories are stored in subdirectories
-based on some number of the first characters of the multipart upload's UUID.
-The number of characters used to split multipart uploads is referred to as the
-"prefix length".
-
-For example, in a Manta deployment for which the prefix length is set to 3,
-a multipart upload would have an upload directory that looks like this:
-
-    /$MANTA_USER/uploads/f00/f00e51d2-7e47-4732-8edf-eb871296b343
-
-Note that the parent directory of the parts directory, also referred to
-as its "prefix directory", has 3 characters, the same as the prefix length.
-
-The following multipart upload would have been created in a Manta deployment
-with a prefix length of 1:
-
-    /$MANTA_USER/uploads/d/d77feb78-cd7f-481f-a6c7-f653c80c7331
-
-
-### Changing the prefix length
-
-The prefix length is configurable in SAPI, represented as the
-`MUSKIE_MPU_PREFIX_DIR_LEN` SAPI variable under the "webapi" service.  For
-example, to change the prefix length of a deployment to 2, you could run:
-
-    $ sapiadm update $(sdc-sapi /services?name=webapi | json -Ha uuid) \
-        metadata."MUSKIE_MPU_PREFIX_DIR_LEN"=2
-
-As with other configuration changes to the "webapi" service, you must restart
-the "webapi" zones to see the configuration change.
-
-Multipart uploads created with a different prefix length within the same Manta
-deployment will continue to work after the prefix length is changed.
-
-### Prefix length tradeoffs
-
-The prefix length dictates the number of subdirectories allowed in the top-level
-`/$MANTA_USER/uploads` directory.  Because the number of entries in a Manta
-directory should be limited, this affects how many ongoing multipart uploads are
-available for a given account.  Increasing the prefix length also increases the
-number of requests required to list all multipart uploads under a given account.
-Consequently, a smaller prefix length allows for fewer ongoing multipart uploads
-for a single account, but less work to list them all; larger prefix directories
-allow more ongoing multipart uploads, but require more work to list them.
-
-For example, in a Manta deployment with a prefix length of 3, a given account
-may have up to 4096 prefix directories, allowing for about 4 billion ongoing
-multipart uploads for a given account.  Listing all of the multipart uploads
-ongoing requires a maximum of 4096 directory listings operations.  Compare this
-to a deployment with a prefix length of 1, which has a maximum of 256 prefix
-directories and allows for about 256 million multipart uploads, but only up to
-256 directory listings are required to list all multipart uploads under an
-account.
-
-
 ## Picker/Storinfo toggle
 
 There are two options for webapi to obtain storage node information - "picker"
@@ -520,9 +458,9 @@ node `statvfs` data, keep a local cache and periodically refresh it, and
 select storage nodes for object write requests.
 
 Storinfo is an optional service which is separate from webapi. If storinfo is
-not deployed (because rebalancer and buckets API components are not in use),
-you should configure webapi to use the local picker function by setting the
-`WEBAPI_USE_PICKER` SAPI variable to `true` under the "webapi" service:
+not deployed you should configure webapi to use the local picker function by
+setting the `WEBAPI_USE_PICKER` SAPI variable to `true` under the "webapi"
+service:
 
     $ sdc-sapi /services/$(sdc-sapi /services?name=webapi | json -Ha uuid) \
         -X PUT -d '{"action": "update", "metadata": {"WEBAPI_USE_PICKER": true}}'

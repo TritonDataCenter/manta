@@ -50,7 +50,7 @@ Specific steps will be provided later in this document.
         sdcadm post-setup manta
 
 2. **Snaplink cleanup**. Snaplinks must be cleaned from the system, otherwise
-   the new GC and rebalancer systems cannot guarantee data integrity.
+   the new GC system cannot guarantee data integrity.
 
 3. Deploy the **new garbage collector** (GCv2) system.
 
@@ -59,10 +59,7 @@ Specific steps will be provided later in this document.
    can be undeployed. As well, any or all remaining Manta services can be
    updated to their latest "mantav2-\*" images.
 
-5. **Optional service updates.** The new rebalancer service and the services
-   that make up the new Buckets API can be deployed.
-
-6. **Additional clean up.** Some orphaned data (related to the removed jobs
+5. **Additional clean up.** Some orphaned data (related to the removed jobs
    feature and to the earlier GC system) can be removed.
 
 Other than the usual possible brief downtimes for service upgrades, this
@@ -234,8 +231,8 @@ Mantav1 supported a feature called "snaplinks" where a new object could be
 quickly created from an existing one by linking to it. These snaplinks must be
 "delinked" -- i.e. changed from being metadata-tier references to a shared
 storage-tier object, to being fully separate objects -- before the new
-garbage-collector and rebalancer services in mantav2 can function. This section
-walks through the process of removing snaplinks.
+garbage-collector services in mantav2 can function. This section walks through
+the process of removing snaplinks.
 
 Snaplink cleanup involves a few stages, some of which are manual. The
 `mantav2-migrate snaplink-cleanup` command is used to coordinate the process.
@@ -1016,16 +1013,7 @@ A simplified procedure is as follows:
   the storinfo service.)
 
 
-## Step 7: Optional service updates
-
-At this point the services for the new "Rebalancer" system and the "Buckets API"
-can be deployed.
-
-(TODO: The operator guide and/or here should provide details for deploying
-those.)
-
-
-## Step 8: Additional clean up
+## Step 7: Additional clean up
 
 There remain a few things that can be cleaned out of the system.
 They are:

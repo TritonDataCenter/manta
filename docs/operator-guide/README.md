@@ -20,11 +20,9 @@ essentially:
 
 * A separate filesystem-like namespace *Directory API*, with directories and
   objects, accessible over HTTP.
-* A *Buckets API* (an experimental feature similar to S3) with objects,
-  accessible over HTTP.
 * *Objects* are arbitrary-size blobs of data
 * Users can use standard HTTP `PUT`/`GET`/`DELETE` verbs to create, list, and
-  remove buckets, directories, and objects.
+  remove directories, and objects.
 * Users can fetch arbitrary ranges of an object, but may not *modify* an object
   except by replacing it.
 

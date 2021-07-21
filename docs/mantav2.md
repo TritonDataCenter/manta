@@ -1,15 +1,21 @@
 # Mantav2
 
-Starting November 2019, there will be two separate active versions of Manta:
+Since November 2019, there have been two separate active versions of Manta:
 
 - "**mantav1**" - a long term support branch of Manta that maintains current
   Manta features.
-- "**mantav2**" - a new major version of Manta that adds (Buckets API, storage
-  "rebalancer" service) and removes (jobs, snaplinks, etc.) some major
-  features, and becomes the focus of future Manta development.
+- "**mantav2**" - a new major version of Manta that removes some features (jobs,
+  snaplinks, MPU, etc.) and makes some major improvements to things like garbage
+  collection.
 
-At this time, mantav1 is the recommended version for production usage, but
-that is expected to change to mantav2 during 2020.
+As of 2021H1, mantav2 is the recommended version for new installations.
+
+Originally mantav2 was intended to include a new "Buckets API" but this work was
+abandoned in early 2020. There may still be references in documentation and code
+to "buckets" but these features should not be deployed or used. Additionally
+there was originally mention of online rebalancing of objects. These features
+were never completed to the point they could be considered part of the product
+and this feature should also be considered abandoned.
 
 
 ## What is mantav2?
@@ -29,11 +35,6 @@ Significant changes are:
     - snaplinks
     - metering data under `/<account>/reports/...`
   Otherwise the Directory API remains a part of Manta.
-- A new "Buckets API" (S3-like) is added. This is the API for which latency
-  improvements are being made.
-- A "rebalancer" system is added for storage tier maintenance.
-- The garbage collection (GC) system is improved for larger scale.
-- Improved per-account usage data for operators.
 
 The "master" branch of Manta-related git repos is for mantav2. Mantav1
 development has moved to "mantav1" branches.
@@ -78,12 +79,11 @@ The Node.js Manta client is developed in the
 - mantav1: Currently on the ["master" branch](https://github.com/joyent/node-manta/tree/master/)
   of joyent/node-manta, and published to npm as
   ["manta"](https://www.npmjs.com/package/manta) -- i.e. `npm install manta`.
-- mantav2: Currently on the ["buckets" branch](https://github.com/joyent/node-manta/tree/buckets/)
-  of joyent/node-manta. It is not yet published to npm.
+- mantav2: The mantav1 client should work with mantav2.
 
-*(The intent is to eventually move mantav2 to the "master" branch and publish it
-to npm as "mantav2". Mantav1 dev would move to the "mantav1" branch and continue
-to publish to npm as "manta".)*
+*(The intent is to eventually move a mantav2 version to the "master" branch and
+publish it to npm as "mantav2". Mantav1 dev would move to the "mantav1" branch
+and continue to publish to npm as "manta".)*
 
 
 #### Java client
@@ -93,11 +93,10 @@ The Java Manta client is developed in the
 
 - mantav1: Currently on the ["master" branch](https://github.com/joyent/java-manta/tree/master/)
   of joyent/java-manta. Current release versions are 3.x.
-- mantav2: Currently on the ["buckets-m1" branch](https://github.com/joyent/java-manta/tree/buckets-m1/)
-  of joyent/java-manta.
+- mantav2: The mantav1 client should work with mantav2.
 
-*(The intent is to eventually move mantav2 to the "master" branch and release it
-as a new "4.x" major version. Mantav1 dev would move to the "3.x" branch and
+*(The intent is to eventually move a mantav2 to the "master" branch and release
+it as a new "4.x" major version. Mantav1 dev would move to the "3.x" branch and
 continue to release as 3.x versions.)*
 
 
