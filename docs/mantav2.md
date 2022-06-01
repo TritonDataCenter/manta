@@ -73,12 +73,12 @@ currently available in a feature branch of their respective git repositories.
 #### Node.js client
 
 The Node.js Manta client is developed in the
-[joyent/node-manta](https://github.com/joyent/node-manta) repository.
+[joyent/node-manta](https://github.com/TritonDataCenter/node-manta) repository.
 
-- mantav1: Currently on the ["master" branch](https://github.com/joyent/node-manta/tree/master/)
+- mantav1: Currently on the ["master" branch](https://github.com/TritonDataCenter/node-manta/tree/master/)
   of joyent/node-manta, and published to npm as
   ["manta"](https://www.npmjs.com/package/manta) -- i.e. `npm install manta`.
-- mantav2: Currently on the ["buckets" branch](https://github.com/joyent/node-manta/tree/buckets/)
+- mantav2: Currently on the ["buckets" branch](https://github.com/TritonDataCenter/node-manta/tree/buckets/)
   of joyent/node-manta. It is not yet published to npm.
 
 *(The intent is to eventually move mantav2 to the "master" branch and publish it
@@ -89,11 +89,11 @@ to publish to npm as "manta".)*
 #### Java client
 
 The Java Manta client is developed in the
-[joyent/java-manta](https://github.com/joyent/java-manta) repository.
+[joyent/java-manta](https://github.com/TritonDataCenter/java-manta) repository.
 
-- mantav1: Currently on the ["master" branch](https://github.com/joyent/java-manta/tree/master/)
+- mantav1: Currently on the ["master" branch](https://github.com/TritonDataCenter/java-manta/tree/master/)
   of joyent/java-manta. Current release versions are 3.x.
-- mantav2: Currently on the ["buckets-m1" branch](https://github.com/joyent/java-manta/tree/buckets-m1/)
+- mantav2: Currently on the ["buckets-m1" branch](https://github.com/TritonDataCenter/java-manta/tree/buckets-m1/)
   of joyent/java-manta.
 
 *(The intent is to eventually move mantav2 to the "master" branch and release it
@@ -104,7 +104,7 @@ continue to release as 3.x versions.)*
 ## Is mantav1 still supported?
 
 Operation of a Mantav1 per the [mantav1 Operator
-Guide](https://github.com/joyent/manta/blob/mantav1/docs/operator-guide.md)
+Guide](https://github.com/TritonDataCenter/manta/blob/mantav1/docs/operator-guide.md)
 remains unchanged, other than that operators should look for images named
 `mantav1-$servicename` rather than `manta-$servicename`. For example:
 

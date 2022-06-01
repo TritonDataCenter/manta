@@ -67,7 +67,7 @@ works like this:
 1. Build the repository itself.
 2. Build an image (a zone filesystem template and some metadata) from the
    contents of the built repository.
-3. Optionally, publish the image to updates.joyent.com.
+3. Optionally, publish the image to updates.tritondatacenter.com.
 4. Import the image into a Triton instance.
 5. Provision a new zone from the imported image.
 6. During the first boot, the zone executes a one-time setup script.
@@ -81,14 +81,14 @@ There are tools to automate most of this:
   which assembles an image containing the built Manta component.  The image
   represents a template filesystem with which instances of this
   component will be stamped out.  After the image is built, it can be uploaded
-  to updates.joyent.com. Alternatively, the image can be manually imported to
+  to updates.tritondatacenter.com. Alternatively, the image can be manually imported to
   a Triton instance by copying the image manifest and image file
   (a compressed zfs send stream) to the headnode and running
   "sdc-imgadm import".
 * The "manta-init" command takes care of step 4.  You run this as part of any
   deployment.  See the [Manta Operator's Guide](https://joyent.github.io/manta)
   for details.  After the first run, subsequent runs find new images in
-  updates.joyent.com, import them into the current Triton instance, and mark
+  updates.tritondatacenter.com, import them into the current Triton instance, and mark
   them for use by "manta-deploy". Alternatively, if you have images that were
   manually imported using "sdc-imgadm import", then "manta-init" can be run
   with the "-n" flag to use those local images instead.
@@ -98,7 +98,7 @@ There are tools to automate most of this:
   previous steps.
 
 For more information on the zone setup and boot process, see the
-[manta-scripts](https://github.com/joyent/manta-scripts) repo.
+[manta-scripts](https://github.com/TritonDataCenter/manta-scripts) repo.
 
 
 # Testing changes inside an actual Manta deployment
@@ -137,7 +137,7 @@ which is that most components are delivered as zone images and deployed by
 provisioning new zones from these images.  While the deployment tools are
 slightly different than Triton's, the build process is nearly identical.  The
 common instructions for building zone images are part of the [Triton
-documentation](https://github.com/joyent/triton/blob/master/docs/developer-guide/building.md).
+documentation](https://github.com/TritonDataCenter/triton/blob/master/docs/developer-guide/building.md).
 
 ## Building with your changes
 
@@ -145,9 +145,9 @@ Building a repository checked out to a given git branch will include those
 changes in the resulting image.
 
 One exception, is any `agents` (for example
-[`amon`](https://github.com/joyent/sdc-amon),
-[`config-agent`](https://github.com/joyent/sdc-config-agent/),
-[`registrar`](https://github.com/joyent/registrar), (there are others)) that
+[`amon`](https://github.com/TritonDataCenter/sdc-amon),
+[`config-agent`](https://github.com/TritonDataCenter/sdc-config-agent/),
+[`registrar`](https://github.com/TritonDataCenter/registrar), (there are others)) that
 are bundled within the image.
 
 At build-time, the build will attempt to build agents from the same branch
@@ -163,10 +163,10 @@ branch name as the checked-out branch of the component you're building, before
 finally falling back to the `master` branch of that agent repository.
 
 The mechanism used is described in the
-[`Makefile.agent_prebuilt.defs`](https://github.com/joyent/eng/blob/master/tools/mk/Makefile.agent_prebuilt.defs),
-[`Makefile.agent_prebuilt.targ`](https://github.com/joyent/eng/blob/master/tools/mk/Makefile.agent_prebuilt.targ),
+[`Makefile.agent_prebuilt.defs`](https://github.com/TritonDataCenter/eng/blob/master/tools/mk/Makefile.agent_prebuilt.defs),
+[`Makefile.agent_prebuilt.targ`](https://github.com/TritonDataCenter/eng/blob/master/tools/mk/Makefile.agent_prebuilt.targ),
 and
-[`agent-prebuilt.sh`](https://github.com/joyent/eng/blob/master/tools/agent_prebuilt.sh)
+[`agent-prebuilt.sh`](https://github.com/TritonDataCenter/eng/blob/master/tools/agent_prebuilt.sh)
 files, likely appearing as a git submodule beneath `deps/eng` in the
 component repository.
 
@@ -188,9 +188,9 @@ points the repo at your local dependency:
              "dependencies": {
                      "assert-plus": "0.1.1",
                      "bunyan": "0.16.6",
-    -                "checker": "git://github.com/joyent/node-checker#master",
+    -                "checker": "git://github.com/TritonDataCenter/node-checker#master",
     +                "checker": "git://github.com/davepacheco/node-checker#master",
-                     "moray": "git://github.com/joyent/node-moray.git#master",
+                     "moray": "git://github.com/TritonDataCenter/node-moray.git#master",
                      "posix-getopt": "1.0.0",
                      "pg": "0.11.3",
 

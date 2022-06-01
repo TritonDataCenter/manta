@@ -26,7 +26,7 @@ Some features of the service include:
 ## User accounts, authentication, and security
 
 To use Manta, you need a Triton account.
-([Triton](https://github.com/joyent/triton) is the cloud management platform on
+([Triton](https://github.com/TritonDataCenter/triton) is the cloud management platform on
 which a Manta runs.) If you don't already have an account, contact your
 administrator. Once you have signed up, you will need to add an SSH public key
 to your account. The SSH key is used to authenticate you with the Manta API.

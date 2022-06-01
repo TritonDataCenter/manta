@@ -65,8 +65,8 @@ To allow the access to a specific resource,
 you also need to associate, or tag, the resource with a role and add
 authorized users as members of the role. You can tag or untag roles
 for a resource by updating the 'role-tag' attribute value in the
-object metadata. See the [mchmod](https://github.com/joyent/node-manta/blob/master/docs/man/mchmod.md)
-or [mchattr](https://github.com/joyent/node-manta/blob/master/docs/man/mchattr.md) CLI reference for
+object metadata. See the [mchmod](https://github.com/TritonDataCenter/node-manta/blob/master/docs/man/mchmod.md)
+or [mchattr](https://github.com/TritonDataCenter/node-manta/blob/master/docs/man/mchattr.md) CLI reference for
 an example of updating object role tags or updating metadata in general.
 
 Roles can be tagged to directories as well (the only exception is the root

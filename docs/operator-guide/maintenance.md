@@ -281,7 +281,7 @@ See "Amon Alarm Updates".
 Manta integrates with **Amon**, the Triton alarming and monitoring system, to
 notify operators when something is wrong with a Manta deployment.  It's
 recommended to review Amon basics in the [Amon
-documentation](https://github.com/joyent/sdc-amon/blob/master/docs/index.md).
+documentation](https://github.com/TritonDataCenter/sdc-amon/blob/master/docs/index.md).
 
 The `manta-adm` tool ships with configuration files that specify Amon probes and
 probe groups, referred to elsewhere as the "Amon configuration" for Manta.  This

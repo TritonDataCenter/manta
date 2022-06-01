@@ -6,6 +6,7 @@
 
 <!--
     Copyright 2020 Joyent, Inc.
+    Copyright 2022 MNX Cloud, Inc.
 -->
 
 # Manta: a scalable, distributed object store
@@ -49,11 +50,10 @@ Community discussion about Manta happens in two main places:
 * In the *#manta* IRC channel on the
   [Libera.chat IRC network](https://libera.chat/).
 
-
 ## Dependencies
 
 Manta is composed of a number of services that deploy on top of Joyent's
-[Triton DataCenter](https://github.com/joyent/triton) platform (just "Triton"
+[Triton DataCenter](https://github.com/TritonDataCenter/triton) platform (just "Triton"
 for short), which is also open-source. Triton provides services for operating
 physical servers (compute nodes), deploying services in containers, monitoring
 services, transmitting and visualizing real-time performance data, and a bunch
@@ -62,7 +62,6 @@ service monitoring.
 
 Triton itself depends on [SmartOS](http://smartos.org).  Manta also directly
 depends on several SmartOS features, notably ZFS.
-
 
 ## Building and Deploying Manta
 
@@ -76,7 +75,6 @@ in VMware and then follow those instructions to deploy Manta on it.
 If you want to deploy your own builds of Manta components, see "Deploying your
 own Manta Builds" below.
 
-
 ## Repositories
 
 This repository is just a wrapper containing documentation about Manta.  Manta
@@ -85,52 +83,52 @@ some of the more important ones.
 
 A full list of repositories relevant to Manta is maintained in a [repo manifest
 file](./tools/jr-manifest.json) in this repo. To more conveniently list those
-repos, you can use the [`jr` tool](https://github.com/joyent/joyent-repos#jr).
+repos, you can use the [`jr` tool](https://github.com/TritonDataCenter/joyent-repos#jr).
 
 The front door services respond to requests from the internet at large:
 
-* [muppet](https://github.com/joyent/muppet): the haproxy-based "loadbalancer"
+* [muppet](https://github.com/TritonDataCenter/muppet): the haproxy-based "loadbalancer"
   service
-* [muskie](https://github.com/joyent/manta-muskie): the node.js-based "webapi"
+* [muskie](https://github.com/TritonDataCenter/manta-muskie): the node.js-based "webapi"
   service, this is Manta's "Directory API"
-* [buckets-api](https://github.com/joyent/manta-buckets-api): Node.js-based
+* [buckets-api](https://github.com/TritonDataCenter/manta-buckets-api): Node.js-based
   "buckets-api" service, this is Manta's "Buckets API"
 
 The metadata tiers for the Directory and Buckets APIs store the entire object
 namespace (not object data) as well as backend storage system capacity:
 
-* [manatee](https://github.com/joyent/manatee): the "postgres" service, a
+* [manatee](https://github.com/TritonDataCenter/manatee): the "postgres" service, a
   high-availability postgres cluster using synchronous replication and automatic
   fail-over
-* [moray](https://github.com/joyent/moray): Node-based key-value store built on
+* [moray](https://github.com/TritonDataCenter/moray): Node-based key-value store built on
   top of manatee.  Also responsible for monitoring manatee replication topology
   (i.e., which postgres instance is the master).
-* [electric-moray](https://github.com/joyent/electric-moray): Node-based service
+* [electric-moray](https://github.com/TritonDataCenter/electric-moray): Node-based service
   that provides the same interface as Moray, but which directs requests to one
   or more Moray+Manatee *shards* based on hashing the Moray key.
-* [buckets-mdapi](https://github.com/joyent/manta-buckets-mdapi): a Rust-based
+* [buckets-mdapi](https://github.com/TritonDataCenter/manta-buckets-mdapi): a Rust-based
   API for managing all metadata for the Buckets API
-* [buckets-mdplacement](https://github.com/joyent/manta-buckets-mdplacement): a
+* [buckets-mdplacement](https://github.com/TritonDataCenter/manta-buckets-mdplacement): a
   Rust-based API for handling routing of Buckets API objects to appropriate
   nodes in the storage tier.
 
 The storage tier is responsible for actually storing bits on disk:
 
-* [mako](https://github.com/joyent/manta-mako): the "storage" service, a
+* [mako](https://github.com/TritonDataCenter/manta-mako): the "storage" service, a
   nginx-based server that receives PUT/GET requests from the front door services
   to store object data on disk
-* [minnow](https://github.com/joyent/manta-minnow): a Node-based agent that
+* [minnow](https://github.com/TritonDataCenter/manta-minnow): a Node-based agent that
   runs inside storage instances to periodically report storage capacity to the
   metadata tier
 
 There are a number of services not part of the data path that are critical for
 Manta's operation. For example:
 
-* [binder](https://github.com/joyent/binder): hosts both ZooKeeper (used for
+* [binder](https://github.com/TritonDataCenter/binder): hosts both ZooKeeper (used for
   manatee leader election and for group membership) and a Node-based DNS server
   that keeps track of which instances of each service are online at any given
   time
-* [mahi](https://github.com/joyent/mahi): The "authcache" service for handling authn/authz.
+* [mahi](https://github.com/TritonDataCenter/mahi): The "authcache" service for handling authn/authz.
 
 Most of the above components are *services*, of which there may be multiple
 *instances* in a single Manta deployment. Except for the last category of
@@ -140,7 +138,6 @@ and additional instances can be deployed to increase capacity.
 For more details on the architecture, including how these pieces actually fit
 together, see the [Architecture](./docs/operator-guide/architecture.md) section
 of the Operator Guide.
-
 
 ## Deploying your own Manta Builds
 
@@ -157,7 +154,7 @@ do this:
 
 1. Complete the Manta deployment procedure from the operator guide.
 2. Build a zone image for whatever zone you want to replace.  See the
-   instructions for building [Triton](https://github.com/joyent/triton)
+   instructions for building [Triton](https://github.com/TritonDataCenter/triton)
    zone images.  Manta zones work the same way.  The output of this process
    will be a zone **image**, identified by uuid.  The image is comprised of
    two files: an image manifest (a JSON file) and the image file itself
@@ -184,7 +181,7 @@ do this:
 If for some reason you want to avoid deploying the Joyent builds at all, you'll
 have to follow a more manual procedure.  One approach is to update the SAPI
 configuration for whatever service you want (using sdc-sapi -- see
-[SAPI](https://github.com/joyent/sdc-sapi)) *immediately after* running
+[SAPI](https://github.com/TritonDataCenter/sdc-sapi)) *immediately after* running
 manta-init but before deploying anything.  Note that each subsequent
 "manta-init" will clobber this change, though the SAPI configuration is normally
 only used for the initial deployment anyway.  The other option is to apply the
@@ -198,7 +195,6 @@ components above.  The other two kinds of components are the *platform* and
 *agents*.  Both of these procedures are documented in the Operator Guide,
 and they work to deploy custom builds as well as the official Joyent builds.
 
-
 ## Contributing to Manta
 
 To report bugs or request features, you can submit issues to the Manta project
@@ -207,7 +203,6 @@ you should contact Joyent support instead.
 
 See the [Contribution Guidelines](./CONTRIBUTING.md) for information about
 contributing changes to the project.
-
 
 ## Design principles
 

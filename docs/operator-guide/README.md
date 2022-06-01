@@ -1,9 +1,9 @@
 # Manta Operator Guide
 
 *(Note: This is the operator guide for
-[Mantav2](https://github.com/joyent/manta/blob/master/docs/mantav2.md). If you
+[Mantav2](https://github.com/TritonDataCenter/manta/blob/master/docs/mantav2.md). If you
 are operating a mantav1 deployment, please see the [Mantav1 Operator
-Guide](https://github.com/joyent/manta/blob/mantav1/docs/operator-guide.md).)*
+Guide](https://github.com/TritonDataCenter/manta/blob/mantav1/docs/operator-guide.md).)*
 
 This operator guide is divided into sections:
 
