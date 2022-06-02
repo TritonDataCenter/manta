@@ -2,7 +2,7 @@
     "jrVersion": 1,
     "description": "Manta public repositories",
     "repoCandidateSearch": {
-        "description": "public github.com/joyent repos directly relevant to development of Joyent Manta",
+        "description": "public github.com/TritonDataCenter repos directly relevant to development of Manta",
         "type": "public",
         "includeArchived": false
     },
@@ -30,7 +30,7 @@
         {
             "name": "mantav1",
             "type": "boolean",
-            "description": "Repositories are related to mantav1. See https://github.com/joyent/manta/blob/master/docs/mantav2.md"
+            "description": "Repositories are related to mantav1. See https://github.com/TritonDataCenter/manta/blob/master/docs/mantav2.md"
         },
         {
             "name": "mantav1branch",

@@ -14,7 +14,7 @@ tools that let you work with Manta much as you would work with a Unix system.
 See the [Getting Started tutorial](./#getting-started) for an introduction.
 
 The documentation for using the Manta node.js package in node code, see
-[the node-manta docs](https://github.com/joyent/node-manta/tree/master/docs).
+[the node-manta docs](https://github.com/TritonDataCenter/node-manta/tree/master/docs).
 
 
 # Java SDK
@@ -34,7 +34,7 @@ it add the following to your project's pom.xml:
     </dependency>
 
 You can find the source for Java SDK at
-[https://github.com/joyent/java-manta](https://github.com/joyent/java-manta).
+[https://github.com/TritonDataCenter/java-manta](https://github.com/TritonDataCenter/java-manta).
 
 
 # Other community or unsupported SDKs
@@ -62,7 +62,7 @@ a bash-like environment.
     four
 
 You can find the Python SDK at
-[https://github.com/joyent/python-manta](https://github.com/joyent/python-manta).
+[https://github.com/TritonDataCenter/python-manta](https://github.com/TritonDataCenter/python-manta).
 
 
 ## Ruby SDK
@@ -73,7 +73,7 @@ checks. The Ruby SDK seeks to expose all of Manta's features in a thin
 low-abstraction client.
 
 You can find the Ruby SDK at
-[https://github.com/joyent/ruby-manta](https://github.com/joyent/ruby-manta).
+[https://github.com/TritonDataCenter/ruby-manta](https://github.com/TritonDataCenter/ruby-manta).
 
 
 ## mantaRSDK
@@ -82,8 +82,8 @@ The R SDK is an interactive client in the form of an R package, that exposes all
 of Manta's features, and supports R on Unix, Linux and Windows.
 
 You can find the mantaRSDK at
-[https://github.com/joyent/mantaRSDK](https://github.com/joyent/mantaRSDK)
-and Rbunyan at [https://github.com/joyent/Rbunyan](https://github.com/joyent/Rbunyan).
+[https://github.com/TritonDataCenter/mantaRSDK](https://github.com/TritonDataCenter/mantaRSDK)
+and Rbunyan at [https://github.com/TritonDataCenter/Rbunyan](https://github.com/TritonDataCenter/Rbunyan).
 
 
 ## Hadoop FileSystem Driver
@@ -94,8 +94,8 @@ dependent upon community involvement. The driver is available as a stand-alone
 jar file that can be dropped into a Hadoop or Apache Drill installation.
 
 You can download the jar directory from the [releases
-page](https://github.com/joyent/hadoop-manta/releases)
-on the [project's github page](https://github.com/joyent/hadoop-manta)
+page](https://github.com/TritonDataCenter/hadoop-manta/releases)
+on the [project's github page](https://github.com/TritonDataCenter/hadoop-manta)
 or directly from Maven Central.
 
 
@@ -111,7 +111,7 @@ be installed using [Composer](https://getcomposer.org/):
 It has been tested in PHP 5.6, PHP 7.0 and HHVM.
 
 You can find the source for PHP SDK at
-[https://github.com/joyent/php-manta](https://github.com/joyent/php-manta).
+[https://github.com/TritonDataCenter/php-manta](https://github.com/TritonDataCenter/php-manta).
 
 
 ## Perl Module
@@ -122,7 +122,7 @@ involvement. The module is available on
 [CPAN](http://search.cpan.org/~andrewh/Manta-Client/).
 
 You can find the source for the Perl module at
-[https://github.com/joyent/Manta-Client](https://github.com/joyent/Manta-Client).
+[https://github.com/TritonDataCenter/Manta-Client](https://github.com/TritonDataCenter/Manta-Client).
 
 
 ## Golang SDK
@@ -131,7 +131,7 @@ The Go SDK for Manta is a combination SDK that provides support for Triton
 CloudAPI operations in addition to Manta API operations.
 
 You can find the source for the Go Manta SDK at
-[https://github.com/joyent/triton-go](https://github.com/joyent/triton-go).
+[https://github.com/TritonDataCenter/triton-go](https://github.com/TritonDataCenter/triton-go).
 
 
 ## Erlang SDK
@@ -140,4 +140,4 @@ The Erlang SDK for Manta is community-maintained SDK that has support for most
 file operations.
 
 You can find the source for the Erlang SDK at
-[https://github.com/joyent/erlang-manta](https://github.com/joyent/erlang-manta).
+[https://github.com/TritonDataCenter/erlang-manta](https://github.com/TritonDataCenter/erlang-manta).

@@ -99,7 +99,7 @@ very helpful in laying out zones for Manta.  See the `manta-adm` manual page for
 details.**  `manta-adm genconfig --from-file` takes as input a list of physical
 servers and information about each one.  Large deployments that use Device 42 to
 manage hardware inventory may find the
-[manta-genazconfig](https://github.com/joyent/manta-genazconfig) tool useful for
+[manta-genazconfig](https://github.com/TritonDataCenter/manta-genazconfig) tool useful for
 constructing the input for `manta-adm genconfig`.
 
 The most important production configurations are described below,
@@ -229,7 +229,7 @@ above.
 
 The two main commands used to deploy and maintain Manta, `manta-init` and
 `manta-adm` operate on software delivered as Triton images. These images are
-retrieved from `https://updates.joyent.com` by default. Both `manta-init` and
+retrieved from `https://updates.tritondatacenter.com` by default. Both `manta-init` and
 `manta-adm` are "channel aware", taking `-C` options to override the Triton
 image channel to download images from. The default channel for a Manta
 deployment can be set using `sdcadm channel set ...` within a given datacenter.
@@ -285,7 +285,7 @@ multi-DC, multi-compute-node deployment.  The general process is:
 
 6. For multi-datacenter deployments, you must [configure SAPI for
    multi-datacenter
-   support](https://github.com/joyent/sdc-sapi/blob/master/docs/index.md#multi-dc-mode).
+   support](https://github.com/TritonDataCenter/sdc-sapi/blob/master/docs/index.md#multi-dc-mode).
 
 7. If you'll be deploying a loadbalancer on any compute nodes *other* than a
    headnode, then you'll need to create the "external" NIC tag on those CNs.
@@ -417,7 +417,7 @@ should consider doing to ensure a working deployment.
 
 ### Prerequisites
 
-If you haven't already done so, you will need to [install the Manta CLI tools](https://github.com/joyent/node-manta#installation).
+If you haven't already done so, you will need to [install the Manta CLI tools](https://github.com/TritonDataCenter/node-manta#installation).
 
 ### Set up a Manta Account
 
@@ -432,7 +432,7 @@ your headnode.
 
 Log into the Operations Portal:
 
- * COAL users should use login `admin` and the password [you initially setup](https://github.com/joyent/triton/blob/master/docs/developer-guide/coal-setup.md#configure-the-headnode).
+ * COAL users should use login `admin` and the password [you initially setup](https://github.com/TritonDataCenter/triton/blob/master/docs/developer-guide/coal-setup.md#configure-the-headnode).
  * Lab users will also use `admin`, but need to ask whoever
    provisioned your lab account for the password.
 

@@ -6,12 +6,12 @@
 
 <!--
     Copyright 2019 Joyent, Inc.
+    Copyright 2022 MNX Cloud, Inc.
 -->
 
 # Manta Contribution Guidelines
 
 Thanks for using Manta and for considering contributing to it!
-
 
 # Code
 
@@ -27,7 +27,7 @@ See the [developer guide](docs/developer-guide) for useful information about
 building and testing the software.
 
 Manta repositories use the same [Joyent Engineering
-Guidelines](https://github.com/joyent/eng/blob/master/docs/index.md) as
+Guidelines](https://github.com/TritonDataCenter/eng/blob/master/docs/index.md) as
 the Triton project.  Notably:
 
 * The #master branch should be first-customer-ship (FCS) quality at all times.
@@ -38,19 +38,18 @@ the Triton project.  Notably:
 Typically each repository has `make check` to lint and check code style.
 Specific code style can vary by repository.
 
-
 ## Issues
 
 There are two separate issue trackers that are relevant for Manta code:
 
-- An internal-to-Joyent JIRA instance.
+* An internal JIRA instance.
 
   A JIRA ticket has an ID like `MANTA-380`, where "MANTA" is the JIRA project
   name. A read-only view of many JIRA tickets is made available at
   <https://smartos.org/bugview/> (e.g.
   <https://smartos.org/bugview/MANTA-380>).
 
-- GitHub issues for the relevant repository.
+* GitHub issues for the relevant repository.
 
 Before Manta was open sourced, Joyent engineering used a private JIRA instance.
 While Joyent continues to use JIRA internally, we also use GitHub issues for

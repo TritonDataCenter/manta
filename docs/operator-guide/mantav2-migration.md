@@ -144,10 +144,10 @@ storage          85d4b8c4 2.0K  /manta/tombstone
 
 Some Mantas may have deployed a garbage collection system called
 "Accelerated GC":
-[overview](https://github.com/joyent/manta/blob/mantav1/docs/operator-guide.md#accelerated-garbage-collection),
-[deployment notes](https://github.com/joyent/manta/blob/mantav1/docs/operator-guide.md#deploy-accelerated-garbage-collection-components),
-[operating/configuration notes](https://github.com/joyent/manta/blob/mantav1/docs/operator-guide.md#accelerated-garbage-collection-1),
-[troubleshooting notes](https://github.com/joyent/manta/blob/mantav1/docs/operator-guide.md#troubleshooting-accelerated-garbage-collection).
+[overview](https://github.com/TritonDataCenter/manta/blob/mantav1/docs/operator-guide.md#accelerated-garbage-collection),
+[deployment notes](https://github.com/TritonDataCenter/manta/blob/mantav1/docs/operator-guide.md#deploy-accelerated-garbage-collection-components),
+[operating/configuration notes](https://github.com/TritonDataCenter/manta/blob/mantav1/docs/operator-guide.md#accelerated-garbage-collection-1),
+[troubleshooting notes](https://github.com/TritonDataCenter/manta/blob/mantav1/docs/operator-guide.md#troubleshooting-accelerated-garbage-collection).
 
 Work through the following steps to determine if you have Accelerated GC and,
 if so, to flush and disable it:
@@ -264,7 +264,7 @@ published after 2019-12-09 will do.
     # Find and import the latest webapi image.
     updates-imgadm -C $(sdcadm channel get) list name=mantav2-webapi
     latest_webapi_image=$(updates-imgadm -C $(sdcadm channel get) list name=mantav2-webapi -H -o uuid --latest)
-    sdc-imgadm import -S https://updates.joyent.com $latest_webapi_image
+    sdc-imgadm import -S https://updates.tritondatacenter.com $latest_webapi_image
     ```
 
 - Update webapis to that new image:
@@ -335,7 +335,7 @@ the async postgres for each Manta index shard. That will generate a
 to "/var/db/snaplink-cleanup/discovery/" on this headnode.
 
 Repeat the following steps for each missing shard:
-    https://github.com/joyent/manta/blob/master/docs/operator-guide/mantav2-migration.md#snaplink-discovery
+    https://github.com/TritonDataCenter/manta/blob/master/docs/operator-guide/mantav2-migration.md#snaplink-discovery
 
 Missing "*_sherlock.tsv.gz" for the following shards (1 of 1):
     1.moray.coalregion.joyent.us
@@ -903,7 +903,7 @@ The new garbage-collector system should be deployed.
     # Find and import the latest storage image.
     updates-imgadm -C $(sdcadm channel get) list name=mantav2-storage
     latest_storage_image=$(updates-imgadm -C $(sdcadm channel get) list name=mantav2-storage -H -o uuid --latest)
-    sdc-imgadm import -S https://updates.joyent.com $latest_storage_image
+    sdc-imgadm import -S https://updates.tritondatacenter.com $latest_storage_image
 
     # Update storages to that image
     manta-adm show -js >/var/tmp/config.json
@@ -912,7 +912,7 @@ The new garbage-collector system should be deployed.
     ```
 
 4.  Follow [the GC deployment
-    steps](https://github.com/joyent/manta-garbage-collector/tree/master/docs#deploying-the-garbage-collector).
+    steps](https://github.com/TritonDataCenter/manta-garbage-collector/tree/master/docs#deploying-the-garbage-collector).
 
 
 ## Step 5: Remove obsolete Manta jobs services and instances
@@ -931,7 +931,7 @@ The services (and their instances) to remove are:
 - marlin-agent (This is an agent on each server, rather than a SAPI service.)
 
 (Internal Joyent ops should look at the appropriate [change-mgmt
-template](https://github.com/joyent/change-mgmt/blob/master/change-plan-templates/mantav2/JPC/0-jobtier-remove.md)
+template](https://github.com/TritonDataCenter/change-mgmt/blob/master/change-plan-templates/mantav2/JPC/0-jobtier-remove.md)
 for this procedure.)
 
 A simplified procedure is as follows:
