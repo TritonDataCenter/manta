@@ -1,5 +1,5 @@
 ---
-title: Joyent Manta Storage Service
+title: Triton Manta Storage Service
 markdown2extras: wiki-tables, code-friendly
 logo-color: green
 logo-font-family: google:Aldrich, Verdana, sans-serif
@@ -8,7 +8,7 @@ header-font-family: google:Aldrich, Verdana, sans-serif
 
 # manta-compute-bin
 
-[manta-compute-bin](http://joyent.github.com/manta-compute-bin) is a collection
+[manta-compute-bin](http://github.com/TritonDataCenter/manta-compute-bin) is a collection
 of utilities that are on the `$PATH` in a compute job.
 
 # Introduction
@@ -56,8 +56,8 @@ your changes in Compute with something like:
 
 # More documentation
 
-Docs can be found here [http://apidocs.joyent.com/manta/](http://apidocs.joyent.com/manta/)
+Docs can be found here [http://apidocs.tritondatacenter.com/manta/](http://apidocs.tritondatacenter.com/manta/)
 
 # Bugs
 
-See <https://github.com/joyent/manta-compute-bin/issues>.
+See <https://github.com/TritonDataCenter.com/manta-compute-bin/issues>.

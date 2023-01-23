@@ -50,7 +50,7 @@ Several principles guide the design of the service:
 * Jobs execute quickly enough to iterate interactively and get results in real
   time.
 * Error cases are debuggable. In addition to providing stderr and core files,
-  the task execution environment is very close to a standard Joyent Instance,
+  the task execution environment is very close to a standard SmartOS Instance,
   which allows users to develop and debug jobs outside of the service if
   desired.
 * Transient failure of individual system components are not visible to users
@@ -188,7 +188,7 @@ tasks have no direct access to inputs as files, since the objects may not be
 stored locally, will not all be ready when the reduce task starts running, and
 are not assumed to fit on a single server.
 
-You'll notice that unlike other map-reduce services, Joyent Manta Storage
+You'll notice that unlike other map-reduce services, Triton Manta Storage
 Service tasks operate at the granularity of a complete object. If you want to
 process key-value pairs or something more structured, your script is responsible
 for parsing the input. Many Unix tools natively parse whitespace-delimited text
@@ -326,8 +326,8 @@ reducers in the next phase.  Also see documentation for "msplit".
 
 ## Compute instance images ("image" property)
 
-Compute instances are Joyent instances based on the manta-compute image. This
-image is essentially a [base image](https://docs.joyent.com/public-cloud/instances/infrastructure/images/smartos/base)
+Compute instances are SmartOS instances based on the manta-compute image. This
+image is essentially a [base image](https://docs.tritondatacenter.com/public-cloud/instances/infrastructure/images/smartos/base)
 with nearly all of the available packages preinstalled.
 
 By default, tasks run in compute instances with the most recently released image
@@ -336,7 +336,7 @@ semver-like value for the "image" property (e.g., "13.1.\*").  If that image is
 not available, tasks for that job will fail with an InvalidArgumentError.
 
 **You're strongly discouraged from depending on an exact version of the image,
-as Joyent may frequently release minor updates to existing images and retire
+as we may frequently release minor updates to existing images and retire
 older versions as long as the new one is backwards-compatible.**  Dependencies
 are intended so you can tie jobs to major releases, or "at least" a particular
 minor release.
@@ -404,7 +404,7 @@ Synopsis:
     mpipe [-p] [-r rIdx] [-H header:value ...] [manta path]
 
 Each invocation of mpipe reads data from stdin, potentially buffers it to local
-disk, and saves it as task output.  If a Joyent Manta Storage Service path is
+disk, and saves it as task output.  If a Manta Storage Service path is
 given, the output is saved to that path.  Otherwise, the object is stored with a
 unique name in the job's directory.  If -p is given, required parent directories
 are automatically created (like "mkdir -p").

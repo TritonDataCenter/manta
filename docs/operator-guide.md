@@ -6,6 +6,7 @@
 
 <!--
     Copyright 2020 Joyent, Inc.
+    Copyright 2023 MNX Cloud, Inc.
 -->
 
 # Manta v1 Operator Guide
@@ -23,21 +24,21 @@ first class operation. The user interface to Manta is essentially:
 * Users submit map-reduce *compute jobs* that run arbitrary Unix programs on
   their objects.
 
-Users can interact with Manta through the official Node.js CLI; the Joyent user
+Users can interact with Manta through the official Node.js CLI; the Triton user
 portal; the Node, Python, Ruby, or Java SDKs; curl(1); or any web browser.
 
 For more information, see the official [public user
-documentation](http://apidocs.joyent.com/manta/).  **Before reading this
+documentation](http://apidocs.tritondatacenter.com/manta/).  **Before reading this
 document, you should be very familiar with using Manta, including both the CLI
 tools and the compute jobs features. You should also be comfortable with all the
-[reference material](http://apidocs.joyent.com/manta/) on how the system works
+[reference material](http://apidocs.tritondatacenter.com/manta/) on how the system works
 from a user's perspective.**
 
 *(Note: This is the operator guide for Manta v1. See [this
-document](https://github.com/joyent/manta/blob/master/docs/mantav2.md) for
+document](https://github.com/TritonDataCenter/manta/blob/master/docs/mantav2.md) for
 information on mantav1 vs mantav2. If you are using mantav2, please see the
 [Mantav2 Operator
-Guide](https://github.com/joyent/manta/blob/master/docs/operator-guide.md).)*
+Guide](https://github.com/TritonDataCenter/manta/blob/master/docs/operator-guide.md).)*
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -270,7 +271,7 @@ In order to make all this work, there are several other pieces:
   servers that actually handle user HTTP requests.  All user interaction with
   Manta happens over HTTP (even compute jobs), so the front door handles all
   user-facing operations.
-* An **authentication cache** maintains a read-only copy of the Joyent account
+* An **authentication cache** maintains a read-only copy of the UFDS account
   database.  All front door requests are authenticated against this cache.
 * A **garbage collection and auditing** system periodically compares the
   contents of the metadata tier with the contents of the storage tier to
@@ -311,22 +312,22 @@ services.
 
 | Kind    | Major subsystem | Service          | Purpose                               | Components                                                                                             |
 | ------- | --------------- | ---------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Service | Consensus       | nameservice      | Service discovery                     | ZooKeeper, [binder](https://github.com/joyent/binder) (DNS)                                            |
-| Service | Front door      | loadbalancer     | SSL termination and load balancing    | stud, haproxy/[muppet](https://github.com/joyent/muppet)                                               |
-| Service | Front door      | webapi           | Manta HTTP API server                 | [muskie](https://github.com/joyent/manta-muskie)                                                       |
-| Service | Front door      | authcache        | Authentication cache                  | [mahi](https://github.com/joyent/mahi) (redis)                                                         |
-| Service | Metadata        | postgres         | Metadata storage and replication      | postgres, [manatee](https://github.com/joyent/manta-manatee)                                           |
-| Service | Metadata        | moray            | Key-value store                       | [moray](https://github.com/joyent/moray)                                                               |
-| Service | Metadata        | electric-moray   | Consistent hashing (sharding)         | [electric-moray](https://github.com/joyent/electric-moray)                                             |
-| Service | Storage         | storage          | Object storage and capacity reporting | [mako](https://github.com/joyent/manta-mako) (nginx), [minnow](https://github.com/joyent/manta-minnow) |
-| Service | Operations      | ops              | GC, audit, and metering cron jobs     | [mola](https://github.com/joyent/manta-mola), [mackerel](https://github.com/joyent/manta-mackerel)     |
-| Service | Operations      | madtom           | Web-based Manta monitoring            | [madtom](https://github.com/joyent/manta-madtom)                                                       |
-| Service | Operations      | marlin-dashboard | Web-based Marlin monitoring           | [marlin-dashboard](https://github.com/joyent/manta-marlin-dashboard)                                   |
+| Service | Consensus       | nameservice      | Service discovery                     | ZooKeeper, [binder](https://github.com/TritonDataCenter/binder) (DNS)                                            |
+| Service | Front door      | loadbalancer     | SSL termination and load balancing    | stud, haproxy/[muppet](https://github.com/TritonDataCenter/muppet)                                               |
+| Service | Front door      | webapi           | Manta HTTP API server                 | [muskie](https://github.com/TritonDataCenter/manta-muskie)                                                       |
+| Service | Front door      | authcache        | Authentication cache                  | [mahi](https://github.com/TritonDataCenter/mahi) (redis)                                                         |
+| Service | Metadata        | postgres         | Metadata storage and replication      | postgres, [manatee](https://github.com/TritonDataCenter/manta-manatee)                                           |
+| Service | Metadata        | moray            | Key-value store                       | [moray](https://github.com/TritonDataCenter/moray)                                                               |
+| Service | Metadata        | electric-moray   | Consistent hashing (sharding)         | [electric-moray](https://github.com/TritonDataCenter/electric-moray)                                             |
+| Service | Storage         | storage          | Object storage and capacity reporting | [mako](https://github.com/TritonDataCenter/manta-mako) (nginx), [minnow](https://github.com/TritonDataCenter/manta-minnow) |
+| Service | Operations      | ops              | GC, audit, and metering cron jobs     | [mola](https://github.com/TritonDataCenter/manta-mola), [mackerel](https://github.com/TritonDataCenter/manta-mackerel)     |
+| Service | Operations      | madtom           | Web-based Manta monitoring            | [madtom](https://github.com/TritonDataCenter/manta-madtom)                                                       |
+| Service | Operations      | marlin-dashboard | Web-based Marlin monitoring           | [marlin-dashboard](https://github.com/TritonDataCenter/manta-marlin-dashboard)                                   |
 | Service | Compute         | jobsupervisor    | Distributed job orchestration         | jobsupervisor                                                                                          |
-| Service | Compute         | jobpuller        | Job archival                          | [wrasse](https://github.com/joyent/manta-wrasse)                                                       |
-| Service | Compute         | marlin           | Compute containers for end users      | [marlin-lackey](https://github.com/joyent/manta-marlin)                                                |
-| Agent   | Compute         | marlin-agent     | Job execution on each storage node    | [marlin-agent](https://github.com/joyent/manta-marlin)                                                 |
-| Agent   | Compute         | medusa           | Interactive Session Engine            | [medusa](https://github.com/joyent/manta-medusa)                                                       |
+| Service | Compute         | jobpuller        | Job archival                          | [wrasse](https://github.com/TritonDataCenter/manta-wrasse)                                                       |
+| Service | Compute         | marlin           | Compute containers for end users      | [marlin-lackey](https://github.com/TritonDataCenter/manta-marlin)                                                |
+| Agent   | Compute         | marlin-agent     | Job execution on each storage node    | [marlin-agent](https://github.com/TritonDataCenter/manta-marlin)                                                 |
+| Agent   | Compute         | medusa           | Interactive Session Engine            | [medusa](https://github.com/TritonDataCenter/manta-medusa)                                                       |
 
 
 ## Consensus and internal service discovery
@@ -344,12 +345,12 @@ In a nutshell, this works like this:
 3. When an instance starts up (e.g., a "moray" zone), an SMF service called the
    *registrar* connects to the ZooKeeper cluster (using the IP addresses
    configured with the zone) and publishes its own IP to ZooKeeper.  A moray
-   zone for shard 1 in region "us-east" publishes its own IP under
-   "1.moray.us-east.joyent.us".
+   zone for shard 1 in region "us-central" publishes its own IP under
+   "1.moray.us-central.mnx.io".
 4. When a client wants to contact the shard 1 moray, it makes a DNS request for
-   1.moray.us-east.joyent.us using the DNS servers in the ZooKeeper cluster.
+   1.moray.us-central.mnx.io using the DNS servers in the ZooKeeper cluster.
    Those DNS servers returns *all* IPs that have been published for
-   1.moray.us-east.joyent.us.
+   1.moray.us-central.mnx.io.
 5. If the registrar in the 1.moray zone dies, the corresponding entry in the
    ZooKeeper data store is automatically removed, causing that zone to fall out
    of DNS.  Due to DNS TTLs of 60s, it may take up to a minute for clients to
@@ -361,7 +362,7 @@ Internally, most services work this way.
 
 Since we don't control Manta clients, the external service discovery system is
 simpler and more static.  We manually configure the public
-`us-east.manta.joyent.com` DNS name to resolve to each of the loadbalancer
+`us-central.manta.mnx.io` DNS name to resolve to each of the loadbalancer
 public IP addresses.  After a request reaches the loadbalancers, everything uses
 the internal service discovery mechanism described above to contact whatever
 other services they need.
@@ -463,7 +464,7 @@ There are actually three kinds of metadata in Manta:
 * Compute job state, which is all stored on a single shard.  This is extremely
   high volume, depending on job load.
 
-In the us-east production deployment, shard 1 stores compute job state and
+In the us-central production deployment, shard 1 stores compute job state and
 storage node capacity.  Shards 2-4 store the object metadata.
 
 Manta supports **resharding** object metadata, which would typically be used to
@@ -807,7 +808,7 @@ Even-numbered configurations are not supported.  See "Other configurations"
 below for details.
 
 A single-datacenter installation can be made to survive server failure, but
-obviously cannot survive datacenter failure.  The us-east deployment uses three
+obviously cannot survive datacenter failure.  The us-central deployment uses three
 datacenters.
 
 ## Choosing the number of metadata shards
@@ -815,7 +816,7 @@ datacenters.
 Recall that each metadata shard has the storage and load capacity of a single
 postgres instance.  If you want more capacity than that, you need more shards.
 Shards can be added later without downtime, but it's a delicate operation.  The
-us-east deployment uses three metadata shards, plus a separate shard for the
+us-central deployment uses three metadata shards, plus a separate shard for the
 compute and storage capacity data.
 
 We recommend at least two shards so that the compute and storage capacity
@@ -833,33 +834,31 @@ and (secondarily) the desired compute capacity.
 The number of non-storage nodes required is a function of the expected load on
 the metadata tier.  Since the point of shards is to distribute load, each
 shard's postgres instance should be on a separate compute node.  So you want at
-least as many compute nodes as you will have shards.  The us-east deployment
+least as many compute nodes as you will have shards.  The us-central deployment
 distributes the other services on those same compute nodes.
 
-For information on the latest recommended production hardware, see [Joyent
-Manufacturing Matrix](http://eng.joyent.com/manufacturing/matrix.html) and
-[Joyent Manufacturing Bill of
-Materials](http://eng.joyent.com/manufacturing/bom.html).
+For information on the latest recommended production hardware, see [Triton
+Manufacturing Matrix](http://eng.tritondatacenter.com/manufacturing/matrix.html) and
+[Triton Manufacturing Bill of
+Materials](http://eng.tritondatacenter.com/manufacturing/bom.html).
 
-The us-east deployment uses older versions of the Tenderloin-A for service
+The us-central deployment uses older versions of the Tenderloin-A for service
 nodes and Mantis Shrimps for storage nodes.
 
 ## Choosing how to lay out zones
 
 Since there are so many different Manta components, and they're all deployed
-redundantly, there are a lot of different pieces to think about.  (The
-production deployment in us-east has 21 zones in *each* of the three
-datacenters, not including the Marlin compute zones.)  So when setting up a
-Manta deployment, it's very important to think ahead of time about which
-components will run where!
+redundantly, there are a lot of different pieces to think about.  So when
+setting up a Manta deployment, it's very important to think ahead of time about
+which components will run where!
 
 **The `manta-adm genconfig` tool (when used with the --from-file option) can be
 very helpful in laying out zones for Manta.  See the `manta-adm` manual page for
 details.**  `manta-adm genconfig --from-file` takes as input a list of physical
 servers and information about each one.  Large deployments that use Device 42 to
 manage hardware inventory may find the
-[manta-genazconfig](https://github.com/joyent/manta-genazconfig) tool useful for
-constructing the input for `manta-adm genconfig`.
+[manta-genazconfig](https://github.com/TritonDataCenter/manta-genazconfig) tool
+useful for constructing the input for `manta-adm genconfig`.
 
 The most important production configurations are described below,
 but for reference, here are the principles to keep in mind:
@@ -1011,8 +1010,8 @@ multi-DC, multi-compute-node deployment.  The general process is:
 
         headnode$ /zones/$(vmadm lookup alias=manta0)/root/opt/smartdc/manta-deployment/networking/gen-coal.sh > /var/tmp/netconfig.json
 
-    b. For those using the internal Joyent Engineering lab, run this from
-       the [lab.git repo](https://mo.joyent.com/docs/lab/master/):
+    b. For those using the internal Engineering lab, run this from
+       the [lab.git repo](https://mo.tritondatacenter.com/docs/lab/master/):
 
         lab.git$ node bin/genmanta.js -r RIG_NAME LAB_NAME
 
@@ -1033,12 +1032,12 @@ multi-DC, multi-compute-node deployment.  The general process is:
    datacenter.
 
 5. For multi-datacenter deployments, you must [link the datacenters within
-   Triton](https://docs.joyent.com/private-cloud/install/headnode-installation/linked-data-centers)
+   Triton](https://docs.tritondatacenter.com/private-cloud/install/headnode-installation/linked-data-centers)
    so that the UFDS database is replicated across all three datacenters.
 
 6. For multi-datacenter deployments, you must [configure SAPI for
    multi-datacenter
-   support](https://github.com/joyent/sdc-sapi/blob/master/docs/index.md#multi-dc-mode).
+   support](https://github.com/TritonDataCenter/sdc-sapi/blob/master/docs/index.md#multi-dc-mode).
 
 7. If you'll be deploying a loadbalancer on any compute nodes *other* than a
    headnode, then you'll need to create the "external" NIC tag on those CNs.
@@ -1046,7 +1045,7 @@ multi-DC, multi-compute-node deployment.  The general process is:
    usually need to do anything for this step.  For multi-CN configurations,
    you probably *will* need to do this.  See the Triton documentation for
    [how to add a NIC tag to a
-   CN](https://docs.joyent.com/sdc7/nic-tags#AssigningaNICTagtoaComputeNode).
+   CN](https://docs.tritondatacenter.com/sdc7/nic-tags#AssigningaNICTagtoaComputeNode).
 
 8. In each datacenter's manta deployment zone, run the following:
 
@@ -1204,7 +1203,7 @@ should consider doing to ensure a working deployment.
 
 ### Prerequisites
 
-If you haven't already done so, you will need to [install the Manta CLI tools](https://github.com/joyent/node-manta#installation).
+If you haven't already done so, you will need to [install the Manta CLI tools](https://github.com/TritonDataCenter/node-manta#installation).
 
 ### Set up a Manta Account
 
@@ -1214,16 +1213,16 @@ accounts or setup your own. The most common method is to test using the
 `poseidon` account which is created by the Manta install.
 
 In either case, you will need access to the Operations Portal. [See the
-instructions here](https://docs.joyent.com/private-cloud/install/headnode-installation#adding-external-access-to-adminui-and-imgapi) on how to find the IP address of the Operations Portal from
+instructions here](https://docs.tritondatacenter.com/private-cloud/install/headnode-installation#adding-external-access-to-adminui-and-imgapi) on how to find the IP address of the Operations Portal from
 your headnode.
 
 Log into the Operations Portal:
 
- * COAL users should use login `admin` and the password [you initially setup](https://github.com/joyent/triton/blob/master/docs/developer-guide/coal-setup.md#configure-the-headnode).
+ * COAL users should use login `admin` and the password [you initially setup](https://github.com/TritonDataCenter/triton/blob/master/docs/developer-guide/coal-setup.md#configure-the-headnode).
  * Lab users will also use `admin`, but need to ask whoever
    provisioned your lab account for the password.
 
-Once in, follow [these instructions](https://docs.joyent.com/private-cloud/users#portalsshkeys) to add ssh keys to the account of your choice.
+Once in, follow [these instructions](https://docs.tritondatacenter.com/private-cloud/users#portalsshkeys) to add ssh keys to the account of your choice.
 
 ### Test Manta from the CLI Tools
 
@@ -1232,7 +1231,7 @@ existing account, you can test your Manta install with the Manta CLI
 tools you installed above in "Prerequisites".
 
 There are complete instructions on how to get started with the CLI
-tools [on the apidocs page](https://apidocs.joyent.com/manta/#getting-started).
+tools [on the apidocs page](https://apidocs.tritondatacenter.com/manta/#getting-started).
 
 Some things in that guide will not be as clear for users of custom deployments.
 
@@ -1343,7 +1342,7 @@ should always eventually be cleared**.
 
 For more sophisticated progress monitoring, see the node-artedi probes described
 in the garbage-collector
-[readme](https://github.com/joyent/manta-garbage-collector/blob/master/README.md).
+[readme](https://github.com/TritonDataCenter/manta-garbage-collector/blob/master/README.md).
 
 #### Deploy garbage-collector zones
 
@@ -1555,7 +1554,7 @@ force distribution of these global zone services.
 
 Note: For global zone network changes handled by boot-time networking to
 take effect, a reboot of the node must be performed. See
-[Triton's virtual networking documentation](https://docs.joyent.com/private-cloud/networks/sdn/architecture#bootstrapping-networking-state-in-the-global-zone)
+[Triton's virtual networking documentation](https://docs.tritondatacenter.com/private-cloud/networks/sdn/architecture#bootstrapping-networking-state-in-the-global-zone)
 for more information on boot-time networking.
 
 For reference, here's an example multi-datacenter configuration with one service
@@ -1678,33 +1677,33 @@ A common failure mode with `manta-init ...` for those without a fast internet
 link is a failure to import the large "manta-marlin" image. This is a multi-GB
 image used for the zones in which Manta compute jobs run. The problem is that
 the large image can make it easy to hit the one hour timeout for the
-[IMGAPI AdminImportRemoteImage](https://github.com/joyent/sdc-imgapi/blob/master/docs/index.md#adminimportremoteimage-post-imagesuuidactionimport-remote)
+[IMGAPI AdminImportRemoteImage](https://github.com/TritonDataCenter/sdc-imgapi/blob/master/docs/index.md#adminimportremoteimage-post-imagesuuidactionimport-remote)
 endpoint used to import Manta images. Neither this endpoint nor the
-<https://updates.joyent.com> server hosting the images supports resumable
+<https://updates.tritondatacenter.com> server hosting the images supports resumable
 downloads.
 
 Here is a manual workaround (run the following from the headnode global zone):
 
     cd /var/tmp
 
-    # Determine the UUID of the latest "manta-marlin" image on updates.joyent.com.
+    # Determine the UUID of the latest "manta-marlin" image on updates.tritondatacenter.com.
     muuid=$(updates-imgadm list name=manta-marlin --latest -H -o uuid)
 
     # Download directly from a separate manual download area in Manta.
-    curl -kO https://us-east.manta.joyent.com/Joyent_Dev/public/Manta/manta-marlin-image/$muuid.imgmanifest
+    curl -kO https://us-central.manta.mnx.io/Joyent_Dev/public/Manta/manta-marlin-image/$muuid.imgmanifest
 
     # First ensure that the origin (i.e. parent) image is installed
     origin=$(json -f $muuid.imgmanifest origin)
     [[ -z "$origin" ]] \
         || sdc-imgadm get $origin >/dev/null \
-        || sdc-imgadm import $origin -S https://updates.joyent.com
+        || sdc-imgadm import $origin -S https://updates.tritondatacenter.com
 
     # If that failed, then the separate download area doesn't have a recent
     # image. Please log an issue.
-    [[ $? -ne 0 ]] && echo log an issue at https://github.com/joyent/manta/issues/
+    [[ $? -ne 0 ]] && echo log an issue at https://github.com/TritonDataCenter/manta/issues/
 
     # If the following is interrupted, then re-run the same command to resume:
-    curl -kO -C - https://us-east.manta.joyent.com/Joyent_Dev/public/Manta/manta-marlin-image/$muuid.file.gz
+    curl -kO -C - https://us-central.manta.mnx.io/Joyent_Dev/public/Manta/manta-marlin-image/$muuid.file.gz
 
     # Verify the download checksum
     [[ $(json -f $muuid.imgmanifest | json files.0.sha1) \
@@ -1860,9 +1859,9 @@ Run this in each datacenter:
 
 1. Download updated images.  The supported approach is to re-run the
    `manta-init` command that you used when initially deploying Manta inside the
-   manta-deployment zone.  For us-east, use:
+   manta-deployment zone.  For us-central, use:
 
-        $ manta-init -e manta+us-east@joyent.com -s production -c 10
+        $ manta-init -e manta+us-central@tritondatacenter.com -s production -c 10
 
    **Do not run `manta-init` concurrently in multiple datacenters.**
 
@@ -1947,7 +1946,7 @@ available to end users simultaneously.  One image is configured as the default.
 End users can request other available images on a per-job-phase basis.  While
 [user documentation recommends that users always specify which image they want
 to
-use](https://apidocs.joyent.com/manta/jobs-reference.html#compute-instance-images-image-property),
+use](https://apidocs.tritondatacenter.com/manta/jobs-reference.html#compute-instance-images-image-property),
 most users do not use this option, so most jobs end up using the default image.
 
 Because the software in compute zones is directly exposed to end users,
@@ -2011,7 +2010,7 @@ zone image `1757ab74-b3ed-11e2-b40f-c7adac046f18` to compute zone image
    current image used for new Manta deployments, "manta-init" can be used to
    download and import the new image.  Otherwise, import it explicitly with
    "sdc-imgadm import", as in `sdc-imgadm import
-   bb9264e2-f134-11e3-9ec7-478da02d1a13 -S https://updates.joyent.com`.
+   bb9264e2-f134-11e3-9ec7-478da02d1a13 -S https://updates.tritondatacenter.com`.
 2. Use `manta-adm show -s -j > config.json` to generate a configuration file
    describing the zones currently deployed in the datacenter.  This file should
    have a number of "marlin" blocks that look like this:
@@ -2244,7 +2243,7 @@ See "Amon Alarm Updates".
 Manta integrates with **Amon**, the Triton alarming and monitoring system, to
 notify operators when something is wrong with a Manta deployment.  It's
 recommended to review Amon basics in the [Amon
-documentation](https://github.com/joyent/sdc-amon/blob/master/docs/index.md).
+documentation](https://github.com/TritonDataCenter/sdc-amon/blob/master/docs/index.md).
 
 The `manta-adm` tool ships with configuration files that specify Amon probes and
 probe groups, referred to elsewhere as the "Amon configuration" for Manta.  This
@@ -2350,7 +2349,7 @@ are three common patterns:
 Most custom services use the bunyan format.  The "bunyan" tool is installed in
 /usr/bin to view these logs.  You can also [snoop logs of running services in
 more detail using bunyan's built-in DTrace
-probes](http://www.joyent.com/blog/node-js-in-production-runtime-log-snooping).
+probes](http://www.tritondatacenter.com/blog/node-js-in-production-runtime-log-snooping).
 If you find yourself needing to look at the *current* log file for a component
 (i.e., can't wait for the next hourly upload into Manta), here's a reference for
 the service's that *don't* use the SMF log file:
@@ -2664,7 +2663,7 @@ interface that each garbage-collector runs on startup:
 
 The admin interface exposes a number of other endpoints. For an exhaustive list,
 see the garbage-collector
-[README](https://github.com/joyent/manta-garbage-collector/blob/master/README.md).
+[README](https://github.com/TritonDataCenter/manta-garbage-collector/blob/master/README.md).
 
 The mapping between garbage-collector instances and shards can also be read via
 manta-adm:
@@ -2772,10 +2771,10 @@ the current datacenter:
 
     # manta-adm cn -o host,compute_id,storage_ids storage
     HOST     COMPUTE ID               STORAGE IDS
-    RM08213  12.cn.us-east.joyent.us  2.stor.us-east.joyent.us
-    RM08211  20.cn.us-east.joyent.us  1.stor.us-east.joyent.us
-    RM08216  19.cn.us-east.joyent.us  3.stor.us-east.joyent.us
-    RM08219  11.cn.us-east.joyent.us  4.stor.us-east.joyent.us
+    RM08213  12.cn.us-central.mnx.io  2.stor.us-central.mnx.io
+    RM08211  20.cn.us-central.mnx.io  1.stor.us-central.mnx.io
+    RM08216  19.cn.us-central.mnx.io  3.stor.us-central.mnx.io
+    RM08219  11.cn.us-central.mnx.io  4.stor.us-central.mnx.io
 
 Note that the column name is "storage\_ids" (with a trailing "s") since there
 may be more than one.
@@ -2837,16 +2836,16 @@ You run this inside any "muskie" (webapi) zone:
       "sharks": [
         {
           "datacenter": "staging-2",
-          "manta_storage_id": "2.stor.staging.joyent.us"
+          "manta_storage_id": "2.stor.staging.mnx.io"
         },
         {
           "datacenter": "staging-1",
-          "manta_storage_id": "1.stor.staging.joyent.us"
+          "manta_storage_id": "1.stor.staging.mnx.io"
         }
       ],
-      "_moray": "tcp://electric-moray.staging.joyent.us:2020",
+      "_moray": "tcp://electric-moray.staging.mnx.io:2020",
       "_node": {
-        "pnode": "tcp://3.moray.staging.joyent.us:2020",
+        "pnode": "tcp://3.moray.staging.mnx.io:2020",
         "vnode": 7336153,
         "data": 1
       }
@@ -2890,9 +2889,9 @@ this to print out the full mapping:
 
     # manta-adm show -a -o storage_id,datacenter,zonename storage
     STORAGE ID                 DATACENTER ZONENAME
-    1.stor.staging.joyent.us   staging-1  f7954cad-7e23-434f-be98-f077ca7bc4c0
-    2.stor.staging.joyent.us   staging-2  12fa9eea-ba7a-4d55-abd9-d32c64ae1965
-    3.stor.staging.joyent.us   staging-3  6dbfb615-b1ac-4f9a-8006-2cb45b87e4cb
+    1.stor.staging.mnx.io      staging-1  f7954cad-7e23-434f-be98-f077ca7bc4c0
+    2.stor.staging.mnx.io      staging-2  12fa9eea-ba7a-4d55-abd9-d32c64ae1965
+    3.stor.staging.mnx.io      staging-3  6dbfb615-b1ac-4f9a-8006-2cb45b87e4cb
 
 Then use "manta-login" to log into the corresponding storage zone:
 
@@ -2949,7 +2948,7 @@ look something like this:
       267786 204
       ...
 
-(You can also use [Dragnet](https://github.com/joyent/dragnet) to scan logs more
+(You can also use [Dragnet](https://github.com/TritonDataCenter/dragnet) to scan logs more
 quickly.)
 
 That output indicates 294,000 requests with code 200, 268,000 requests with code
@@ -3016,9 +3015,9 @@ servers to debug that.
 Manta performs a number of housekeeping operations that are based on the
 contents of the metadata tier, including garbage collection, auditing, metering,
 and object rebalancing.  These are documented with the
-[Mola](https://github.com/joyent/manta-mola) project, particularly under
+[Mola](https://github.com/TritonDataCenter/manta-mola) project, particularly under
 ["system
-crons"](https://github.com/joyent/manta-mola/blob/master/docs/system-crons.md).
+crons"](https://github.com/TritonDataCenter/manta-mola/blob/master/docs/system-crons.md).
 In summary: a pipeline gets kicked off daily that saves database dumps of the
 metadata tier into Manta itself and then uses normal Manta jobs to first unpack
 these dumps and then process them for these various purposes.  If any of these
@@ -3026,9 +3025,9 @@ steps fails, manual intervention may be required to complete these operations.
 
 If the pipeline has failed, it's important to figure out why.  In practice, the
 most common reason is that the database dumps were not uploaded on time.  The
-[manta-hk](https://github.com/joyent/manta-hk) tool is provided to help figure
+[manta-hk](https://github.com/TritonDataCenter/manta-hk) tool is provided to help figure
 this out.  Its [manual
-page](https://github.com/joyent/manta-hk/blob/master/docs/man/manta-hk.md)
+page](https://github.com/TritonDataCenter/manta-hk/blob/master/docs/man/manta-hk.md)
 describes its usage.
 
 **When this pipeline has failed, use the manta-hk tool to determine whether
@@ -3041,7 +3040,7 @@ checks for the objects that normally get unpacked into the same directory, which
 may look like this (though the set of objects differs based on what the shard is
 being used for):
 
-    # mls /poseidon/stor/manatee_backups/2.moray.us-east.joyent.us/2015/06/02/00
+    # mls /poseidon/stor/manatee_backups/2.moray.us-central.mnx.io/2015/06/02/00
     buckets_config-2015-06-02-00-00-33.gz
     manta-2015-06-02-00-00-33.gz
     manta_delete_log-2015-06-02-00-00-33.gz
@@ -3091,7 +3090,7 @@ If the database dump is present, but none of the other objects are present, then
 the dump was not successfully unpacked.  You can kick off a job to do this by
 running a command like this one from the "ops" zone:
 
-    # /opt/smartdc/mola/bin/kick_off_pg_transform.js -b /poseidon/stor/manatee_backups/2.moray.us-east.joyent.us/2015/06/02/00/moray-2015-06-02-00-00-37.gz 2>&1 | bunyan
+    # /opt/smartdc/mola/bin/kick_off_pg_transform.js -b /poseidon/stor/manatee_backups/2.moray.us-central.mnx.io/2015/06/02/00/moray-2015-06-02-00-00-37.gz 2>&1 | bunyan
 
 The argument for the "-b" option is the name of the database dump object in
 Manta.  You'll need to run this command for each dump that you want to unpack
@@ -3223,7 +3222,7 @@ Use `mrjob where` to list uncompleted tasks and see where they're running:
 
     ops$ mrjob where e493ab87-fcf0-e991-8b82-8f649696d197
     TASKID                               PH       NIN SERVER
-    6ce64b78-691b-4703-970a-de2fb84b69f1  0         - 1.cn.us-east.joyent.us
+    6ce64b78-691b-4703-970a-de2fb84b69f1  0         - 1.cn.us-central.mnx.io
          map: /dap/stor/mdb.log
 
 Note that physical storage nodes in Manta are identified by mantaComputeId
@@ -3283,14 +3282,14 @@ Here's a normal history for one of the first phase tasks:
         /dap/stor/datasets/cmd/cmd/acct/acctcms.c
 
     2014-01-17T19:22:03.746Z  map task   33b7f617-141e-4673-8056-a27a6f511b60
-                                         (attempt 1, host 11.cn.us-east.joyent.us)
+                                         (attempt 1, host 11.cn.us-central.mnx.io)
         /dap/stor/datasets/cmd/cmd/acct/acctcms.c
 
     2014-01-17T19:22:04.142Z  taskoutput b9bb82de-416d-4ac3-a962-09f75a140932
         /dap/jobs/ea784e03-a735-cd29-d913-b1b9cb5f0503/stor/dap/stor/datasets/cmd/cmd/acct/acctcms.c.0.33b7f617-141e-4673-8056-a27a6f511b60
 
     2014-01-17T19:22:08.663Z  map task   1b370599-90b3-4c03-a388-c8967798d396
-                                         (attempt 1, host 25.cn.us-east.joyent.us)
+                                         (attempt 1, host 25.cn.us-central.mnx.io)
 
     2014-01-17T19:22:09.078Z  taskoutput c98b68d1-1b76-4adf-845c-f7392d860694
         /dap/jobs/ea784e03-a735-cd29-d913-b1b9cb5f0503/stor/dap/stor/datasets/cmd/cmd/acct/acctcms.c.1.1b370599-90b3-4c03-a388-c8967798d396
@@ -3299,7 +3298,7 @@ Here's a normal history for one of the first phase tasks:
         /dap/jobs/ea784e03-a735-cd29-d913-b1b9cb5f0503/stor/dap/stor/datasets/cmd/cmd/acct/acctcms.c.1.1b370599-90b3-4c03-a388-c8967798d396
 
     2014-01-17T19:22:02.447Z  reducer    015f6dbb-8bb3-4b07-b806-12bdf46fd8a8
-                                         (attempt 1, host 11.cn.us-east.joyent.us)
+                                         (attempt 1, host 11.cn.us-central.mnx.io)
                                          4 inputs
 
 This shows the jobinput that created the task, the output from the task that
@@ -3317,7 +3316,7 @@ retried:
         /dap/stor/datasets/cmd/cmd/addbadsec/addbadsec.c
 
     2014-01-17T19:22:03.660Z  map task   a322ebe6-3279-40ee-8c7e-88130def17b4
-                                         (attempt 1, host 9.cn.us-east.joyent.us)
+                                         (attempt 1, host 9.cn.us-central.mnx.io)
         /dap/stor/datasets/cmd/cmd/addbadsec/addbadsec.c
 
     2014-01-17T19:22:06.411Z  error      bb08a232-75d6-4b59-a80c-3f369f84d64a
@@ -3325,14 +3324,14 @@ retried:
                                          internal error: agent timed out
 
     2014-01-17T19:22:07.551Z  map task   e4c80edb-5302-4f6f-af19-336be9834e92
-                                         (attempt 2, host 26.cn.us-east.joyent.us)
+                                         (attempt 2, host 26.cn.us-central.mnx.io)
         /dap/stor/datasets/cmd/cmd/addbadsec/addbadsec.c
 
     2014-01-17T19:22:07.679Z  taskoutput c79dc94d-5800-4e59-b808-998c94024c2f
         /dap/jobs/ea784e03-a735-cd29-d913-b1b9cb5f0503/stor/dap/stor/datasets/cmd/cmd/addbadsec/addbadsec.c.0.e4c80edb-5302-4f6f-af19-336be9834e92
 
     2014-01-17T19:22:12.279Z  map task   c6cbe67f-2c9d-4c50-ae0c-53590303f544
-                                         (attempt 1, host 19.cn.us-east.joyent.us)
+                                         (attempt 1, host 19.cn.us-central.mnx.io)
 
     2014-01-17T19:22:12.529Z  taskoutput 70275969-c92f-4700-96c2-9564158be0b2
         /dap/jobs/ea784e03-a735-cd29-d913-b1b9cb5f0503/stor/dap/stor/datasets/cmd/cmd/addbadsec/addbadsec.c.1.c6cbe67f-2c9d-4c50-ae0c-53590303f544
@@ -3341,7 +3340,7 @@ retried:
         /dap/jobs/ea784e03-a735-cd29-d913-b1b9cb5f0503/stor/dap/stor/datasets/cmd/cmd/addbadsec/addbadsec.c.1.c6cbe67f-2c9d-4c50-ae0c-53590303f544
 
     2014-01-17T19:22:02.447Z  reducer    6e009faa-a0d8-478a-9b66-ae82852fbf45
-                                         (attempt 1, host 25.cn.us-east.joyent.us)
+                                         (attempt 1, host 25.cn.us-central.mnx.io)
                                          7 inputs
 
 In this case, we see the map task we asked about, the error it produced, and the map retry task below it on a different host.
@@ -3350,7 +3349,7 @@ Here's what happens when we select a reducer that failed:
 
     ops$ mrjob taskhistory 3ac67932-75ba-4ce0-891e-1b295949a3be
     2014-01-17T19:22:02.447Z  reducer    3ac67932-75ba-4ce0-891e-1b295949a3be
-                                         (attempt 1, host 9.cn.us-east.joyent.us)
+                                         (attempt 1, host 9.cn.us-central.mnx.io)
                                          input stream open
 
     2014-01-17T19:22:06.424Z  error      c3923a5f-93ea-425e-92c3-694b6bf08b3d
@@ -3358,7 +3357,7 @@ Here's what happens when we select a reducer that failed:
                                          internal error: agent timed out
 
     2014-01-17T19:22:07.542Z  reducer    c98bd373-6c08-4032-b405-bf0a0e18f820
-                                         (attempt 2, host 12.cn.us-east.joyent.us)
+                                         (attempt 2, host 12.cn.us-central.mnx.io)
                                          9 inputs
 
 We don't see any of the previous or subsequent phase tasks because
@@ -3377,20 +3376,20 @@ attempt:
         /dap/stor/datasets/cmd/cmd/acct/acctwtmp.c
 
     2014-01-17T19:22:03.633Z  map task   4906e7b9-c65e-4655-95d0-5bdcbda62b39
-                                         (attempt 1, host 26.cn.us-east.joyent.us)
+                                         (attempt 1, host 26.cn.us-central.mnx.io)
         /dap/stor/datasets/cmd/cmd/acct/acctwtmp.c
 
     2014-01-17T19:22:04.164Z  taskoutput 41dd8fac-2923-42ec-a893-43318596472b
         /dap/jobs/ea784e03-a735-cd29-d913-b1b9cb5f0503/stor/dap/stor/datasets/cmd/cmd/acct/acctwtmp.c.0.4906e7b9-c65e-4655-95d0-5bdcbda62b39
 
     2014-01-17T19:22:07.380Z  map task   94851372-49b9-48fd-b5ca-b51b330561ab
-                                         (attempt 1, host 293.cn.us-east.joyent.us)
+                                         (attempt 1, host 293.cn.us-central.mnx.io)
 
     2014-01-17T19:22:07.604Z  taskoutput 5cbb34ab-a0f4-4144-9629-629d323cc1f0
         /dap/jobs/ea784e03-a735-cd29-d913-b1b9cb5f0503/stor/dap/stor/datasets/cmd/cmd/acct/acctwtmp.c.1.94851372-49b9-48fd-b5ca-b51b330561ab
 
     2014-01-17T19:22:02.447Z  reducer    660f7838-4055-49b3-8376-dec9648ec2a5
-                                         (attempt 1, host 9.cn.us-east.joyent.us)
+                                         (attempt 1, host 9.cn.us-central.mnx.io)
                                          input stream open
 
     2014-01-17T19:22:06.397Z  error      4263bcc0-3a5e-433b-9460-b5970044cb51
@@ -3401,7 +3400,7 @@ attempt:
         /dap/jobs/ea784e03-a735-cd29-d913-b1b9cb5f0503/stor/dap/stor/datasets/cmd/cmd/acct/acctwtmp.c.1.94851372-49b9-48fd-b5ca-b51b330561ab
 
     2014-01-17T19:22:07.539Z  reducer    318b47e5-a234-4fa0-b11e-e80701cfc90d
-                                         (attempt 2, host 9.cn.us-east.joyent.us)
+                                         (attempt 2, host 9.cn.us-central.mnx.io)
                                          input stream open
 
     2014-01-17T19:22:11.437Z  error      681faf97-2ae5-4938-89a8-d422e7156d11
@@ -3409,7 +3408,7 @@ attempt:
                                          internal error: agent timed out
 
     2014-01-17T19:22:12.689Z  reducer    721187a7-5df1-4ce1-9c3b-9e54ffd71cce
-                                         (attempt 3, host 20.cn.us-east.joyent.us)
+                                         (attempt 3, host 20.cn.us-central.mnx.io)
                                          6 inputs
 
 ## Using the Moray tools to fetch detailed state
@@ -3574,7 +3573,7 @@ Each instruction contains a variable number of lines referring to object
 backing-files on a storage server. These are formatted to match the expectations
 of the existing storage server cron job. For more about this format and running
 Mako cleaning steps manually, see
-[documentation](https://github.com/joyent/manta-mola/blob/master/docs/gc-manual-coal.md#cleaning-makos)
+[documentation](https://github.com/TritonDataCenter/manta-mola/blob/master/docs/gc-manual-coal.md#cleaning-makos)
 in the Mola consolidation.
 
 To check the number of instruction objects for a particular shark:
@@ -3781,10 +3780,10 @@ mrjob only shows overall system state.  Once a task is issued to a server, you
 have to contact the agent running on that server to figure out the status.  The
 dashboard shows running groups and streams, but you can get more information by
 logging into the box and running the "mrgroups" and "mrzones" tools.
-Continuing the above example, 25.cn.us-east.joyent.us corresponds to MS08214 in
-us-east-1, so we can log into that box and run `mrgroups`:
+Continuing the above example, 25.cn.us-central.mnx.io corresponds to MS08214 in
+us-central-1, so we can log into that box and run `mrgroups`:
 
-    [root@MS08214 (us-east-1) ~]# mrgroups
+    [root@MS08214 (us-central-1) ~]# mrgroups
     JOBID                                PH NTASKS RUN SHARE  LOGIN
     4ff04c4d-4540-483d-94ca-d515320d2b9d  0      0   1      1 dap
     946587d1-3ef6-46d5-b139-186d59813f9d  3      1   0      1 poseidon
@@ -3794,7 +3793,7 @@ job will have two groups on each physical server where it's running.  Each
 group may have multiple "streams" associated with it, each corresponding to a
 compute zone where tasks are running.  We can see these with:
 
-    [root@MS08214 (us-east-1) ~]# mrgroups -s
+    [root@MS08214 (us-central-1) ~]# mrgroups -s
     JOBID       PH ZONE                                 LAST START
     4ff04c4d...  0 1118c00b-4729-4c18-a289-f54afe2d9e9d 2013-07-02T22:16:17.746Z
     946587d1...  3 4836fd7b-d80d-4b2d-8519-8955ca5621ff 2013-07-02T22:20:30.068Z
@@ -3808,7 +3807,7 @@ and each group has one zone.  But in general:
 
 You can even see exactly what processes the user's job is running:
 
-    [root@MS08214 (us-east-1) ~]# mrgroups -sv
+    [root@MS08214 (us-central-1) ~]# mrgroups -sv
     JOBID       PH ZONE                                 LAST START
     4ff04c4d...  0 1118c00b-4729-4c18-a289-f54afe2d9e9d 2013-07-02T22:16:17.746Z
       90397 ./node lib/agent.js
@@ -4058,7 +4057,7 @@ indicates when they started.  If you see a number of other processes that have
 been running for several minutes, that's generally a sign that things are in
 bad shape.  Here's an example:
 
-    [root@RM08211 (us-east-2) ~]# svcs -p marlin-agent
+    [root@RM08211 (us-central-2) ~]# svcs -p marlin-agent
     STATE          STIME    FMRI
     online         Dec_20   svc:/smartdc/agent/marlin-agent:default
                    16:54:16    15450 vmadm
@@ -4127,7 +4126,7 @@ into.
 On occasion, a compute zone may transition to the "disabled" state.  These zones
 appear red on the Marlin dashboard and mrzones will report the same:
 
-    [root@RM08211 (us-east-2) ~]# mrzones
+    [root@RM08211 (us-central-2) ~]# mrzones
        5 busy
        1 disabled
      122 ready
@@ -4135,7 +4134,7 @@ appear red on the Marlin dashboard and mrzones will report the same:
 
 Use `mrzones -x` to determine the reason for the zone being disabled:
 
-    [root@RM08211 (us-east-2) ~]# mrzones -x
+    [root@RM08211 (us-central-2) ~]# mrzones -x
     3cf7ccc4-4da2-4a0a-b111-ef4e0c2e04cc (since 2014-07-25T03:00:28.001Z)
         zone not ready: command "zfs rollback zones/3cf7ccc4-4da2-4a0a-b111-ef4e0c2e04cc@marlin_init" failed with stderr: cannot open 'zones/3cf7ccc4-4da2-4a0a-b111-ef4e0c2e04cc@marlin_init': dataset does not exist : child exited with status 1
 
@@ -4294,10 +4293,10 @@ there's the tools/install_marlin_image.sh script.  This script:
 
     manta$ ./tools/install_marlin_image.sh <machine>
 
-will download the latest marlin image from updates.joyent.com, save it on that
+will download the latest marlin image from updates.tritondatacenter.com, save it on that
 machine on which the script is run, and copy it to the machine's IMGAPI.  On
 subsequent runs, this script will copy the image from the local machine and
-avoid downloading it again from updates.joyent.com.  Because the manta-compute
+avoid downloading it again from updates.tritondatacenter.com.  Because the manta-compute
 image is larger than all other images combined, using install_marlin_image.sh
 will shorten the development cycle.
 
@@ -4445,7 +4444,7 @@ external addresses:
     	ether 90:b8:d0:3f:37:e0
     lo0: flags=2002000849<UP,LOOPBACK,RUNNING,MULTICAST,IPv6,VIRTUAL> mtu 8252 index 1
     	inet6 ::1/128
-    [root@0be5c6c1-8ae2-4249-ab64-8c6f1c54363e ~]# nslookup www.joyent.com
+    [root@0be5c6c1-8ae2-4249-ab64-8c6f1c54363e ~]# nslookup www.tritondatacenter.com
     Server:         8.8.8.8
     Address:        8.8.8.8#53
 
@@ -4535,7 +4534,7 @@ Take note of the service uuid and make sure you can fetch it with:
     headnode$ sapiadm update [service uuid] json.path=value
     #Examples:
     headnode$ sapiadm update 8386d8f5-d4ff-4b51-985a-061832b41179 \
-      params.tags.manta_storage_id=2.stor.us-east.joyent.us
+      params.tags.manta_storage_id=2.stor.us-central.mnx.io
     headnode$ sapiadm update update 0b48c067-01bd-41ca-9f70-91bda65351b2 \
       metadata.PG_DIR=/manatee/pg/data
 
@@ -4639,7 +4638,7 @@ Then reboot the zone.
 The information in this section may be useful once you're familiar with Marlin
 internals.  These are internal implementation details intended to help
 *understand* the system.  It is completely unsupported to make any changes to
-the system outside of using a documented tool or following a Joyent support
+the system outside of using a documented tool or following a supported
 procedure.  **Everything in this section is subject to change without
 notice!**
 
@@ -4676,7 +4675,7 @@ through the system.
 
 The schema for these buckets is not documented or stable, but you can find the
 latest version (with comments) on
-[github](https://github.com/joyent/manta-marlin/blob/master/common/lib/schema.js).
+[github](https://github.com/TritonDataCenter/manta-marlin/blob/master/common/lib/schema.js).
 
 
 ## Heartbeats, failures, and health checking
@@ -4731,7 +4730,7 @@ json representation and the full lists of inputs, outputs, and errors into the
 job's directory (`/$MANTA_USER/jobs/$JOBID`).  The job's json representation is
 also saved into `/poseidon/stor/job_archives/YYYY/MM/DD/HH`.  For more on the
 user-facing implications of archiving, see the [public
-docs](http://apidocs.joyent.com/manta/jobs-reference.html#job-completion-and-archival).
+docs](http://apidocs.tritondatacenter.com/manta/jobs-reference.html#job-completion-and-archival).
 
 About 24 hours after a job is archived, all of its records are removed from the
 database.  This is necessary to keep the jobs database from growing without
@@ -4778,17 +4777,17 @@ database:
    example, if the job completed at 2014-05-05T11:07:05.519Z, you'll look at the
    dump for 2014/05/06/00 (the first dump after the completion time).  All of
    the dumps are stored in `/poseidon/stor/manatee_backups`, under the shard
-   designated as the jobs shard.  For the us-east Manta deployment, the jobs
-   shard is 1.moray.us-east.joyent.us.  Putting all this together, the database
+   designated as the jobs shard.  For the us-central Manta deployment, the jobs
+   shard is 1.moray.us-central.mnx.io.  Putting all this together, the database
    dumps we care about would be in:
 
-        /poseidon/stor/manatee_backups/1.moray.us-east.joyent.us/2014/05/06/00
+        /poseidon/stor/manatee_backups/1.moray.us-central.mnx.io/2014/05/06/00
 
    Next, you'll run `mrextractjob` (from the `ops` zone).  You can run it with
    no arguments for details, but basically you'll run something like this:
 
         $ mrextractjob \
-            /poseidon/stor/manatee_backups/1.moray.us-east.joyent.us/2014/05/06/00 \
+            /poseidon/stor/manatee_backups/1.moray.us-central.mnx.io/2014/05/06/00 \
             /poseidon/stor/debug-fe4c6e2a \
             fe4c6e2a-bc78-4c94-d4cd-c9f6a8931855
 

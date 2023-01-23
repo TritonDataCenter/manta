@@ -2,12 +2,12 @@
 title: Compute Environment Software
 markdown2extras: wiki-tables, code-friendly
 ---
-    
+
 # Compute Environment Software
-    
-The Joyent Manta Storage Service compute environment is a SmartOS instance with
-most major languages and packages installed including: 
-    
+
+The Manta Storage Service compute environment is a SmartOS instance with
+most major languages and packages installed including:
+
 * Node.js
 * Python
 * Ruby
@@ -17,13 +17,13 @@ most major languages and packages installed including:
 * MySQL client
 * Postgres client
 
-All of the Joyent Manta  command line utilities listed in [CLI Utilities Reference](commands-reference.html)
+All of the Manta  command line utilities listed in [CLI Utilities Reference](commands-reference.html)
 are also available to you in the compute environment.
 
 You can use your own software as [assets](index.html#running-jobs-using-assets) to your job.
 
 This list shows every package installed in the compute environment:
-    
+
     GConf-2.32.4nb6      Configuration database system used by GNOME
     GeoIP-1.4.8          Find the country from any IP address
     GeoLiteCity-201305   Free alternative for the GeoIP City database
@@ -2243,5 +2243,5 @@ This list shows every package installed in the compute environment:
     zookeeper-server-3.4.4 Highly reliable distributed coordination server
     zsh-5.0.2            The Z shell
     zziplib-0.13.59      Library for ZIP archive handling
-    
-    
+
+
