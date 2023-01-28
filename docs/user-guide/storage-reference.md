@@ -5,7 +5,7 @@ markdown2extras: wiki-tables, code-friendly
 
 # Object Storage Reference
 
-The Joyent Manta Storage Service uses a REST API to read, write, and delete objects.
+The Manta Storage Service uses a REST API to read, write, and delete objects.
 This document assumes that you are familiar with HTTP-based REST systems, including
 HTTP requests, responses, status codes, and headers.
 
@@ -36,7 +36,7 @@ the storage service. The data portion is opaque. The metadata is a set of
 
 # Objects
 
-Objects are the primary entity you store in Joyent Manta Storage Service.
+Objects are the primary entity you store in Manta Storage Service.
 Objects can be of any size, including zero bytes.
 Objects consist of your raw, uninterpreted data,
 as well as the metadata (HTTP headers) returned when you retrieve an object.
@@ -302,7 +302,7 @@ There is no way to add additional metadata.
 # Storage System Architecture
 
 This section describes some of the design principles that guide the
-operation of the Joyent Manta Storage System.
+operation of the Manta Storage System.
 
 ## Guiding Principles
 
@@ -327,7 +327,7 @@ Several principles guide the design of the service:
 
 ## System scale
 
-Joyent Manta Storage Service is designed to support an arbitrarily large number of objects and an
+Manta Storage Service is designed to support an arbitrarily large number of objects and an
 arbitrarily large number of directories. However, it bounds the number of
 objects in a single directory so that list operations can be performed
 efficiently.

@@ -2,11 +2,11 @@
 
 This document outlines sample topics for a training course on operating Manta.
 
-* Docs: 
-    * Manta Overview: https://github.com/joyent/manta
-    * Manta Ops Guide: https://github.com/joyent/manta/blob/master/docs/manta-ops.md
-    * Manatee Users Guide: https://github.com/joyent/manatee/blob/master/docs/user-guide.md
-    * Manatee Troubleshooting Guide: https://github.com/joyent/manatee/blob/master/docs/trouble-shooting.md
+* Docs:
+    * Manta Overview: https://github.com/TritonDataCenter/manta
+    * Manta Ops Guide: https://github.com/TritonDataCenter/manta/blob/master/docs/manta-ops.md
+    * Manatee Users Guide: https://github.com/TritonDataCenter/manatee/blob/master/docs/user-guide.md
+    * Manatee Troubleshooting Guide: https://github.com/TritonDataCenter/manatee/blob/master/docs/trouble-shooting.md
 * Architecture Review
 * Using Manta
     * Get new users set up for Manta

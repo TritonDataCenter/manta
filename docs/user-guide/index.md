@@ -11,7 +11,7 @@ This page is to only use the node.js CLI examples. The curl one is for the web a
 Standard Opening Paragraph
 -->
 
-# Manta: Triton's object storage and converged analytics solution
+# Manta: Triton's object storage solution
 
 Manta, Triton's object storage and converged analytics solution, is a highly scalable, distributed object storage service with integrated compute that enables the creation of analytics jobs (more generally, compute jobs) which process and transform data at rest. Developers can store and process any amount of data at any time where a simple web API call replaces the need for spinning up instances. Manta compute is a complete and high performance compute environment including R, Python, node.js, Perl, Ruby, Java, C/C++, ffmpeg, grep, awk and others. Metering is by the second with zero provisioning, data movement or scheduling latency costs.
 
@@ -49,19 +49,19 @@ Patterns](job-patterns.html) page.
 
 # Real-world systems
 
-These are systems that customers and Joyent engineers have built on top of
+These are systems that customers and tritondatacenter engineers have built on top of
 Manta.
 
 * [Scaling Event-based Data Collection and
   Analysis](http://building.wanelo.com/2013/06/28/a-cost-effective-approach-to-scaling-event-based-data-collection-and-analysis.html):
   Wanelo stores user analytics and analyzes behavior with Manta
 * [500 regression tests in 4
-  minutes](https://www.joyent.com/blog/550-regression-tests-in-4-minutes-with-joyent-manta): The Node team uses Manta to run a test case against all commits in a repository to find which one introduced a regression
+  minutes](https://www.tritondatacenter.com/blog/550-regression-tests-in-4-minutes-with-joyent-manta): The Node team uses Manta to run a test case against all commits in a repository to find which one introduced a regression
 * [Kartlytics](http://kartlytics.com/): Mario Kart 64 analytics
 * [Image Manipulation and
-  Publishing](http://www.joyent.com/blog/manta-image-content-manipulation-and-publishing-example-part-1)
+  Publishing](http://www.tritondatacenter.com/blog/manta-image-content-manipulation-and-publishing-example-part-1)
   using the Getty Open Content Image Set
-* [Thoth](https://github.com/joyent/manta-thoth): Joyent stores and analyzes
+* [Thoth](https://github.com/TritonDataCenter/manta-thoth): stores and analyzes
   core dumps and crash dumps using Manta
 
 
@@ -72,8 +72,7 @@ Manta.
 To use Triton's object storage, you need a Triton Compute account.  If
 you don't already have an account, contact your administrator.
 
-Once you have signed up, you will need to add an SSH public key to your account. Joyent recommends using RSA keys, as the node-manta CLI programs will work with RSA keys both locally, and with the `ssh agent`. DSA keys will only work if the
-private key is on the same system as the CLI, and not password-protected.
+Once you have signed up, you will need to add an SSH public key to your account.
 
 <!--
 Standard Closing Paragraph
@@ -89,31 +88,25 @@ From this point on, this is the same exact material as inside the portal
 
 # Getting Started
 
-This tutorial assumes you've signed up for a Joyent account and have an RSA public SSH key added to your account. We will cover installing the node.js SDK and CLI, setting up your shell environment variables, and then working through examples of creating directories, objects, links and finally running compute jobs on your data.
+This tutorial assumes you've signed up for a Triton account and have a public SSH key added to your account. We will cover installing the node.js SDK and CLI, setting up your shell environment variables, and then working through examples of creating directories, objects, links and finally running compute jobs on your data.
 
 The CLI is the only tool used in these examples, and the instructions assume you're doing this from a Mac OS X, SmartOS, Linux or BSD system, and know how to use SSH and a terminal application such as Terminal.app. It helps to be familiar with basic Unix facilities like the shells, pipes, stdin, and stdout.
-
-## Using the Mac OS X installer
-
-If you do not have node.js installed you can use the complete installer for Mac. This installer installs node.js 0.10.x, npm, node-manta and smartdc.
-
-[OS X Installer](https://us-east.manta.joyent.com/manta/public/sdks/joyent-node-latest.pkg)
 
 ## If You Have node.js Installed
 
 If you have at least node.js 0.8.x installed (0.10.x is recommended) you can install the CLI and SDK from an npm package. All of the examples below work with both node.js 0.8.x and 0.10.x.
 
-    $ sudo npm install manta -g
+    sudo npm install manta -g
 
 Additionally, as the API is JSON-based, the examples will refer to the
 [json](https://github.com/trentm/json) tool, which helps put JSON output in a more human readable format. You can install from npm:
 
-    $ sudo npm install json -g
+    sudo npm install json -g
 
 Lastly, and while optional, if you want to use verbose debug logging with the
 SDK, you will want [bunyan](https://github.com/trentm/node-bunyan):
 
-    $ sudo npm install bunyan -g
+    sudo npm install bunyan -g
 
 ## Setting Up Your Environment
 
@@ -124,20 +117,20 @@ environment.  There are four environment variables that all command line tools l
 * `MANTA_URL` - The API endpoint
 * `MANTA_USER` - Your Triton Public Cloud account login name
 * `MANTA_SUBUSER` - A user who has limited access to your account.
-See [Role Based Access Control and Manta](rbac.html)
+  See [Role Based Access Control and Manta](rbac.html)
 * `MANTA_KEY_ID` - The fingerprint of your SSH key.
 
 Copy all of the text below, and paste it into your `~/.bash_profile` or `~/.bashrc`.
 
-	export MANTA_URL=https://us-east.manta.joyent.com
-	export MANTA_USER=$TRITON_CLOUD_USER_NAME
-	unset MANTA_SUBUSER # Unless you have subusers
+    export MANTA_URL=https://us-central.manta.mnx.io
+    export MANTA_USER=$TRITON_CLOUD_USER_NAME
+    unset MANTA_SUBUSER # Unless you have subusers
     export MANTA_KEY_ID=$(ssh-keygen -E md5 -l -f ~/.ssh/id_rsa.pub | awk '{print $2}' | tr -d '\n' | cut -d: -f 2-)
 
 An easy way to do this in Mac OS X, is to copy the text, then use the `pbpaste` command
 to add the text in the clipboard to your file. like this:
 
-    $ pbpaste >> ~/.bash_profile
+    pbpaste >> ~/.bash_profile
 
 Edit the `~/.bash_profile` or `~/.bashrc` file, replacing `$TRITON_CLOUD_USER_NAME` with your Triton Public Cloud username.
 
@@ -509,7 +502,7 @@ dynamically).
 
 ## Running Jobs Using Assets
 
-Although the compute facility provides a full Joyent SmartOS environment,
+Although the compute facility provides a full SmartOS environment,
 your jobs may require special software, additional configuration information, or
 any other static file that is useful. You can make these available as assets,
 which are objects that are copied into the compute environment when your
@@ -690,17 +683,17 @@ Now let's take it up one more level. You can see what's inside a simple node.js 
 
     $ mget /mantademo/public/manta-desc.txt
 
-      Joyent Manta Storage Service is a cloud service that offers both a highly
+      Manta Storage Service is a cloud service that offers both a highly
       available, highly durable object store and integrated compute. Application
       developers can store and process any amount of data at any time, from any
       location, without requiring additional compute resources.
 
     $ echo /mantademo/public/manta-desc.txt | mjob create -o -s /mantademo/public/capitalizer.js -m 'node /assets/mantademo/public/capitalizer.js'
       added 1 input to 2aa8a0a9-92e9-47f3-8b66-acf2a22d25a8
-      JOYENT MANTA STORAGE SERVICE IS A CLOUD SERVICE THAT OFFERS BOTH A HIGHLY
+      MANTA STORAGE SERVICE IS A CLOUD SERVICE THAT OFFERS BOTH A HIGHLY
       AVAILABLE, HIGHLY DURABLE OBJECT STORE AND INTEGRATED COMPUTE! APPLICATION
       DEVELOPERS CAN STORE AND PROCESS ANY AMOUNT OF DATA AT ANY TIME, FROM ANY
       LOCATION, WITHOUT REQUIRING ADDITIONAL COMPUTE RESOURCES!
 
 For more details compute jobs see the
-[Compute Jobs Reference documentation](http://apidocs.joyent.com/manta/jobs-reference.html), along with the [default installed software](compute-instance-software.html) and some of our [built-in compute utilities](compute-instance-utilities.html).
+[Compute Jobs Reference documentation](http://apidocs.tritondatacenter.com/manta/jobs-reference.html), along with the [default installed software](compute-instance-software.html) and some of our [built-in compute utilities](compute-instance-utilities.html).
