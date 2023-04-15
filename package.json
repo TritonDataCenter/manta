@@ -4,6 +4,6 @@
   "description": "Manta project landing repo",
   "private": true,
   "devDependencies": {
-    "doctoc": "~1.3.0"
+    "doctoc": "~2.2.1"
   }
 }
