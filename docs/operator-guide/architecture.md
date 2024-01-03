@@ -188,7 +188,7 @@ Internally, most services work this way.
 
 Since we don't control Manta clients, the external service discovery system is
 simpler and more static.  We manually configure the public
-`us-east.manta.joyent.com` DNS name to resolve to each of the loadbalancer
+`us-central.manta.mnx.io` DNS name to resolve to each of the loadbalancer
 public IP addresses.  After a request reaches the loadbalancers, everything uses
 the internal service discovery mechanism described above to contact whatever
 other services they need.

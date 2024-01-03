@@ -1,6 +1,6 @@
 {
   "name": "manta-project",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Manta project landing repo",
   "private": true,
   "devDependencies": {
