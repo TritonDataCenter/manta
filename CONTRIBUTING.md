@@ -6,7 +6,7 @@
 
 <!--
     Copyright 2019 Joyent, Inc.
-    Copyright 2022 MNX Cloud, Inc.
+    Copyright 2024 MNX Cloud, Inc.
 -->
 
 # Manta Contribution Guidelines
@@ -54,3 +54,12 @@ There are two separate issue trackers that are relevant for Manta code:
 Before Manta was open sourced, Joyent engineering used a private JIRA instance.
 While Joyent continues to use JIRA internally, we also use GitHub issues for
 tracking -- primarily to allow interaction with those without access to JIRA.
+
+
+## Code of Conduct
+
+All persons and/or organizations contributing to, or intercting with our
+repositories or communities are required to abide by the
+[illumos Code of Conduct][coc].
+
+[coc]: https://github.com/TritonDataCenter/illumos-joyent/blob/master/CODE_OF_CONDUCT.md
