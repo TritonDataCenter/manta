@@ -6,6 +6,7 @@
 
 <!--
     Copyright 2020 Joyent, Inc.
+    Copyright 2025 MNX Cloud, Inc.
 -->
 
 # Manta v1 Operator Guide
