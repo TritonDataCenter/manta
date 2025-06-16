@@ -10,7 +10,7 @@ directories in your file system.
 
 `manta-nfs` implements a [NFS vers. 3](http://tools.ietf.org/html/rfc1813)
 server that uses
-[Joyent Manta](http://www.joyent.com/products/manta) as the backing store.
+[Triton Manta](http://www.tritondatacenter.com/products/manta) as the backing store.
 The server implements all NFS functionality, although some OS-level commands,
 such as `chmod`, will have no effect since Manta does not support that concept.
 The server is implemented in [node.js](http://nodejs.org/) and **requires**
@@ -18,7 +18,7 @@ v0.10.x.
 
 If node isn't installed on your machine,
 follow the instructions for
-[installing Manta](http://apidocs.joyent.com/manta/#getting-started).
+[installing Manta](http://apidocs.tritondatacenter.com/manta/#getting-started).
 
 
 # Quick Start
@@ -37,12 +37,12 @@ and install manta-nfs.
 
 
 Next, check that you have the
-[Manta environment variables set up](http://apidocs.joyent.com/manta/#setting-up-your-environment).
+[Manta environment variables set up](http://apidocs.tritondatacenter.com/manta/#setting-up-your-environment).
 
     $ env | grep MANTA
     MANTA_USER=mantauser
     MANTA_KEY_ID=3e:37:9b:11:a6:dc:21:be:1a:fd:95:b6:73:ea:42:9e
-    MANTA_URL=https://us-east.manta.joyent.com
+    MANTA_URL=https://us-central.manta.mnx.io
 
 Start the manta-nfs server. The server writes log output,
 so it's best to run it in its own terminal session.
@@ -151,7 +151,7 @@ to do this vary from operating system to operating system.
 
 You can find files mentioned in this section
 (launchd, SMF, rc)
-in the [manta-nfs repo on GitHub](https://github.com/joyent/manta-nfs).
+in the [manta-nfs repo on GitHub](https://github.com/TritonDataCenter/manta-nfs).
 
 
 ## Writing a Configuration File
@@ -167,7 +167,7 @@ The minimal configuration file is:
         "manta": {
             "keyFile": "/Users/mantauser/.ssh/id_rsa",
             "keyId": "03:71:24:1c:b6:64:51:9e:9d:6b:06:bf:4f:7c:19:dc",
-            "url": "https://us-east.manta.joyent.com",
+            "url": "https://us-central.manta.mnx.io",
             "user": "mantauser"
         }
     }
@@ -237,13 +237,13 @@ platforms. If you see the following, you know your mount code is incorrect.
     nfs mount: retrying: /home/foo.bar/mnt
 
 You will either need to run on a newer platform or you can use this
-[fixed NFS mount command](http://us-east.manta.joyent.com/jjelinek/public/mount)
+[fixed NFS mount command](http://us-central.manta.mnx.io/jjelinek/public/mount)
 explicitly. e.g.
 
     pfexec ./mount 127.0.0.1:/foo.bar/public /home/foo/mnt
 
 For unmounting, you can use this
-[fixed umount command](http://us-east.manta.joyent.com/jjelinek/public/umount)
+[fixed umount command](http://us-central.manta.mnx.io/jjelinek/public/umount)
 explicitly.
 
 On SmartOS the uid/gid for 'nobody' is 60001.
@@ -432,7 +432,7 @@ These next steps assume a default path for SSH keys. You can use other paths, bu
 * Append your Manta variable exports to `/root/.bashrc`, for example:
 
     ```
-    export MANTA_URL=https://us-east.manta.joyent.com
+    export MANTA_URL=https://us-central.manta.mnx.io
     export MANTA_USER=john.smith
     export MANTA_KEY_ID=b9:71:88:f4:c1:62:cf:b4:7c:cc:3b:00:d7:ff:21:46
     ```

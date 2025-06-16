@@ -6,12 +6,12 @@ markdown2extras: wiki-tables, code-friendly
 # CLI Utilities Reference
 
 This document lists the command line interface (CLI) tools available from the
-Joyent Manta [Node.js SDK](sdks.html#nodejs-sdk-and-cli) as well as the CLI tools available to you in the
+Manta [Node.js SDK](sdks.html#nodejs-sdk-and-cli) as well as the CLI tools available to you in the
 compute environment.
 
 # Client-Side Utilities
 
-These commands are installed locally on your machine as part of the Joyent Manta Node.js SDK.
+These commands are installed locally on your machine as part of the Manta Node.js SDK.
 They are also available to your jobs in the compute environment.
 
 * [mls](mls.html) - Lists directory contents

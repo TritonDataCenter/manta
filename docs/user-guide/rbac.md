@@ -72,8 +72,8 @@ To allow the access to a specific resource,
 you also need to associate, or tag, the resource with a role and add
 authorized users as members of the role. You can tag or untag roles
 for a resource by updating the 'role-tag' attribute value in the
-object metadata. See the [mchmod](https://apidocs.joyent.com/manta/mchmod.html)
-or [mchattr](https://apidocs.joyent.com/manta/mchattr.html) CLI reference for
+object metadata. See the [mchmod](https://apidocs.tritondatacenter.com/manta/mchmod.html)
+or [mchattr](https://apidocs.tritondatacenter.com/manta/mchattr.html) CLI reference for
 an example of updating object role tags or updating metadata in general.
 
 Roles can be tagged to directories as well (the only exception is the root
@@ -101,11 +101,11 @@ The account owner always has complete access to every resource in the account.
 
 # Learning More About Access Control
 
-To learn more see the main [RBAC documentation](https://docs.joyent.com/jpc/rbac).
+To learn more see the main [RBAC documentation](https://docs.tritondatacenter.com/jpc/rbac).
 
 If you want a quick walkthrough of how access control works with Manta,
-see [Getting Started With Access Control](https://docs.joyent.com/jpc/rbac/quickstart).
+see [Getting Started With Access Control](https://docs.tritondatacenter.com/jpc/rbac/quickstart).
 
 If you are already familiar with the key RBAC concepts, you can review the
-complete list of [Manta Actions](https://docs.joyent.com/public-cloud/rbac/rules#manta-actions)
+complete list of [Manta Actions](https://docs.tritondatacenter.com/public-cloud/rbac/rules#manta-actions)
 and start defining the rules for your RBAC policies.

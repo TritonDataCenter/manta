@@ -10,6 +10,7 @@ markdown2extras: wiki-tables, code-friendly
 
 <!--
     Copyright (c) 2018, Joyent, Inc.
+    Copyright 2023 MNX Cloud, Inc.
 -->
 
 # Multipart Uploads Reference
@@ -196,7 +197,7 @@ they are within the system-wide grace period for garbage collection.
 # Multipart Upload System Architecture
 
 This section describes some of the design principles that guide the operation of
-the Joyent Manta Multipart Upload Service.
+the Manta Multipart Upload Service.
 
 ## Guiding Principles
 
