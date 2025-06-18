@@ -7,6 +7,7 @@
 <!--
     Copyright 2020 Joyent, Inc.
     Copyright 2023 MNX Cloud, Inc.
+    Copyright 2025 MNX Cloud, Inc.
 -->
 
 # Manta v1 Operator Guide
@@ -1086,6 +1087,14 @@ multi-DC, multi-compute-node deployment.  The general process is:
 
     # Install the agent on all servers.
     sdc-oneachnode -a "apm install $marlin_agent_file >>/var/log/marlin-agent-install.log 2>&1 && echo success || echo 'fail (see /var/log/marlin-agent-install.log)'"
+
+    # Add the marlin-agent's configuration to those servers
+    sdc-login manta
+
+    # Repeat this with UUIDs of all servers running marlin-agents
+    manta-marlin -s $CN_UUID
+    ...
+    exit
 
     # Sanity check to ensure marlin agent is running on all storage servers.
     sdc-oneachnode -a 'svcs -H marlin-agent'
